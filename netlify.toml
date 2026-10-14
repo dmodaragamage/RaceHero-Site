@@ -1,0 +1,16 @@
+# racehero.ca — Netlify config
+
+# /link serves the RaceHero Link PC installer (the URL the app points to).
+# Build it with tools/racehero-link/build-exe.bat + build-installer.bat,
+# drop RaceHeroLinkSetup.exe next to index.html, push — no code change needed.
+[[redirects]]
+  from = "/link"
+  to = "/RaceHeroLinkSetup.exe"
+  status = 200
+
+# /app is the stable "get the app" URL. Point it at the real Play listing
+# once RaceHero is live on Google Play.
+[[redirects]]
+  from = "/app"
+  to = "https://play.google.com/store"
+  status = 302
