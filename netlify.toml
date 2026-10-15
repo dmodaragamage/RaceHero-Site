@@ -1,5 +1,12 @@
 # racehero.ca — Netlify config
 
+# /acc is the one-minute ACC telemetry setup page (the app points SIM users
+# here instead of making them paste config across devices).
+[[redirects]]
+  from = "/acc"
+  to = "/acc.html"
+  status = 200
+
 # /link serves the RaceHero Link PC installer (the URL the app points to).
 # Build it with tools/racehero-link/build-exe.bat + build-installer.bat,
 # drop RaceHeroLinkSetup.exe next to index.html, push — no code change needed.

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RaceHero — ACC Setup (60 seconds)</title>
+<meta name="description" content="Enable Assetto Corsa Competizione's telemetry API for RaceHero in under a minute. One file, no software to install.">
+<style>
+  :root { --bg: #0d0d0f; --panel: #16161a; --line: #26262c; --txt: #f5f5f5; --mut: #a7a7ae; --acc: #ff8a00; --grn: #35d07f; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); color: var(--txt); font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; }
+  .checkers { height: 10px; background: repeating-conic-gradient(#111 0% 25%, #f5f5f5 0% 50%) 0 0 / 20px 20px; opacity: .9; }
+  .wrap { max-width: 720px; margin: 0 auto; padding: 0 1.5rem 4rem; }
+  nav { display: flex; justify-content: space-between; align-items: center; padding: 1.2rem 0; }
+  .brand { font-weight: 800; letter-spacing: .3em; text-indent: .3em; font-size: 1.1rem; color: var(--txt); text-decoration: none; }
+  .brand span { color: var(--acc); }
+  h1 { font-size: clamp(1.8rem, 5vw, 2.6rem); font-weight: 800; margin: 2.5rem 0 .6rem; line-height: 1.2; }
+  h1 span { color: var(--acc); }
+  .sub { color: var(--mut); margin-bottom: 2rem; }
+  .btn { display: inline-block; background: var(--acc); color: #0d0d0f; font-weight: 700; padding: .95rem 2.1rem; border-radius: 999px; text-decoration: none; font-size: 1.05rem; }
+  .steps { margin: 2.2rem 0; display: flex; flex-direction: column; gap: 1rem; }
+  .step { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 1.3rem 1.5rem; }
+  .step .n { display: inline-block; background: var(--acc); color: #0d0d0f; font-weight: 800; width: 1.7rem; height: 1.7rem; line-height: 1.7rem; text-align: center; border-radius: 50%; margin-right: .6rem; }
+  .step h3 { display: inline; font-size: 1.05rem; }
+  .step p { color: var(--mut); margin-top: .5rem; font-size: .95rem; }
+  .step code { background: #0d0d0f; border: 1px solid var(--line); border-radius: 6px; padding: .1rem .45rem; color: var(--txt); font-size: .88rem; word-break: break-all; }
+  .done { border: 1px solid var(--grn); border-radius: 14px; padding: 1.3rem 1.5rem; color: var(--mut); }
+  .done strong { color: var(--grn); }
+  footer { margin-top: 3rem; color: #666; font-size: .9rem; }
+  footer a { color: var(--acc); text-decoration: none; }
+</style>
+</head>
+<body>
+<div class="checkers"></div>
+<div class="wrap">
+  <nav><a class="brand" href="/">RACE<span>HERO</span></a></nav>
+
+  <h1>ACC setup in <span>60 seconds</span></h1>
+  <p class="sub">Assetto Corsa Competizione needs one tiny config file so it can stream telemetry to your phone. No software to install, nothing to sign into.</p>
+
+  <a class="btn" href="/broadcasting.json" download="broadcasting.json">⬇ Download broadcasting.json</a>
+
+  <div class="steps">
+    <div class="step">
+      <span class="n">1</span><h3>Download the file above</h3>
+      <p>It's 3 lines. That's the whole thing.</p>
+    </div>
+    <div class="step">
+      <span class="n">2</span><h3>Move it into ACC's Config folder</h3>
+      <p>Put <code>broadcasting.json</code> here (create the folder if it isn't there):<br><code>Documents\Assetto Corsa Competizione\Config\broadcasting.json</code></p>
+    </div>
+    <div class="step">
+      <span class="n">3</span><h3>Load any session</h3>
+      <p>Your phone finds the game over WiFi by itself and starts coaching. Do this once — it stays enabled forever.</p>
+    </div>
+  </div>
+
+  <div class="done">
+    <strong>✓ Done?</strong> Go back to the RaceHero app → RACE SIM → pick Assetto Corsa Competizione → START. The app detects the game automatically.
+  </div>
+
+  <footer><a href="/">← racehero.ca</a></footer>
+</div>
+</body>
+</html>
