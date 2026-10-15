@@ -8,12 +8,13 @@
   status = 200
 
 # /link serves the RaceHero Link PC installer (the URL the app points to).
-# Build it with tools/racehero-link/build-exe.bat + build-installer.bat,
-# drop RaceHeroLinkSetup.exe next to index.html, push — no code change needed.
+# The installer is attached to the GitHub release (binaries can't go through
+# the web file upload); to ship a new version, publish a new "link-vN"
+# release with the exe attached and update the URL below.
 [[redirects]]
   from = "/link"
-  to = "/RaceHeroLinkSetup.exe"
-  status = 200
+  to = "https://github.com/dmodaragamage/RaceHero-Site/releases/download/link-v1/RaceHeroLinkSetup.exe"
+  status = 302
 
 # /app is the stable "get the app" URL. Point it at the real Play listing
 # once RaceHero is live on Google Play.
