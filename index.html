@@ -4,105 +4,188 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>RaceHero — Your AI Race Coach</title>
-<meta name="description" content="RaceHero is the AI race coach for karting and sim racing: real-time voice coaching, live lap analytics, video overlays, and session debriefs.">
+<meta name="description" content="RaceHero is the AI race coach for karting, formula and sim racing: real-time voice coaching, live lap analytics, video overlays, and AI micro-sector debriefs.">
 <style>
-  :root { --bg: #0d0d0f; --panel: #16161a; --line: #26262c; --txt: #f5f5f5; --mut: #a7a7ae; --acc: #ff8a00; --grn: #35d07f; }
+  :root { --bg: #0a0a0c; --panel: #131316; --line: #26262c; --txt: #f5f5f5; --mut: #a7a7ae; --acc: #ff8a00; --grn: #35d07f; }
   * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
   body { background: var(--bg); color: var(--txt); font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; }
-  .checkers { height: 10px; background: repeating-conic-gradient(#111 0% 25%, #f5f5f5 0% 50%) 0 0 / 20px 20px; opacity: .9; }
-  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 1.5rem; }
-  nav { display: flex; justify-content: space-between; align-items: center; padding: 1.2rem 0; }
-  .brand { font-weight: 800; letter-spacing: .3em; text-indent: .3em; font-size: 1.1rem; }
+  .wrap { max-width: 1140px; margin: 0 auto; padding: 0 1.5rem; }
+
+  nav { position: fixed; top: 0; left: 0; right: 0; z-index: 50; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); background: rgba(10,10,12,.55); border-bottom: 1px solid rgba(255,255,255,.07); }
+  nav .wrap { display: flex; justify-content: space-between; align-items: center; padding-top: 1rem; padding-bottom: 1rem; }
+  .brand { font-weight: 800; letter-spacing: .3em; text-indent: .3em; font-size: 1.05rem; }
   .brand span { color: var(--acc); }
-  nav a { color: var(--mut); text-decoration: none; margin-left: 1.4rem; font-size: .95rem; }
-  nav a:hover { color: var(--txt); }
-  .hero { text-align: center; padding: 5rem 0 4rem; }
-  .hero h1 { font-size: clamp(2.6rem, 7vw, 4.6rem); font-weight: 800; letter-spacing: .12em; text-indent: .12em; line-height: 1.1; }
+  nav .links a { color: var(--mut); text-decoration: none; margin-left: 1.4rem; font-size: .92rem; }
+  nav .links a:hover { color: var(--txt); }
+  @media (max-width: 640px) { nav .links a { margin-left: .9rem; font-size: .85rem; } }
+
+  .hero { position: relative; height: 100svh; min-height: 560px; display: flex; align-items: flex-end; overflow: hidden; }
+  .hero video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .hero .shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(10,10,12,.55) 0%, rgba(10,10,12,.15) 35%, rgba(10,10,12,.88) 100%); }
+  .hero .content { position: relative; z-index: 2; width: 100%; padding-bottom: 5.5rem; }
+  .kicker { display: inline-block; font-size: .78rem; letter-spacing: .28em; text-indent: .28em; color: var(--acc); font-weight: 700; margin-bottom: 1rem; border: 1px solid rgba(255,138,0,.4); padding: .45rem .9rem; border-radius: 999px; background: rgba(10,10,12,.45); }
+  .hero h1 { font-size: clamp(3rem, 9vw, 6.2rem); font-weight: 800; letter-spacing: .06em; line-height: 1.02; text-shadow: 0 4px 30px rgba(0,0,0,.6); }
   .hero h1 span { color: var(--acc); }
-  .hero p { color: var(--mut); font-size: 1.15rem; max-width: 38rem; margin: 1.2rem auto 2.2rem; }
-  .cta { display: flex; gap: .8rem; justify-content: center; flex-wrap: wrap; }
+  .hero p.sub { color: #d7d7dc; font-size: clamp(1.02rem, 2.4vw, 1.3rem); max-width: 36rem; margin: 1.2rem 0 2rem; text-shadow: 0 2px 14px rgba(0,0,0,.7); }
+  .cta { display: flex; gap: .8rem; flex-wrap: wrap; }
   .btn { display: inline-block; background: var(--acc); color: #0d0d0f; font-weight: 700; padding: .95rem 2.1rem; border-radius: 999px; text-decoration: none; }
-  .btn.ghost { background: transparent; color: var(--txt); border: 1px solid var(--line); }
-  .btn.soon { background: var(--panel); color: var(--mut); border: 1px dashed var(--line); cursor: default; }
-  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; padding: 1rem 0 4rem; }
-  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 1.6rem; }
-  .card .ico { font-size: 1.8rem; margin-bottom: .6rem; }
-  .card h3 { margin-bottom: .4rem; font-size: 1.05rem; }
+  .btn.ghost { background: rgba(10,10,12,.5); color: var(--txt); border: 1px solid rgba(255,255,255,.25); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+  .btn.soon { background: rgba(255,255,255,.12); color: var(--mut); border: 1px dashed rgba(255,255,255,.25); cursor: default; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+  .sound-toggle { position: absolute; z-index: 3; right: 1.5rem; bottom: 1.5rem; width: 46px; height: 46px; border-radius: 50%; border: 1px solid rgba(255,255,255,.3); background: rgba(10,10,12,.55); color: #fff; font-size: 1.15rem; cursor: pointer; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+
+  .strip { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); background: var(--panel); }
+  .strip .wrap { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; padding-top: 1.4rem; padding-bottom: 1.4rem; }
+  .stat b { display: block; font-size: 1.5rem; color: var(--acc); letter-spacing: .02em; }
+  .stat span { color: var(--mut); font-size: .88rem; }
+
+  .section { padding: 4.5rem 0; }
+  .section h2 { font-size: clamp(1.6rem, 4vw, 2.3rem); margin-bottom: .6rem; letter-spacing: .03em; }
+  .section h2 span { color: var(--acc); }
+  .section p.lead { color: var(--mut); max-width: 42rem; margin-bottom: 2rem; font-size: 1.06rem; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 1.7rem; transition: transform .25s, border-color .25s; }
+  .card:hover { transform: translateY(-4px); border-color: rgba(255,138,0,.45); }
+  .card .ico { font-size: 1.9rem; margin-bottom: .7rem; }
+  .card h3 { margin-bottom: .4rem; font-size: 1.08rem; }
   .card p { color: var(--mut); font-size: .95rem; }
-  .section { padding: 3.5rem 0; border-top: 1px solid var(--line); }
-  .section h2 { font-size: 1.7rem; margin-bottom: .6rem; letter-spacing: .04em; }
-  .section p.lead { color: var(--mut); max-width: 40rem; margin-bottom: 1.6rem; }
+
+  .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; counter-reset: step; }
+  .step { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 1.7rem; }
+  .step::before { counter-increment: step; content: "0" counter(step); display: block; font-size: 2.2rem; font-weight: 800; color: var(--acc); opacity: .9; margin-bottom: .5rem; }
+  .step h3 { margin-bottom: .4rem; }
+  .step p { color: var(--mut); font-size: .95rem; }
+
+  .sim { background: linear-gradient(180deg, var(--panel), var(--bg)); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
   ul.ticks { list-style: none; margin: 0 0 1.8rem; }
-  ul.ticks li { padding: .35rem 0; color: var(--mut); }
+  ul.ticks li { padding: .4rem 0; color: var(--mut); }
   ul.ticks li::before { content: "✓ "; color: var(--grn); font-weight: 700; }
-  footer { border-top: 1px solid var(--line); padding: 2rem 0 3rem; color: #666; font-size: .9rem; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
+  ul.ticks li b { color: var(--txt); }
+
+  .final { text-align: center; padding: 5rem 0; }
+  .final h2 { font-size: clamp(2rem, 6vw, 3.4rem); letter-spacing: .05em; margin-bottom: 1rem; }
+  .final h2 span { color: var(--acc); }
+  .final p { color: var(--mut); margin-bottom: 2rem; }
+
+  footer { border-top: 1px solid var(--line); padding: 2rem 0 3rem; color: #666; font-size: .9rem; }
+  footer .wrap { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
   footer a { color: var(--acc); text-decoration: none; margin-left: 1.2rem; }
-  @media (max-width: 600px) { nav a { margin-left: .9rem; } }
+  .checkers { height: 8px; background: repeating-conic-gradient(#111 0% 25%, #f5f5f5 0% 50%) 0 0 / 18px 18px; opacity: .85; }
 </style>
 </head>
 <body>
-<div class="checkers"></div>
-<div class="wrap">
-  <nav>
+
+<nav>
+  <div class="wrap">
     <div class="brand">RACE<span>HERO</span></div>
-    <div>
+    <div class="links">
       <a href="#features">Features</a>
-      <a href="#link">RaceHero Link</a>
+      <a href="#how">How it works</a>
+      <a href="#sim">Sim racing</a>
       <a href="https://www.instagram.com/racehero.ai">Instagram</a>
     </div>
-  </nav>
+  </div>
+</nav>
 
-  <header class="hero">
-    <h1>YOUR AI<br>RACE <span>COACH</span></h1>
-    <p>Real-time voice coaching, live lap analytics and video overlays — for karting and sim racing. No account, no cloud, no subscription.</p>
-    <div class="cta">
-      <span class="btn soon">Get it on Google Play — coming soon</span>
-      <a class="btn ghost" href="/link">Download RaceHero Link (PC)</a>
+<header class="hero">
+  <video id="heroVideo" autoplay muted loop playsinline preload="auto"
+         src="https://github.com/dmodaragamage/RaceHero-Site/releases/download/hero-latest/racehero-hero.mp4"></video>
+  <div class="shade"></div>
+  <div class="content">
+    <div class="wrap">
+      <span class="kicker">AI RACE COACH</span>
+      <h1>STOP<br>GUESSING<span>.</span></h1>
+      <p class="sub">Real-time voice coaching, live lap analytics and video overlays — for karting, formula and sim racing. Any hardware. No $1,000 dash.</p>
+      <div class="cta">
+        <span class="btn soon">Get it on Google Play — coming soon</span>
+        <a class="btn ghost" href="/link">RaceHero Link for PC</a>
+      </div>
     </div>
-  </header>
+  </div>
+  <button class="sound-toggle" id="soundToggle" aria-label="Toggle sound">🔇</button>
+</header>
 
-  <section id="features" class="grid">
-    <div class="card">
-      <div class="ico">🎙️</div>
-      <h3>AI Voice Coach</h3>
-      <p>Spoken tips through your earbuds or Meta glasses. Straightaways only, two per lap — never mid-corner.</p>
-    </div>
-    <div class="card">
-      <div class="ico">🏁</div>
-      <h3>Live Lap Timing</h3>
-      <p>10&nbsp;Hz GPS finds your track automatically. Lap&nbsp;1 maps the start/finish line — lap&nbsp;2 is timed.</p>
-    </div>
-    <div class="card">
-      <div class="ico">🎮</div>
-      <h3>SIM Racing</h3>
-      <p>F1&nbsp;24, Forza, ACC and Assetto Corsa. Your phone listens for telemetry and coaches you corner by corner.</p>
-    </div>
-    <div class="card">
-      <div class="ico">📊</div>
-      <h3>AI Debrief</h3>
-      <p>Every session ends with a written coaching report — where you lost time and what to fix next.</p>
-    </div>
-  </section>
-
-  <section id="link" class="section">
-    <h2>RaceHero Link — the PC companion</h2>
-    <p class="lead">One small installer on your gaming PC. It talks to the RaceHero app on your phone and sets everything up itself.</p>
-    <ul class="ticks">
-      <li>Auto-configures F1&nbsp;24 telemetry and ACC broadcasting</li>
-      <li>Runs the Assetto Corsa bridge in the background</li>
-      <li>Starts with Windows — set it once, forget it</li>
-    </ul>
-    <a class="btn" href="/link">⬇ Download RaceHero Link (PC)</a>
-  </section>
-
-  <footer>
-    <div>© 2026 RaceHero</div>
-    <div>
-      <a href="https://www.instagram.com/racehero.ai">@racehero.ai</a>
-      <a href="/privacy.html">Privacy Policy</a>
-    </div>
-  </footer>
+<div class="strip">
+  <div class="wrap">
+    <div class="stat"><b>25 Hz</b><span>GPS telemetry</span></div>
+    <div class="stat"><b>Live</b><span>voice coaching</span></div>
+    <div class="stat"><b>AI</b><span>micro-sector debriefs</span></div>
+    <div class="stat"><b>Any</b><span>hardware &amp; sim</span></div>
+  </div>
 </div>
+
+<section class="section" id="features">
+  <div class="wrap">
+    <h2>Everything a <span>$1,000 dash</span> does. In your pocket.</h2>
+    <p class="lead">RaceHero turns your phone into a full race engineering station — on the kart track, in a formula car, or in the sim rig.</p>
+    <div class="grid">
+      <div class="card"><div class="ico">📊</div><h3>Live telemetry</h3><p>Speed, delta, lap times and racing line, rendered live from GPS or sim data as you drive.</p></div>
+      <div class="card"><div class="ico">🎧</div><h3>AI voice coaching</h3><p>Short, decisive cues in your ear — brake later, carry more speed — only when it matters. Never mid-corner.</p></div>
+      <div class="card"><div class="ico">🎥</div><h3>Video overlays</h3><p>Sync any camera footage with your telemetry and export a 720p HUD video with live delta.</p></div>
+      <div class="card"><div class="ico">🧠</div><h3>Micro-sector debriefs</h3><p>AI breaks every lap into micro-sectors and tells you exactly where the time is, corner by corner.</p></div>
+      <div class="card"><div class="ico">🏁</div><h3>Every track</h3><p>Thousands of kart, formula, oval and road circuits across North America — plus your own saved tracks.</p></div>
+      <div class="card"><div class="ico">🔌</div><h3>Any hardware</h3><p>Phone GPS, Bluetooth pucks, RaceBox, DIY 25&nbsp;Hz modules, OBD-II — or straight from your sim.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="how" style="padding-top:0">
+  <div class="wrap">
+    <h2>From download to <span>fast laps</span> in minutes.</h2>
+    <p class="lead">No accounts, no subscriptions, no pit crew required.</p>
+    <div class="steps">
+      <div class="step"><h3>Mount your phone</h3><p>Suction mount on the kart, formula car, or sim rig. Any Android phone works.</p></div>
+      <div class="step"><h3>Drive</h3><p>RaceHero records telemetry and coaches you live through your earbuds.</p></div>
+      <div class="step"><h3>Debrief</h3><p>AI breaks down every micro-sector and shows you where to find time next session.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="section sim" id="sim">
+  <div class="wrap">
+    <h2>Built for <span>sim racers</span> too.</h2>
+    <p class="lead">F1 24, Forza, Assetto Corsa Competizione and classic Assetto Corsa stream telemetry straight to the app.</p>
+    <ul class="ticks">
+      <li><b>F1 24 &amp; Forza</b> — point the game at your phone, done.</li>
+      <li><b>ACC &amp; Assetto Corsa</b> — install <b>RaceHero Link</b> on your gaming PC and everything configures itself.</li>
+      <li><b>Same coaching</b> — live voice cues, delta and debriefs, identical to the track experience.</li>
+    </ul>
+    <div class="cta">
+      <a class="btn" href="/link">Download RaceHero Link (PC)</a>
+      <a class="btn ghost" href="/acc">Manual ACC setup</a>
+    </div>
+  </div>
+</section>
+
+<section class="final">
+  <div class="wrap">
+    <h2>STOP GUESSING.<br><span>START DRIVING FASTER.</span></h2>
+    <p>Join the launch list — RaceHero is coming to Google Play.</p>
+    <div class="cta" style="justify-content:center">
+      <a class="btn ghost" href="https://www.instagram.com/racehero.ai">Follow @racehero.ai</a>
+    </div>
+  </div>
+</section>
+
 <div class="checkers"></div>
+<footer>
+  <div class="wrap">
+    <div>© 2026 RaceHero</div>
+    <div><a href="/privacy.html">Privacy</a><a href="/acc">ACC Setup</a><a href="/link">RaceHero Link</a></div>
+  </div>
+</footer>
+
+<script>
+  const v = document.getElementById('heroVideo');
+  const btn = document.getElementById('soundToggle');
+  btn.addEventListener('click', () => {
+    v.muted = !v.muted;
+    btn.textContent = v.muted ? '🔇' : '🔊';
+  });
+  document.addEventListener('touchstart', function once() {
+    if (v.paused) v.play().catch(() => {});
+    document.removeEventListener('touchstart', once);
+  });
+</script>
 </body>
 </html>
