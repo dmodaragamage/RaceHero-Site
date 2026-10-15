@@ -88,8 +88,10 @@
 </nav>
 
 <header class="hero">
-  <video id="heroVideo" autoplay muted loop playsinline preload="auto"
-         src="https://github.com/dmodaragamage/RaceHero-Site/releases/download/hero-latest/racehero-hero.mp4"></video>
+  <video id="heroVideo" autoplay muted loop playsinline preload="auto">
+    <source src="https://github.com/dmodaragamage/RaceHero-Site/releases/download/hero-latest/racehero-hero-portrait.mp4" media="(max-aspect-ratio: 1/1)" type="video/mp4">
+    <source src="https://github.com/dmodaragamage/RaceHero-Site/releases/download/hero-latest/racehero-hero.mp4" type="video/mp4">
+  </video>
   <div class="shade"></div>
   <div class="content">
     <div class="wrap">
