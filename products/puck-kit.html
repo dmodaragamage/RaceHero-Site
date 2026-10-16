@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RaceHero 25Hz Puck Kit — RaceHero™ Gear</title>
+<meta name="description" content="The RaceHero™ 25Hz Puck Kit: our assembled, track-tested GPS puck. 25Hz multi-GNSS over Bluetooth — badge it in the app and drive.">
+<style>
+  :root { --bg: #0a0a0c; --panel: #131316; --line: #26262c; --txt: #f5f5f5; --mut: #a7a7ae; --acc: #ff8a00; --grn: #35d07f; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); color: var(--txt); font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; }
+  .wrap { max-width: 1140px; margin: 0 auto; padding: 0 1.5rem; }
+  nav { position: fixed; top: 0; left: 0; right: 0; z-index: 50; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); background: rgba(10,10,12,.55); border-bottom: 1px solid rgba(255,255,255,.07); }
+  nav .wrap { display: flex; justify-content: space-between; align-items: center; padding-top: 1rem; padding-bottom: 1rem; }
+  .brand { font-weight: 800; letter-spacing: .3em; text-indent: .3em; font-size: 1.05rem; color: var(--txt); text-decoration: none; }
+  .brand span { color: var(--acc); }
+  .tm{font-size:.5em;vertical-align:super;letter-spacing:0;margin-left:.15em;}
+  nav .links a { color: var(--mut); text-decoration: none; margin-left: 1.4rem; font-size: .92rem; }
+  nav .links a:hover { color: var(--txt); }
+  header.page { padding: 8rem 0 2rem; }
+  .kicker { display: inline-block; font-size: .78rem; letter-spacing: .28em; text-indent: .28em; color: var(--acc); font-weight: 700; margin-bottom: 1rem; border: 1px solid rgba(255,138,0,.4); padding: .45rem .9rem; border-radius: 999px; background: rgba(10,10,12,.45); }
+  h1 { font-size: clamp(2rem, 5vw, 3rem); font-weight: 800; letter-spacing: .02em; line-height: 1.08; }
+  h2 { font-size: 1.5rem; font-weight: 800; margin: 3rem 0 1rem; }
+  p.lead { color: var(--mut); font-size: 1.1rem; max-width: 42rem; margin: 1rem 0 0; }
+  .pgrid { display: grid; grid-template-columns: 1.1fr 1fr; gap: 2.5rem; padding: 1rem 0 0; align-items: start; }
+  @media (max-width: 820px) { .pgrid { grid-template-columns: 1fr; } }
+  .pimg { width: 100%; border-radius: 16px; border: 1px solid var(--line); aspect-ratio: 4/3; object-fit: cover; background: var(--panel); }
+  .buybox { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 1.8rem; }
+  .price { font-size: 2rem; font-weight: 800; margin: .4rem 0 1rem; }
+  .price small { font-size: .85rem; color: var(--mut); font-weight: 400; }
+  .btn { display: inline-block; background: var(--acc); color: #0d0d0f; font-weight: 700; padding: .95rem 2.1rem; border-radius: 999px; text-decoration: none; text-align: center; width: 100%; }
+  .btn.soon { background: rgba(255,255,255,.12); color: var(--mut); border: 1px dashed rgba(255,255,255,.25); cursor: default; }
+  .keys { list-style: none; margin: 1.4rem 0 0; }
+  .keys li { padding: .45rem 0; color: var(--mut); font-size: .95rem; }
+  .keys li b { color: var(--txt); }
+  .specs { width: 100%; border-collapse: collapse; margin-top: .5rem; }
+  .specs td { padding: .7rem .5rem; border-bottom: 1px solid var(--line); font-size: .95rem; vertical-align: top; }
+  .specs td:first-child { color: var(--mut); width: 38%; }
+  .howto { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 1.8rem; margin-top: .5rem; }
+  .howto ol { margin: .8rem 0 0 1.2rem; color: var(--mut); }
+  .howto ol li { padding: .35rem 0; }
+  .howto ol li b { color: var(--txt); }
+  .boxlist { list-style: none; margin-top: .5rem; }
+  .boxlist li { padding: .5rem 0; border-bottom: 1px solid var(--line); color: var(--mut); font-size: .95rem; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1.2rem; padding: 1rem 0 4rem; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 1.4rem; text-decoration: none; color: var(--txt); display: block; transition: transform .25s, border-color .25s; }
+  .card:hover { transform: translateY(-4px); border-color: rgba(255,138,0,.45); }
+  .card h3 { font-size: 1.02rem; margin-bottom: .2rem; }
+  .card .cprice { color: var(--acc); font-weight: 700; margin: .4rem 0; }
+  .card .go { color: var(--mut); font-size: .9rem; }
+  .crumbs { color: var(--mut); font-size: .85rem; margin-bottom: 1rem; }
+  .crumbs a { color: var(--mut); text-decoration: none; }
+  .crumbs a:hover { color: var(--txt); }
+  footer { border-top: 1px solid var(--line); padding: 2rem 0; color: var(--mut); font-size: .9rem; margin-top: 2rem; }
+  footer .wrap { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
+  footer a { color: var(--mut); text-decoration: none; margin-left: 1.2rem; }
+</style>
+</head>
+<body>
+<nav><div class="wrap">
+  <a class="brand" href="/">RACE<span>HERO</span><sup class="tm">™</sup></a>
+  <div class="links"><a href="/#features">Features</a><a href="/gear.html">Gear</a><a href="https://www.instagram.com/racehero.ai">Instagram</a></div>
+</div></nav>
+
+<header class="page"><div class="wrap">
+  <div class="crumbs"><a href="/gear.html">Gear</a> / RaceHero 25Hz Puck Kit</div>
+  <span class="kicker">RACEHERO™ ORIGINAL</span>
+  <h1>RaceHero 25Hz Puck Kit</h1>
+  <p class="lead">Our assembled, track-tested GPS puck. Don't want to solder the DIY build? This is it — badge it in the app and drive.</p>
+</div></header>
+
+<main><div class="wrap">
+<div class="pgrid">
+  <img class="pimg" src="../images/gear/puck-kit.jpg" alt="RaceHero 25Hz Puck Kit">
+  <div class="buybox">
+    <div class="price">$119 <small>USD</small></div>
+    <a class="btn soon" href="#" data-stripe="PUCK_KIT_LINK">Coming soon</a>
+    <ul class="keys">
+      <li><b>25Hz</b> multi-constellation GNSS — a position fix every 40&nbsp;ms</li>
+      <li><b>Bluetooth LE + classic SPP</b> — pairs with any Android phone</li>
+      <li><b>Badges in the app</b> — the DIY puck badge, unlocked</li>
+      <li><b>Assembled &amp; tested</b> — no soldering, no firmware flashing</li>
+    </ul>
+  </div>
+</div>
+
+<h2>Specifications</h2>
+<table class="specs">
+  <tr><td>Update rate</td><td>25 Hz (25 position fixes per second)</td></tr>
+  <tr><td>GNSS constellations</td><td>GPS, GLONASS, Galileo, BeiDou (multi-constellation)</td></tr>
+  <tr><td>Bluetooth</td><td>Bluetooth Low Energy (NMEA) + Classic Bluetooth SPP</td></tr>
+  <tr><td>Protocols</td><td>NMEA over BLE; UBX protocol support; SPP serial stream</td></tr>
+  <tr><td>App integration</td><td>PuckLink gateway — auto-detected and badged by the RaceHero™ app</td></tr>
+  <tr><td>Charging</td><td>USB-C</td></tr>
+  <tr><td>Mechanical specs</td><td>Published at launch — final enclosure in testing</td></tr>
+</table>
+
+<h2>How it works with RaceHero™</h2>
+<div class="howto"><ol>
+  <li><b>Power it on</b> trackside — the puck starts broadcasting its 25Hz stream.</li>
+  <li><b>Open the RaceHero™ app</b> — PuckLink finds it over Bluetooth and badges it as your puck.</li>
+  <li><b>Drive.</b> The app reads every fortieth of a second: lap timing to the hundredth, live delta against your optimal lap, and corner-by-corner telemetry for the AI coach.</li>
+</ol></div>
+
+<h2>What's in the box</h2>
+<ul class="boxlist">
+  <li>RaceHero 25Hz puck (assembled, tested, latest firmware)</li>
+  <li>USB-C charging cable</li>
+  <li>Mounting pad</li>
+  <li>Quick-start card</li>
+</ul>
+
+<h2>Pairs well with</h2>
+<div class="grid">
+  <a class="card" href="/products/gopro-suction-mount.html"><h3>GoPro Suction Cup Mount</h3><div class="cprice">$39</div><div class="go">Full specs →</div></a>
+  <a class="card" href="/products/obdlink-mx.html"><h3>OBDLink MX+</h3><div class="cprice">$139.95</div><div class="go">Full specs →</div></a>
+  <a class="card" href="/products/racebox-mini-s.html"><h3>RaceBox Mini S</h3><div class="cprice">$289</div><div class="go">Full specs →</div></a>
+</div>
+</div></main>
+
+<footer><div class="wrap">
+  <div>© 2026 RaceHero™</div>
+  <div><a href="/privacy.html">Privacy</a><a href="/gear.html">Gear</a><a href="/link">RaceHero Link</a></div>
+</div></footer>
+</body>
+</html>
