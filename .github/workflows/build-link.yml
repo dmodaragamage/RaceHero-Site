@@ -1,0 +1,61 @@
+name: Build RaceHero Link
+
+# Builds RaceHeroLink.exe (PyInstaller) + RaceHeroLinkSetup.exe (Inno Setup)
+# on a Windows runner, then publishes a GitHub Release. Triggers whenever
+# anything under link/ changes — push a fix, get a release.
+
+on:
+  push:
+    paths:
+      - "link/**"
+      - ".github/workflows/build-link.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: pwsh
+        working-directory: link
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Restore app icon
+        run: |
+          [IO.File]::WriteAllBytes("racehero.ico", [Convert]::FromBase64String((Get-Content racehero.ico.b64 -Raw)))
+
+      - name: Build exe with PyInstaller
+        run: |
+          pip install pyinstaller
+          pyinstaller --onedir --noconsole --name RaceHeroLink --icon racehero.ico racehero_link.py
+
+      - name: Install Inno Setup 6
+        run: choco install innosetup -y
+
+      - name: Build installer
+        run: |
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          & $iscc RaceHeroLink.iss
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: link-v2
+          name: RaceHero Link v2
+          body: |
+            New: RaceHero logo on the installer, the app and its shortcuts.
+            Fixed: the terminal window no longer flashes every few seconds
+            (game detection now runs hidden).
+            Fixed: only one copy of the Link ever runs — single-instance
+            guard and a single-process build (no duplicate in Task Manager).
+            Fixed: the Assetto Corsa bridge is built into the app itself —
+            no Python needed on the PC.
+          files: link/installer/RaceHeroLinkSetup.exe
