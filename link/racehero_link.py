@@ -357,12 +357,26 @@ def main():
         sys.exit(0 if ok else 1)
 
     if not single_instance():
-        # No console in the --noconsole build; just leave quietly.
+        # SAY something. Quietly exiting here is how an old copy in the
+        # tray silently blocked every newer version from ever starting
+        # (no pedal streamer, no fixes) while looking "installed".
+        try:
+            import ctypes
+            ctypes.windll.user32.MessageBoxW(
+                None,
+                "RaceHero Link is already running (check the system tray).\n\n"
+                "If that's an older version, right-click its tray icon "
+                "and Exit it first, then launch this one again — "
+                "otherwise the old copy keeps running and the new one "
+                "never starts.",
+                "RaceHero Link", 0x40)
+        except Exception:
+            pass
         sys.exit(0)
 
     pc_name = os.environ.get("COMPUTERNAME", "PC")
     print("=" * 62)
-    print("  RaceHero Link v2 — waiting for your phone…")
+    print("  RaceHero Link v2.3 — waiting for your phone…")
     print("  On the phone: RaceHero -> RACE SIM -> START SIM LINK")
     print("  (Phone and PC must be on the same WiFi.)")
     print("=" * 62)
