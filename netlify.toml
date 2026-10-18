@@ -1,5 +1,14 @@
 # racehero.ca — Netlify config
 
+# /api/gemini is the app's AI endpoint — a Netlify Function
+# (netlify/functions/gemini.js) that holds the Gemini key server-side so
+# no app build ever ships one. Key lives in the Netlify env var
+# GEMINI_API_KEY (site settings); env changes need a redeploy.
+[[redirects]]
+  from = "/api/gemini"
+  to = "/.netlify/functions/gemini"
+  status = 200
+
 # /acc is the one-minute ACC telemetry setup page (the app points SIM users
 # here instead of making them paste config across devices).
 [[redirects]]
