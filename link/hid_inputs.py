@@ -217,12 +217,29 @@ class InputStreamer(threading.Thread):
         self._announced = False
 
     def run(self):
-        devices = list_devices()
-        if not devices:
-            return  # no controllers — nothing to stream, stay silent
-        mapping = load_mapping(devices)
-        if not mapping:
-            return
+        # NEVER die silently. The v2.2 streamer listed controllers once
+        # at startup and exited if none were visible — wheels wake up
+        # with the game, not with Windows, so a normal launch order
+        # killed pedal streaming for the whole session with no sign
+        # anywhere. Now: keep looking, and say what's happening.
+        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        while True:
+            devices = list_devices()
+            if not devices:
+                if not self._announced:
+                    self.log("Direct inputs: no wheel/pedals found yet — "
+                             "will keep looking (they may be off or "
+                             "asleep).")
+                    self._announced = True
+                time.sleep(3)
+                continue
+            mapping = load_mapping(devices)
+            if not mapping:
+                time.sleep(3)
+                continue
+            self._stream(devices, mapping, sock)
+
+    def _stream(self, devices, mapping, sock):
         by_index = {d["index"]: d for d in devices}
         chans = mapping["channels"]
         names = []
@@ -231,8 +248,9 @@ class InputStreamer(threading.Thread):
             if d and d["name"] not in names:
                 names.append(d["name"])
         label = " + ".join(names) if names else "Wheel/pedals"
-        sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         cache = {}
+        announced_stream = False
+        dead_reads = 0
 
         def current(ch):
             idx = ch["device"]
@@ -260,7 +278,16 @@ class InputStreamer(threading.Thread):
                 vals[name] = (_norm_steer(ch, raw) if name == "steer"
                               else _norm_pedal(ch, raw))
             if not ok:
+                # Device vanished mid-session (USB sleep, replug) —
+                # after ~2 s of dead reads, go back to scanning.
+                dead_reads += 1
+                if dead_reads > 100:
+                    self.log("Direct inputs: controller stopped "
+                             "answering — rescanning.")
+                    self._announced = False
+                    return
                 continue
+            dead_reads = 0
             payload = {
                 "throttle": round(vals.get("throttle", 0.0), 3),
                 "brake": round(vals.get("brake", 0.0), 3),
@@ -279,8 +306,8 @@ class InputStreamer(threading.Thread):
                                 (ip, PHONE_INPUT_PORT))
                     self._last_sent = payload
                     self._last_sent_at = now
-                    if not self._announced:
-                        self._announced = True
+                    if not announced_stream:
+                        announced_stream = True
                         self.log(f"Direct inputs streaming: {label}"
                                  + ("" if mapping.get("calibrated")
                                     else " (uncalibrated — run "
