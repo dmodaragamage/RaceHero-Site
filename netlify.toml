@@ -13,7 +13,7 @@
 # release with the exe attached and update the URL below.
 [[redirects]]
   from = "/link"
-  to = "https://github.com/dmodaragamage/RaceHero-Site/releases/download/link-v1/RaceHeroLinkSetup.exe"
+  to = "https://github.com/dmodaragamage/RaceHero-Site/releases/download/link-v2/RaceHeroLinkSetup.exe"
   status = 302
 
 # /app is the stable "get the app" URL. Point it at the real Play listing
