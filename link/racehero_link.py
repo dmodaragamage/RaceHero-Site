@@ -338,6 +338,13 @@ def single_instance():
 
 
 def main():
+    if "--calibrate-inputs" in sys.argv:
+        # One-time wheel/pedal calibration wizard (windowed; works in
+        # the --noconsole build too). Runs standalone, then exits.
+        import hid_inputs
+        hid_inputs.run_calibration(log)
+        return
+
     if "--bridge" in sys.argv:
         # AC1 shared-memory bridge mode: same binary, no mutex, no listener.
         sys.argv.remove("--bridge")
@@ -375,6 +382,16 @@ def main():
         log(f"Last known phone IP: {last_ip} — verifying games…")
         ensure_all(last_ip, state)
 
+    # Direct wheel/pedal capture: streams the driver's raw inputs to
+    # the phone (feeds like ACC broadcast carry none). Best-effort —
+    # any failure here must never take the Link itself down.
+    ip_holder = {"ip": last_ip if last_ip and valid_ipv4(last_ip) else None}
+    try:
+        import hid_inputs
+        hid_inputs.start_streamer(lambda: ip_holder["ip"], log)
+    except Exception as e:
+        log(f"Direct input capture unavailable: {e}")
+
     log("Listening for the phone beacon… (Ctrl+C to stop)")
     sock.settimeout(5.0)
     while True:
@@ -385,6 +402,14 @@ def main():
             if last_ip and f1_needs_patch(last_ip) and not game_running(F1_EXE):
                 log("F1 24 config changed — re-patching…")
                 ensure_all(last_ip, state)
+            # Self-healing: re-verify ACC's broadcast config on the same
+            # tick (it's a cheap file read when already correct). If the
+            # game or a cleanup tool rewrote broadcasting.json, the feed
+            # would otherwise stay dead until the Link happened to
+            # restart — customers shouldn't need to know any of this.
+            acc_res = patch_acc()
+            if acc_res.startswith("enabled"):
+                log(f"ACC: {acc_res} (config restored)")
             # Original AC needs its bridge while the game is up.
             maybe_start_bridge()
             continue
@@ -410,6 +435,7 @@ def main():
             state["phone_ip"] = ip
             save_state(state)
             last_ip = ip
+            ip_holder["ip"] = ip
 
 
 if __name__ == "__main__":
