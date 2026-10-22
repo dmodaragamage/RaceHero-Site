@@ -10,14 +10,23 @@ so the frozen single-file Link build needs nothing extra) and streams
 normalized inputs to the phone at ~50 Hz:
 
     UDP -> phone:20782   {"throttle":0..1, "brake":0..1,
-                          "steer":-1..1, "device":"MOZA … + …"}
+                          "steer":-1..1, "device":"MOZA … + …",
+                          "calibrated":true}
 
-Axis mapping is per-rig, so there is a one-time calibration wizard
-(--calibrate-inputs, tkinter) that watches which axis moves when the
-driver works each control and saves the map to
-%APPDATA%/RaceHero/hid_inputs.json. Until then, a heuristic default
-(wheel-named device, axis 0 = steering, axes 1/2 = pedals) gives a
-starting point the wizard then makes exact.
+Axis mapping is per-rig, and v2.4 maps it AUTOMATICALLY — there is no
+calibration step for the driver, ever. The AutoMapper below watches
+every axis on every controller while the driver drives: axes that
+never move are excluded (a centred, never-read axis streaming a
+constant 0.5 was the session-4 failure), the centre-stable,
+both-directions axis on the wheel becomes steering, and the two
+excursion axes on the pedals become throttle/brake — told apart by
+correlation with the car's own gas/brake from the game shared memory
+when it is readable, else by excursion duty cycle. Until the map is
+LOCKED, the stream sends a heartbeat WITHOUT the input fields (absent
+data, never guessed constants) and "calibrated": false. The locked
+map persists to %APPDATA%/RaceHero/hid_inputs.json, is re-validated
+every session, and is relearned automatically if a mapped channel
+ever flatlines through a full session.
 """
 
 import ctypes
@@ -134,15 +143,18 @@ def config_path():
     return os.path.join(d, "hid_inputs.json")
 
 
-def _channel(device, axis, rest, full, center=None):
+def _channel(device, axis, rest, full, center=None, device_name=None):
     return {"device": device, "axis": axis,
-            "rest": rest, "full": full, "center": center}
+            "rest": rest, "full": full, "center": center,
+            "deviceName": device_name}
 
 
 def heuristic_mapping(devices):
-    """Best guess before calibration: a wheel-named device steers on
-    axis 0; throttle/brake ride axes 1/2 of the pedal-ish device
-    (or the wheel's own axes when the pedals plug into the base)."""
+    """DEPRECATED (v2.3 and earlier): a name-based GUESS at the axes.
+    Guessed constants are worse than absent data — the guess streamed
+    a flat 0.5/0.5/0.0 for a whole session while claiming coverage.
+    v2.4 never streams from a guess; this stays only so old code paths
+    can be audited. The AutoMapper replaces it."""
     if not devices:
         return None
     wheel = next(
@@ -164,19 +176,43 @@ def heuristic_mapping(devices):
 
 
 def load_mapping(devices):
+    """The persisted map, or None. Only a CONFIDENT map loads — one
+    the AutoMapper locked ("auto": true) or the old wizard measured
+    ("calibrated": true); a heuristic guess on disk is ignored.
+    Channel device indices are re-resolved by device NAME: Windows
+    re-numbers controllers across reboots, and a stale index reads
+    the wrong device (another flatline factory). Unresolvable maps
+    are discarded — the mapper relearns from live data."""
     try:
         with open(config_path(), "r", encoding="utf-8") as f:
             saved = json.load(f)
-        if saved.get("channels"):
-            return saved
     except (OSError, ValueError):
-        pass
-    return heuristic_mapping(devices)
+        return None
+    if not saved.get("channels") or not saved.get("calibrated"):
+        return None
+    by_name = {d["name"]: d for d in devices}
+    by_index = {d["index"]: d for d in devices}
+    for ch in saved["channels"].values():
+        name = ch.get("deviceName")
+        if name and name in by_name:
+            ch["device"] = by_name[name]["index"]
+        elif ch.get("device") not in by_index:
+            return None
+        elif name and by_index[ch["device"]]["name"] != name:
+            return None
+    return saved
 
 
 def save_mapping(mapping):
     with open(config_path(), "w", encoding="utf-8") as f:
         json.dump(mapping, f, indent=2)
+
+
+def discard_mapping():
+    try:
+        os.remove(config_path())
+    except OSError:
+        pass
 
 
 def _norm_pedal(ch, raw):
@@ -203,10 +239,423 @@ def _norm_steer(ch, raw):
     return min(1.0, (raw - center) / span)
 
 
+# ------------------------------------------------- game motion (ref) ---
+
+class _GameMotion:
+    """The car's own inputs/speed from the AC/ACC shared memory
+    ("acpmf_physics"), read best-effort with the stdlib mmap module.
+    Used ONLY as the correlation reference that tells throttle from
+    brake — the HID axes stay the streamed data. Absent or insane
+    values simply mean "no reference", and the mapper falls back to
+    excursion statistics. SPageFilePhysics head layout (both games):
+    packetId i32 @0, gas f32 @4, brake f32 @8, fuel f32 @12,
+    gear i32 @16, rpms i32 @20, steerAngle f32 @24, speedKmh f32 @28.
+    """
+
+    def __init__(self):
+        self._mm = None
+        self._tried = 0.0
+        self.gas = []    # (t, 0..1)
+        self.brake = []  # (t, 0..1)
+        self.speed = []  # (t, km/h)
+        self.available = False
+
+    def _open(self):
+        # Named shared memory is a Windows facility; off Windows (dev
+        # runs) there is simply no reference — never an error.
+        if os.name != "nt":
+            self._mm = None
+            return
+        import mmap
+        import struct
+        self._struct = struct
+        try:
+            self._mm = mmap.mmap(-1, 1024, "acpmf_physics",
+                                 mmap.ACCESS_READ)
+        except Exception:
+            self._mm = None
+
+    def update(self, now):
+        if self._mm is None:
+            if now - self._tried < 5.0:
+                return
+            self._tried = now
+            try:
+                self._open()
+            except Exception:
+                self._mm = None
+            if self._mm is None:
+                self.available = False
+                return
+        try:
+            raw = self._mm[0:32]
+            gas, brake, speed = self._struct.unpack_from("<ff", raw, 4)[0], \
+                self._struct.unpack_from("<f", raw, 8)[0], \
+                self._struct.unpack_from("<f", raw, 28)[0]
+        except Exception:
+            self._mm = None
+            self.available = False
+            return
+        sane = (0.0 <= gas <= 1.001 and 0.0 <= brake <= 1.001
+                and 0.0 <= speed <= 450.0)
+        self.available = bool(sane)
+        if not sane:
+            return
+        for series, v in ((self.gas, gas), (self.brake, brake),
+                          (self.speed, speed)):
+            series.append((now, v))
+            cut = now - 150.0
+            while series and series[0][0] < cut:
+                series.pop(0)
+
+
+def _median(vals):
+    if not vals:
+        return 0.0
+    s = sorted(vals)
+    n = len(s)
+    return s[n // 2] if n % 2 else (s[n // 2 - 1] + s[n // 2]) / 2.0
+
+
+def _pearson(xs, ys):
+    n = len(xs)
+    if n < 40:
+        return 0.0
+    mx = sum(xs) / n
+    my = sum(ys) / n
+    sxx = sum((x - mx) ** 2 for x in xs)
+    syy = sum((y - my) ** 2 for y in ys)
+    if sxx < 1e-6 or syy < 1e-6:
+        return 0.0
+    sxy = sum((x - mx) * (y - my) for x, y in zip(xs, ys))
+    return sxy / (sxx * syy) ** 0.5
+
+
+# ------------------------------------------------------- auto-mapper ---
+
+class AutoMapper:
+    """Learns which (device, axis) is steer / throttle / brake by
+    watching real driving — no wizard, no guesses-as-data.
+
+    Lifecycle: LEARNING (stream sends a heartbeat with NO input
+    fields) -> LOCKED (persisted map; values stream with
+    "calibrated": true) -> back to LEARNING if any mapped channel
+    flatlines through a full session of real driving.
+
+    Identification, over a rolling ~2.5 min of axis history:
+      * dead axes (range < 0.05) are excluded outright;
+      * STEER = the axis with strong travel BOTH ways from a stable
+        centre it keeps returning to, wheel device preferred;
+      * PEDALS = one-sided excursion axes resting at an extreme
+        (pedal device preferred); throttle vs brake is decided by
+        correlation with the game's gas/brake when shared memory is
+        readable (decisive), else by duty cycle (throttle works far
+        more of a lap than brake).
+    A candidate set must win three consecutive evaluations before it
+    locks, so a single odd lap can't mint a bad map.
+    """
+
+    WINDOW_S = 150.0
+    EVAL_EVERY_S = 2.0
+    MIN_OBSERVE_S = 20.0
+    LOCK_STREAK = 3
+    FLAT_UNLOCK_S = 120.0
+
+    def __init__(self, devices, log=print):
+        self.log = log
+        self.devices = {d["index"]: d for d in devices}
+        self.names = {d["index"]: d["name"] for d in devices}
+        self.series = {}          # (dev, ax) -> [(t, v)]
+        self.motion = _GameMotion()
+        self.mapping = load_mapping(devices)
+        self.locked = self.mapping is not None
+        self._eval_at = 0.0
+        self._streak = 0
+        self._last_pick = None
+        self._flat_since = {}     # channel -> t when flatness began
+        self._driving_since = None
+        self._snapshot = {}       # dev -> [axes] latest tick
+        if self.locked:
+            log("Direct inputs: saved auto-map loaded — re-validating "
+                "against this session.")
+
+    # ------------------------------------------------------------ io --
+
+    def observe(self, snapshot, now):
+        """snapshot: {device_index: [axis values 0..1]} for one tick."""
+        self._snapshot = snapshot
+        for dev, axes in snapshot.items():
+            if axes is None:
+                continue
+            for ax, v in enumerate(axes):
+                key = (dev, ax)
+                s = self.series.setdefault(key, [])
+                # ~10 Hz is plenty for statistics; ticks arrive ~50 Hz.
+                if s and now - s[-1][0] < 0.09:
+                    continue
+                s.append((now, v))
+                cut = now - self.WINDOW_S
+                while s and s[0][0] < cut:
+                    s.pop(0)
+        self.motion.update(now)
+        if self.locked:
+            self._validate_locked(now)
+        elif now >= self._eval_at:
+            self._eval_at = now + self.EVAL_EVERY_S
+            self._evaluate(now)
+
+    def status_text(self):
+        if self.locked:
+            return "Pedals: auto-mapped"
+        if self.series:
+            return "Pedals: learning — drive a lap"
+        return "Pedals: no controllers yet"
+
+    def payload(self, label):
+        """The datagram for this tick: real values once locked;
+        a field-less heartbeat while learning — absent, never faked."""
+        if not self.locked or not self.mapping:
+            return {"device": label, "calibrated": False}
+        vals = {}
+        for name, ch in self.mapping["channels"].items():
+            axes = self._snapshot.get(ch["device"])
+            if axes is None or ch["axis"] >= len(axes):
+                return {"device": label, "calibrated": False}
+            raw = axes[ch["axis"]]
+            vals[name] = (_norm_steer(ch, raw) if name == "steer"
+                          else _norm_pedal(ch, raw))
+        return {
+            "throttle": round(vals.get("throttle", 0.0), 3),
+            "brake": round(vals.get("brake", 0.0), 3),
+            "steer": round(vals.get("steer", 0.0), 3),
+            "device": label,
+            "calibrated": True,
+        }
+
+    # ------------------------------------------------------ features --
+
+    def _features(self, key):
+        s = self.series.get(key) or []
+        if len(s) < 30:
+            return None
+        vals = [v for _, v in s]
+        lo, hi = min(vals), max(vals)
+        med = _median(vals)
+        rest_lo_share = sum(1 for v in vals if v - lo < 0.06) / len(vals)
+        rest_hi_share = sum(1 for v in vals if hi - v < 0.06) / len(vals)
+        # Which extreme is REST? Not the busier one — a throttle worked
+        # hard sits PRESSED more than half the lap, so share-of-samples
+        # picks the wrong end and the pedal streams inverted. The
+        # truthful witness is the axis's position in the first seconds
+        # of observation: Link starts before the driving does, with
+        # feet off the pedals and the wheel centred.
+        t_start = s[0][0]
+        early = [v for t, v in s if t - t_start <= 3.0]
+        if early:
+            e = sum(early) / len(early)
+            rest_is_lo = abs(e - lo) <= abs(e - hi)
+        else:
+            rest_is_lo = rest_lo_share >= rest_hi_share
+        return {
+            "lo": lo, "hi": hi, "range": hi - lo, "med": med,
+            "exc_lo": med - lo, "exc_hi": hi - med,
+            "centre_share": sum(1 for v in vals
+                                if abs(v - med) < 0.05) / len(vals),
+            "rest_lo_share": rest_lo_share,
+            "rest_hi_share": rest_hi_share,
+            "rest_is_lo": rest_is_lo,
+            "duty": sum(1 for v in vals
+                        if (v - lo) > 0.25 * (hi - lo)) / len(vals),
+        }
+
+    def _correlate(self, key, motion_series):
+        """Pearson between this axis (oriented as an excursion 0..1)
+        and a game input series, paired by nearest timestamp."""
+        s = self.series.get(key) or []
+        if len(s) < 40 or len(motion_series) < 40:
+            return 0.0
+        f = self._features(key)
+        if not f or f["range"] < 0.1:
+            return 0.0
+        rest_is_lo = f["rest_is_lo"]
+        xs, ys = [], []
+        j = 0
+        for t, v in s:
+            while (j + 1 < len(motion_series)
+                   and abs(motion_series[j + 1][0] - t)
+                   < abs(motion_series[j][0] - t)):
+                j += 1
+            if abs(motion_series[j][0] - t) > 0.2:
+                continue
+            norm = (v - f["lo"]) / f["range"] if rest_is_lo \
+                else (f["hi"] - v) / f["range"]
+            xs.append(norm)
+            ys.append(motion_series[j][1])
+        return _pearson(xs, ys)
+
+    # ---------------------------------------------------- evaluation --
+
+    def _evaluate(self, now):
+        if not self.series:
+            return
+        t0 = min(s[0][0] for s in self.series.values() if s)
+        if now - t0 < self.MIN_OBSERVE_S:
+            return
+        feats = {}
+        for key in list(self.series):
+            f = self._features(key)
+            if f and f["range"] >= 0.05:      # dead axes never qualify
+                feats[key] = f
+        if not feats:
+            return
+        driving = (
+            (self.motion.speed and max(v for _, v in self.motion.speed) > 25.0)
+            or any(f["range"] > 0.3 for f in feats.values())
+        )
+        if not driving:
+            return
+        wheelish = ("moza", "wheel", "base", "simucube", "fanatec",
+                    "logitech", "thrustmaster")
+        pedalish = ("pedal", "sigma", "heusinkveld", "vrs", "fanatec")
+
+        def dev_rank(key, words):
+            name = self.names.get(key[0], "").lower()
+            return 0 if any(w in name for w in words) else 1
+
+        # --- steer: travel both ways from a returning centre.
+        steer_key, steer_score = None, 0.0
+        for key, f in feats.items():
+            if f["exc_lo"] < 0.15 or f["exc_hi"] < 0.15:
+                continue
+            if f["centre_share"] < 0.08:
+                continue
+            score = min(f["exc_lo"], f["exc_hi"]) \
+                - 0.25 * dev_rank(key, wheelish)
+            if score > steer_score:
+                steer_key, steer_score = key, score
+        if steer_key is None:
+            self._streak = 0
+            return
+        # --- pedals: one-sided excursions resting at an extreme.
+        cands = []
+        for key, f in feats.items():
+            if key == steer_key:
+                continue
+            rest = max(f["rest_lo_share"], f["rest_hi_share"])
+            one_sided = min(f["exc_lo"], f["exc_hi"]) \
+                <= 0.35 * max(f["exc_lo"], f["exc_hi"])
+            if rest < 0.35 or not one_sided or f["range"] < 0.25:
+                continue
+            cands.append((key, f))
+        cands.sort(key=lambda kf: (dev_rank(kf[0], pedalish),
+                                   -kf[1]["range"]))
+        if len(cands) < 2:
+            self._streak = 0
+            return
+        (k1, f1), (k2, f2) = cands[0], cands[1]
+        # --- throttle vs brake.
+        thr_key, brk_key = None, None
+        if self.motion.available:
+            g1 = self._correlate(k1, self.motion.gas)
+            b1 = self._correlate(k1, self.motion.brake)
+            g2 = self._correlate(k2, self.motion.gas)
+            b2 = self._correlate(k2, self.motion.brake)
+            pref1 = g1 - b1
+            pref2 = g2 - b2
+            if abs(pref1) > 0.15 and abs(pref2) > 0.15 \
+                    and (pref1 > 0) != (pref2 > 0):
+                thr_key, brk_key = (k1, k2) if pref1 > 0 else (k2, k1)
+        if thr_key is None:
+            # Duty cycle: throttle is worked far more of a lap.
+            if abs(f1["duty"] - f2["duty"]) < 0.03:
+                self._streak = 0
+                return
+            thr_key, brk_key = (k1, k2) if f1["duty"] > f2["duty"] \
+                else (k2, k1)
+        pick = (steer_key, thr_key, brk_key)
+        if pick == self._last_pick:
+            self._streak += 1
+        else:
+            self._last_pick, self._streak = pick, 1
+        if self._streak < self.LOCK_STREAK:
+            return
+        self._lock(pick)
+
+    def _lock(self, pick):
+        steer_key, thr_key, brk_key = pick
+        chans = {}
+        f = self._features(steer_key)
+        chans["steer"] = _channel(
+            steer_key[0], steer_key[1], f["lo"], f["hi"],
+            center=f["med"], device_name=self.names.get(steer_key[0]))
+        for name, key in (("throttle", thr_key), ("brake", brk_key)):
+            f = self._features(key)
+            rest, full = (f["lo"], f["hi"]) if f["rest_is_lo"] \
+                else (f["hi"], f["lo"])
+            chans[name] = _channel(
+                key[0], key[1], rest, full,
+                device_name=self.names.get(key[0]))
+        self.mapping = {"channels": chans, "calibrated": True,
+                        "auto": True, "version": 2}
+        self.locked = True
+        self._flat_since.clear()
+        save_mapping(self.mapping)
+        self.log("Direct inputs: auto-mapped — "
+                 f"steer={self.names.get(steer_key[0])} ax{steer_key[1]}, "
+                 f"throttle=ax{thr_key[1]}, brake=ax{brk_key[1]} "
+                 "(learned from your driving; saved).")
+
+    # ---------------------------------------------------- validation --
+
+    def _validate_locked(self, now):
+        """A locked channel whose axis stays dead through a full
+        session of real driving means the rig changed (or the map was
+        wrong): drop the map and relearn."""
+        driving = self.motion.speed and \
+            max(v for _, v in self.motion.speed) > 25.0
+        if not driving:
+            strong = any(
+                (self._features(k) or {}).get("range", 0) > 0.3
+                for k in self.series)
+            driving = bool(strong)
+        if not driving:
+            self._driving_since = None
+            return
+        if self._driving_since is None:
+            self._driving_since = now
+            return
+        for name, ch in (self.mapping or {}).get("channels", {}).items():
+            key = (ch["device"], ch["axis"])
+            s = [v for t, v in (self.series.get(key) or [])
+                 if t > now - self.WINDOW_S]
+            if len(s) < 30:
+                continue
+            rng = max(s) - min(s)
+            if rng >= 0.05:
+                self._flat_since.pop(name, None)
+                continue
+            since = self._flat_since.setdefault(name, now)
+            if now - since > self.FLAT_UNLOCK_S:
+                self.log(f"Direct inputs: mapped {name} has been dead "
+                         "through a full session — dropping the map "
+                         "and relearning.")
+                self.locked = False
+                self.mapping = None
+                self._flat_since.clear()
+                self._streak = 0
+                self._last_pick = None
+                discard_mapping()
+                return
+
+
 # ------------------------------------------------------------ streamer ---
 
 class InputStreamer(threading.Thread):
-    """Reads the mapped controllers and streams inputs to the phone."""
+    """Watches every controller, auto-maps the axes (AutoMapper),
+    and streams inputs to the phone. While the map is still being
+    learned it sends a heartbeat with NO input fields — the phone
+    shows "identifying", and no guessed constant is ever presented
+    as data."""
 
     def __init__(self, get_phone_ip, log=print):
         super().__init__(daemon=True, name="racehero-hid")
@@ -215,6 +664,13 @@ class InputStreamer(threading.Thread):
         self._last_sent = None
         self._last_sent_at = 0.0
         self._announced = False
+        self._mapper = None
+
+    def mapper_status(self):
+        """One line for the tray: where auto-mapping stands."""
+        m = self._mapper
+        return m.status_text() if m is not None \
+            else "Pedals: no controllers yet"
 
     def run(self):
         # NEVER die silently. The v2.2 streamer listed controllers once
@@ -233,72 +689,53 @@ class InputStreamer(threading.Thread):
                     self._announced = True
                 time.sleep(3)
                 continue
-            mapping = load_mapping(devices)
-            if not mapping:
-                time.sleep(3)
-                continue
-            self._stream(devices, mapping, sock)
+            self._stream(devices, sock)
 
-    def _stream(self, devices, mapping, sock):
-        by_index = {d["index"]: d for d in devices}
-        chans = mapping["channels"]
+    def _stream(self, devices, sock):
         names = []
-        for ch in chans.values():
-            d = by_index.get(ch["device"])
-            if d and d["name"] not in names:
+        for d in devices:
+            if d["name"] not in names:
                 names.append(d["name"])
         label = " + ".join(names) if names else "Wheel/pedals"
-        cache = {}
+        mapper = AutoMapper(devices, self.log)
+        self._mapper = mapper
         announced_stream = False
         dead_reads = 0
-
-        def current(ch):
-            idx = ch["device"]
-            if idx not in cache:
-                d = by_index.get(idx)
-                if d is None:
-                    return None
-                cache[idx] = read_axes(idx, d["ranges"])
-            return cache[idx]
-
         while True:
             time.sleep(0.02)  # ~50 Hz
-            cache.clear()
-            ip = self.get_phone_ip()
-            if not ip:
-                continue
-            vals = {}
-            ok = True
-            for name, ch in chans.items():
-                axes = current(ch)
-                if axes is None or ch["axis"] >= len(axes):
-                    ok = False
-                    break
-                raw = axes[ch["axis"]]
-                vals[name] = (_norm_steer(ch, raw) if name == "steer"
-                              else _norm_pedal(ch, raw))
-            if not ok:
-                # Device vanished mid-session (USB sleep, replug) —
-                # after ~2 s of dead reads, go back to scanning.
+            snapshot = {}
+            any_ok = False
+            for d in devices:
+                axes = read_axes(d["index"], d["ranges"])
+                snapshot[d["index"]] = axes
+                if axes is not None:
+                    any_ok = True
+            if not any_ok:
+                # Devices vanished (USB sleep, replug) — after ~2 s of
+                # dead reads, go back to scanning.
                 dead_reads += 1
                 if dead_reads > 100:
-                    self.log("Direct inputs: controller stopped "
+                    self.log("Direct inputs: controllers stopped "
                              "answering — rescanning.")
                     self._announced = False
+                    self._mapper = None
                     return
                 continue
             dead_reads = 0
-            payload = {
-                "throttle": round(vals.get("throttle", 0.0), 3),
-                "brake": round(vals.get("brake", 0.0), 3),
-                "steer": round(vals.get("steer", 0.0), 3),
-                "device": label,
-            }
             now = time.time()
+            mapper.observe(snapshot, now)
+            ip = self.get_phone_ip()
+            if not ip:
+                continue
+            payload = mapper.payload(label)
             changed = (
                 self._last_sent is None
-                or any(abs(payload[k] - self._last_sent[k]) > 0.004
-                       for k in ("throttle", "brake", "steer"))
+                or payload.keys() != self._last_sent.keys()
+                or any(
+                    abs(payload[k] - self._last_sent[k]) > 0.004
+                    for k in ("throttle", "brake", "steer")
+                    if k in payload and k in self._last_sent
+                )
             )
             if changed or now - self._last_sent_at > 0.25:
                 try:
@@ -308,10 +745,12 @@ class InputStreamer(threading.Thread):
                     self._last_sent_at = now
                     if not announced_stream:
                         announced_stream = True
-                        self.log(f"Direct inputs streaming: {label}"
-                                 + ("" if mapping.get("calibrated")
-                                    else " (uncalibrated — run "
-                                         "--calibrate-inputs once)"))
+                        self.log(
+                            f"Direct inputs: {label} — "
+                            + ("streaming (auto-mapped)"
+                               if payload.get("calibrated")
+                               else "identifying axes from your driving "
+                                    "(pedals stream once mapped)"))
                 except OSError:
                     pass
 

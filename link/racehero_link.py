@@ -337,14 +337,63 @@ def single_instance():
     return True
 
 
-def main():
-    if "--calibrate-inputs" in sys.argv:
-        # One-time wheel/pedal calibration wizard (windowed; works in
-        # the --noconsole build too). Runs standalone, then exits.
-        import hid_inputs
-        hid_inputs.run_calibration(log)
-        return
+# ----------------------------------------------------------------- tray ---
 
+def _tray_image():
+    """The app icon for the tray: decode the shipped .ico when it can
+    be found; a plain two-tone square otherwise — art must never stop
+    the tray (or the Link) from starting."""
+    from PIL import Image
+    here = os.path.dirname(os.path.abspath(__file__))
+    for cand in (os.path.join(here, "racehero.ico"),
+                 os.path.join(here, "..", "racehero.ico")):
+        try:
+            if os.path.exists(cand):
+                return Image.open(cand)
+        except Exception:
+            pass
+    img = Image.new("RGB", (64, 64), (12, 12, 14))
+    for x in range(64):
+        for y in range(64):
+            if 10 <= x <= 53 and 26 <= y <= 37:
+                img.putpixel((x, y), (255, 122, 0))
+    return img
+
+
+def start_tray(status_fn, log):
+    """System-tray presence: version + live mapping status + Exit.
+    There is deliberately NO action item for the pedals — mapping is
+    automatic; the tray only REPORTS where it stands. Best-effort:
+    any failure here (no pystray in a dev run, no desktop session)
+    leaves the Link running exactly as before."""
+    try:
+        import threading
+        import pystray
+
+        def on_exit(icon, _item):
+            icon.stop()
+            os._exit(0)
+
+        menu = pystray.Menu(
+            pystray.MenuItem("RaceHero Link v2.4", None, enabled=False),
+            pystray.MenuItem(lambda _item: status_fn(), None,
+                             enabled=False),
+            pystray.Menu.SEPARATOR,
+            pystray.MenuItem("Exit", on_exit),
+        )
+        icon = pystray.Icon("racehero-link", _tray_image(),
+                            "RaceHero Link", menu)
+        t = threading.Thread(target=icon.run, name="racehero-tray",
+                             daemon=True)
+        t.start()
+        log("Tray icon up — right-click it for mapping status.")
+        return icon
+    except Exception as e:
+        log(f"Tray icon unavailable ({e}) — Link continues without it.")
+        return None
+
+
+def main():
     if "--bridge" in sys.argv:
         # AC1 shared-memory bridge mode: same binary, no mutex, no listener.
         sys.argv.remove("--bridge")
@@ -376,7 +425,7 @@ def main():
 
     pc_name = os.environ.get("COMPUTERNAME", "PC")
     print("=" * 62)
-    print("  RaceHero Link v2.3 — waiting for your phone…")
+    print("  RaceHero Link v2.4 — waiting for your phone…")
     print("  On the phone: RaceHero -> RACE SIM -> START SIM LINK")
     print("  (Phone and PC must be on the same WiFi.)")
     print("=" * 62)
@@ -397,14 +446,25 @@ def main():
         ensure_all(last_ip, state)
 
     # Direct wheel/pedal capture: streams the driver's raw inputs to
-    # the phone (feeds like ACC broadcast carry none). Best-effort —
-    # any failure here must never take the Link itself down.
+    # the phone (feeds like ACC broadcast carry none). The axes map
+    # THEMSELVES (v2.4 auto-mapping — the driver never calibrates
+    # anything). Best-effort — any failure here must never take the
+    # Link itself down.
     ip_holder = {"ip": last_ip if last_ip and valid_ipv4(last_ip) else None}
+    streamer = None
     try:
         import hid_inputs
-        hid_inputs.start_streamer(lambda: ip_holder["ip"], log)
+        streamer = hid_inputs.start_streamer(lambda: ip_holder["ip"], log)
     except Exception as e:
         log(f"Direct input capture unavailable: {e}")
+
+    # Tray: version + mapping status ("Pedals: auto-mapped" /
+    # "Pedals: learning — drive a lap"). Status only — no actions
+    # exist for the driver to take.
+    start_tray(
+        lambda: streamer.mapper_status() if streamer is not None
+        else "Pedals: capture unavailable",
+        log)
 
     log("Listening for the phone beacon… (Ctrl+C to stop)")
     sock.settimeout(5.0)
