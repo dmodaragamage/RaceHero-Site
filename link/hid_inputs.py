@@ -27,6 +27,11 @@ data, never guessed constants) and "calibrated": false. The locked
 map persists to %APPDATA%/RaceHero/hid_inputs.json, is re-validated
 every session, and is relearned automatically if a mapped channel
 ever flatlines through a full session.
+
+Since v2.5 the mapper and streamer also report their state changes
+(lock, unlock, device connect/disconnect, stream start/stop, a 60 s
+heartbeat) to the dev funnel via an optional emit callback — see
+funnel.py. Diagnostics only; the stream itself is unchanged.
 """
 
 import ctypes
@@ -361,8 +366,10 @@ class AutoMapper:
     LOCK_STREAK = 3
     FLAT_UNLOCK_S = 120.0
 
-    def __init__(self, devices, log=print):
+    def __init__(self, devices, log=print, emit=None):
         self.log = log
+        self._emit = emit        # dev-funnel poster (v2.5), optional
+        self._evidence = None    # how throttle/brake got decided
         self.devices = {d["index"]: d for d in devices}
         self.names = {d["index"]: d["name"] for d in devices}
         self.series = {}          # (dev, ax) -> [(t, v)]
@@ -378,6 +385,46 @@ class AutoMapper:
         if self.locked:
             log("Direct inputs: saved auto-map loaded — re-validating "
                 "against this session.")
+            self._emit_event({
+                "event": "automap_loaded",
+                "hidDevice": self.device_label(),
+                "calibrated": True,
+                "axisMap": self.axis_map_summary(),
+            })
+
+    # ------------------------------------------------------- funnel --
+
+    def _emit_event(self, event):
+        """Dev-funnel diagnostics (v2.5): report lock-state changes
+        the moment they happen. Fire-and-forget — the poster never
+        blocks the stream, and a failure here is swallowed."""
+        if self._emit is None:
+            return
+        try:
+            self._emit(event)
+        except Exception:
+            pass
+
+    def device_label(self):
+        names = []
+        for n in self.names.values():
+            if n not in names:
+                names.append(n)
+        return " + ".join(names) if names else None
+
+    def axis_map_summary(self):
+        """{channel: {device, axis}} for the current map — what the
+        funnel (and a human debugging a rig) actually needs to see."""
+        out = {}
+        for name, ch in (self.mapping or {}).get("channels", {}).items():
+            ax = ch["axis"]
+            out[name] = {
+                "device": ch.get("deviceName")
+                          or self.names.get(ch["device"]),
+                "axis": AXIS_NAMES[ax] if 0 <= ax < len(AXIS_NAMES)
+                        else ax,
+            }
+        return out
 
     # ------------------------------------------------------------ io --
 
@@ -565,6 +612,12 @@ class AutoMapper:
             if abs(pref1) > 0.15 and abs(pref2) > 0.15 \
                     and (pref1 > 0) != (pref2 > 0):
                 thr_key, brk_key = (k1, k2) if pref1 > 0 else (k2, k1)
+                g_thr, b_brk = (g1, b2) if pref1 > 0 else (g2, b1)
+                self._evidence = {
+                    "method": "game-correlation",
+                    "throttleGasCorr": round(g_thr, 3),
+                    "brakeBrakeCorr": round(b_brk, 3),
+                }
         if thr_key is None:
             # Duty cycle: throttle is worked far more of a lap.
             if abs(f1["duty"] - f2["duty"]) < 0.03:
@@ -572,6 +625,13 @@ class AutoMapper:
                 return
             thr_key, brk_key = (k1, k2) if f1["duty"] > f2["duty"] \
                 else (k2, k1)
+            f_thr, f_brk = (f1, f2) if f1["duty"] > f2["duty"] \
+                else (f2, f1)
+            self._evidence = {
+                "method": "duty-cycle",
+                "throttleDuty": round(f_thr["duty"], 3),
+                "brakeDuty": round(f_brk["duty"], 3),
+            }
         pick = (steer_key, thr_key, brk_key)
         if pick == self._last_pick:
             self._streak += 1
@@ -604,6 +664,13 @@ class AutoMapper:
                  f"steer={self.names.get(steer_key[0])} ax{steer_key[1]}, "
                  f"throttle=ax{thr_key[1]}, brake=ax{brk_key[1]} "
                  "(learned from your driving; saved).")
+        self._emit_event({
+            "event": "automap_lock",
+            "hidDevice": self.device_label(),
+            "calibrated": True,
+            "axisMap": self.axis_map_summary(),
+            "evidence": self._evidence,
+        })
 
     # ---------------------------------------------------- validation --
 
@@ -639,6 +706,14 @@ class AutoMapper:
                 self.log(f"Direct inputs: mapped {name} has been dead "
                          "through a full session — dropping the map "
                          "and relearning.")
+                self._emit_event({
+                    "event": "automap_unlock",
+                    "hidDevice": self.device_label(),
+                    "calibrated": False,
+                    "axisMap": self.axis_map_summary(),
+                    "reason": f"mapped {name} flatlined through a "
+                              "full session",
+                })
                 self.locked = False
                 self.mapping = None
                 self._flat_since.clear()
@@ -657,14 +732,26 @@ class InputStreamer(threading.Thread):
     shows "identifying", and no guessed constant is ever presented
     as data."""
 
-    def __init__(self, get_phone_ip, log=print):
+    def __init__(self, get_phone_ip, log=print, emit=None):
         super().__init__(daemon=True, name="racehero-hid")
         self.get_phone_ip = get_phone_ip
         self.log = log
+        self._emit = emit        # dev-funnel poster (v2.5), optional
+        self._frames_sent = 0
         self._last_sent = None
         self._last_sent_at = 0.0
         self._announced = False
         self._mapper = None
+
+    def _emit_event(self, event):
+        """Dev-funnel diagnostics (v2.5), fire-and-forget like the
+        mapper's — a poster failure must never touch the stream."""
+        if self._emit is None:
+            return
+        try:
+            self._emit(event)
+        except Exception:
+            pass
 
     def mapper_status(self):
         """One line for the tray: where auto-mapping stands."""
@@ -697,10 +784,16 @@ class InputStreamer(threading.Thread):
             if d["name"] not in names:
                 names.append(d["name"])
         label = " + ".join(names) if names else "Wheel/pedals"
-        mapper = AutoMapper(devices, self.log)
+        mapper = AutoMapper(devices, self.log, emit=self._emit)
         self._mapper = mapper
+        self._emit_event({
+            "event": "device_connect",
+            "hidDevice": label,
+            "calibrated": mapper.locked,
+        })
         announced_stream = False
         dead_reads = 0
+        last_hb = time.time()
         while True:
             time.sleep(0.02)  # ~50 Hz
             snapshot = {}
@@ -717,6 +810,18 @@ class InputStreamer(threading.Thread):
                 if dead_reads > 100:
                     self.log("Direct inputs: controllers stopped "
                              "answering — rescanning.")
+                    self._emit_event({
+                        "event": "device_disconnect",
+                        "hidDevice": label,
+                        "calibrated": mapper.locked,
+                        "framesSent": self._frames_sent,
+                    })
+                    self._emit_event({
+                        "event": "stream_stop",
+                        "hidDevice": label,
+                        "framesSent": self._frames_sent,
+                        "reason": "controllers stopped answering",
+                    })
                     self._announced = False
                     self._mapper = None
                     return
@@ -724,6 +829,17 @@ class InputStreamer(threading.Thread):
             dead_reads = 0
             now = time.time()
             mapper.observe(snapshot, now)
+            if now - last_hb >= 60.0:
+                # Funnel heartbeat (v2.5): proof of life with the
+                # numbers a remote diagnosis needs — no payload data.
+                last_hb = now
+                self._emit_event({
+                    "event": "heartbeat",
+                    "hidDevice": label,
+                    "calibrated": mapper.locked,
+                    "devicePresent": True,
+                    "framesSent": self._frames_sent,
+                })
             ip = self.get_phone_ip()
             if not ip:
                 continue
@@ -741,10 +857,17 @@ class InputStreamer(threading.Thread):
                 try:
                     sock.sendto(json.dumps(payload).encode("utf-8"),
                                 (ip, PHONE_INPUT_PORT))
+                    self._frames_sent += 1
                     self._last_sent = payload
                     self._last_sent_at = now
                     if not announced_stream:
                         announced_stream = True
+                        self._emit_event({
+                            "event": "stream_start",
+                            "hidDevice": label,
+                            "calibrated": bool(
+                                payload.get("calibrated")),
+                        })
                         self.log(
                             f"Direct inputs: {label} — "
                             + ("streaming (auto-mapped)"
@@ -755,8 +878,8 @@ class InputStreamer(threading.Thread):
                     pass
 
 
-def start_streamer(get_phone_ip, log=print):
-    t = InputStreamer(get_phone_ip, log)
+def start_streamer(get_phone_ip, log=print, emit=None):
+    t = InputStreamer(get_phone_ip, log, emit=emit)
     t.start()
     return t
 

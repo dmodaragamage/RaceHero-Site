@@ -39,6 +39,17 @@ PHONE_PORTS = {"f1": 20778, "forza": 20779, "acc": 20780, "ac1": 20777}
 F1_EXE = "F1_24.exe"
 AC_EXE = "acs.exe"  # original Assetto Corsa
 
+# Dev-funnel diagnostics (v2.5): Link posts its own lock/device/
+# stream events to the founder's funnel so a PC-side problem is
+# visible the moment it happens. Best-effort — the Link runs exactly
+# the same if the poster module is missing or the network is dead.
+try:
+    import funnel
+    LINK_VERSION = funnel.LINK_VERSION
+except Exception:
+    funnel = None
+    LINK_VERSION = "2.5"
+
 
 # ---------------------------------------------------------------- state ---
 
@@ -375,7 +386,8 @@ def start_tray(status_fn, log):
             os._exit(0)
 
         menu = pystray.Menu(
-            pystray.MenuItem("RaceHero Link v2.4", None, enabled=False),
+            pystray.MenuItem(f"RaceHero Link v{LINK_VERSION}", None,
+                             enabled=False),
             pystray.MenuItem(lambda _item: status_fn(), None,
                              enabled=False),
             pystray.Menu.SEPARATOR,
@@ -425,7 +437,7 @@ def main():
 
     pc_name = os.environ.get("COMPUTERNAME", "PC")
     print("=" * 62)
-    print("  RaceHero Link v2.4 — waiting for your phone…")
+    print(f"  RaceHero Link v{LINK_VERSION} — waiting for your phone…")
     print("  On the phone: RaceHero -> RACE SIM -> START SIM LINK")
     print("  (Phone and PC must be on the same WiFi.)")
     print("=" * 62)
@@ -454,9 +466,17 @@ def main():
     streamer = None
     try:
         import hid_inputs
-        streamer = hid_inputs.start_streamer(lambda: ip_holder["ip"], log)
+        streamer = hid_inputs.start_streamer(
+            lambda: ip_holder["ip"], log,
+            emit=(funnel.post if funnel is not None else None))
     except Exception as e:
         log(f"Direct input capture unavailable: {e}")
+
+    # Funnel poster starts after the streamer so a saved map's
+    # "loaded" event is already queued and goes out with link_start.
+    if funnel is not None:
+        funnel.start(log)
+        funnel.post({"event": "link_start"})
 
     # Tray: version + mapping status ("Pedals: auto-mapped" /
     # "Pedals: learning — drive a lap"). Status only — no actions
@@ -510,6 +530,9 @@ def main():
             save_state(state)
             last_ip = ip
             ip_holder["ip"] = ip
+
+    if funnel is not None:
+        funnel.post({"event": "link_stop"})
 
 
 if __name__ == "__main__":
