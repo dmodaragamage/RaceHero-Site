@@ -48,12 +48,21 @@ set change), automap_state events (the mapper's candidate picture,
 with reasons), and a heartbeat carrying per-axis activity plus the
 mapper's candidate state — so the next silent rig is diagnosable
 from the other side of the world.
+
+v2.6.1 fixes a startup collision with the game itself: the
+auto-mapper's game-motion reference used to attach to the game's
+shared-memory page through a call that CREATES the page when it is
+absent. Link started before ACC therefore claimed the game's page
+name first, and ACC died with a fatal error when a session loaded.
+The reference reader is now open-only (see _GameMotion) — Link
+never creates another process's named objects.
 """
 
 import ctypes
 import json
 import os
 import socket
+import struct
 import threading
 import time
 
@@ -356,57 +365,113 @@ def _norm_steer(ch, raw):
 
 class _GameMotion:
     """The car's own inputs/speed from the AC/ACC shared memory
-    ("acpmf_physics"), read best-effort with the stdlib mmap module.
-    Used ONLY as the correlation reference that tells throttle from
-    brake — the HID axes stay the streamed data. Absent or insane
-    values simply mean "no reference", and the mapper falls back to
-    excursion statistics. SPageFilePhysics head layout (both games):
-    packetId i32 @0, gas f32 @4, brake f32 @8, fuel f32 @12,
-    gear i32 @16, rpms i32 @20, steerAngle f32 @24, speedKmh f32 @28.
+    ("acpmf_physics"). Used ONLY as the correlation reference that
+    tells throttle from brake — the HID axes stay the streamed data.
+    Absent or insane values simply mean "no reference", and the
+    mapper falls back to excursion statistics. SPageFilePhysics
+    head layout (both games): packetId i32 @0, gas f32 @4,
+    brake f32 @8, fuel f32 @12, gear i32 @16, rpms i32 @20,
+    steerAngle f32 @24, speedKmh f32 @28.
+
+    OPEN-ONLY — NEVER CREATE (v2.6.1; this is the ACC-crash fix).
+    That page is the GAME's kernel object, not ours. The reader
+    used to attach with the stdlib tagged-mmap call, which CPython
+    implements as CreateFileMappingW — so when Link started before
+    the game, LINK was the process that created "acpmf_physics":
+    a small PAGE_READONLY page, claimed seconds after Link launch
+    and re-claimed on every retry. The game creates its physics
+    page only when a session loads, and then it found its own name
+    already taken by a foreign page it could not adopt as its
+    writable physics page — ACC died with a fatal error at exactly
+    that moment, every time. Starting Link after entering the
+    session worked because the game's page already existed and the
+    call merely attached to it. Now we attach the way ac_bridge
+    does: OpenFileMappingW only. Absence (game not running, or in
+    menus) fails cleanly, leaves NO footprint of any kind, and is
+    retried on a slow poll — Link's startup is fully passive.
     """
 
+    _READ_LEN = 32      # the head fields end at speedKmh (@28 + 4)
+    _RETRY_S = 5.0
+
     def __init__(self):
-        self._mm = None
+        self._handle = None   # mapping handle from OpenFileMappingW
+        self._view = None     # address from MapViewOfFile
         self._tried = 0.0
         self.gas = []    # (t, 0..1)
         self.brake = []  # (t, 0..1)
         self.speed = []  # (t, km/h)
         self.available = False
 
+    @staticmethod
+    def _kernel32():
+        k32 = ctypes.windll.kernel32
+        # c_void_p restypes: 64-bit handles/addresses must not be
+        # truncated to C int by ctypes' default restype.
+        k32.OpenFileMappingW.restype = ctypes.c_void_p
+        k32.OpenFileMappingW.argtypes = [
+            ctypes.c_uint32, ctypes.c_bool, ctypes.c_wchar_p]
+        k32.MapViewOfFile.restype = ctypes.c_void_p
+        k32.MapViewOfFile.argtypes = [
+            ctypes.c_void_p, ctypes.c_uint32, ctypes.c_uint32,
+            ctypes.c_uint32, ctypes.c_size_t]
+        k32.UnmapViewOfFile.argtypes = [ctypes.c_void_p]
+        k32.CloseHandle.argtypes = [ctypes.c_void_p]
+        return k32
+
     def _open(self):
         # Named shared memory is a Windows facility; off Windows (dev
         # runs) there is simply no reference — never an error.
         if os.name != "nt":
-            self._mm = None
             return
-        import mmap
-        import struct
-        self._struct = struct
+        FILE_MAP_READ = 0x0004
         try:
-            self._mm = mmap.mmap(-1, 1024, "acpmf_physics",
-                                 mmap.ACCESS_READ)
+            k32 = self._kernel32()
+            # OpenFileMapping ONLY — if the game hasn't created the
+            # page this returns NULL, and that absence is the normal
+            # pre-session state, not an error.
+            handle = k32.OpenFileMappingW(
+                FILE_MAP_READ, False, "acpmf_physics")
+            if not handle:
+                return
+            # Size 0 maps the whole page, whatever size the GAME
+            # made it; we only ever read the 32-byte head.
+            view = k32.MapViewOfFile(handle, FILE_MAP_READ, 0, 0, 0)
+            if not view:
+                k32.CloseHandle(handle)
+                return
+            self._handle, self._view = handle, view
         except Exception:
-            self._mm = None
+            self._handle = self._view = None
+
+    def _close(self):
+        if os.name == "nt" and (self._view or self._handle):
+            try:
+                k32 = self._kernel32()
+                if self._view:
+                    k32.UnmapViewOfFile(self._view)
+                if self._handle:
+                    k32.CloseHandle(self._handle)
+            except Exception:
+                pass
+        self._handle = self._view = None
 
     def update(self, now):
-        if self._mm is None:
-            if now - self._tried < 5.0:
+        if self._view is None:
+            if now - self._tried < self._RETRY_S:
                 return
             self._tried = now
-            try:
-                self._open()
-            except Exception:
-                self._mm = None
-            if self._mm is None:
+            self._open()
+            if self._view is None:
                 self.available = False
                 return
         try:
-            raw = self._mm[0:32]
-            gas, brake, speed = self._struct.unpack_from("<ff", raw, 4)[0], \
-                self._struct.unpack_from("<f", raw, 8)[0], \
-                self._struct.unpack_from("<f", raw, 28)[0]
+            raw = ctypes.string_at(self._view, self._READ_LEN)
+            gas = struct.unpack_from("<f", raw, 4)[0]
+            brake = struct.unpack_from("<f", raw, 8)[0]
+            speed = struct.unpack_from("<f", raw, 28)[0]
         except Exception:
-            self._mm = None
+            self._close()
             self.available = False
             return
         sane = (0.0 <= gas <= 1.001 and 0.0 <= brake <= 1.001

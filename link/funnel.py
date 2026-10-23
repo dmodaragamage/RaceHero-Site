@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-RaceHero Link — dev-funnel diagnostics poster (v2.6, stdlib only).
+RaceHero Link — dev-funnel diagnostics poster (v2.6.1, stdlib only).
 
 Link's PC-side problems (a wheel that vanished, an auto-map that
 wouldn't lock, a stream that died) used to be inferable only from
@@ -48,7 +48,7 @@ import time
 import urllib.error
 import urllib.request
 
-LINK_VERSION = "2.6"
+LINK_VERSION = "2.6.1"
 FUNNEL_URL = "https://racehero.ca/api/dev-ingest"
 FUNNEL_TOKEN = "fdfacc39fd1d684572fd573afb12b9ce56f06f0cc4c1798c88b2d49bb09c139f"
 ENABLED = True
