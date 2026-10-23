@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-RaceHero Link — dev-funnel diagnostics poster (v2.5, stdlib only).
+RaceHero Link — dev-funnel diagnostics poster (v2.6, stdlib only).
 
 Link's PC-side problems (a wheel that vanished, an auto-map that
 wouldn't lock, a stream that died) used to be inferable only from
@@ -12,6 +12,17 @@ moment they happen:
     device connect / disconnect        (which controllers, by name)
     stream start / stop                (HID streaming lifecycle)
     heartbeat every 60 s while streaming (frames sent, map state)
+    device_inventory (v2.6)            (startup + every device-set
+                                        change: EVERY controller
+                                        Windows can enumerate, with
+                                        VID/PID identity + whether
+                                        it is answering)
+    automap_state (v2.6)               (the mapper's candidate
+                                        picture whenever it changes
+                                        materially, with the reason
+                                        class for the current stage)
+    The 60 s heartbeat also carries per-axis activity (min/max/
+    variance) and the mapper's candidate state since v2.6.
 
 Design rules, in order:
   * NEVER block or delay the HID stream. post() only enqueues;
@@ -37,7 +48,7 @@ import time
 import urllib.error
 import urllib.request
 
-LINK_VERSION = "2.5"
+LINK_VERSION = "2.6"
 FUNNEL_URL = "https://racehero.ca/api/dev-ingest"
 FUNNEL_TOKEN = "fdfacc39fd1d684572fd573afb12b9ce56f06f0cc4c1798c88b2d49bb09c139f"
 ENABLED = True

@@ -39,7 +39,7 @@ PHONE_PORTS = {"f1": 20778, "forza": 20779, "acc": 20780, "ac1": 20777}
 F1_EXE = "F1_24.exe"
 AC_EXE = "acs.exe"  # original Assetto Corsa
 
-# Dev-funnel diagnostics (v2.5): Link posts its own lock/device/
+# Dev-funnel diagnostics (v2.6): Link posts its own lock/device/
 # stream events to the founder's funnel so a PC-side problem is
 # visible the moment it happens. Best-effort — the Link runs exactly
 # the same if the poster module is missing or the network is dead.
@@ -48,7 +48,7 @@ try:
     LINK_VERSION = funnel.LINK_VERSION
 except Exception:
     funnel = None
-    LINK_VERSION = "2.5"
+    LINK_VERSION = "2.6"
 
 
 # ---------------------------------------------------------------- state ---

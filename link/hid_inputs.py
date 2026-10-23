@@ -32,6 +32,22 @@ Since v2.5 the mapper and streamer also report their state changes
 (lock, unlock, device connect/disconnect, stream start/stop, a 60 s
 heartbeat) to the dev funnel via an optional emit callback — see
 funnel.py. Diagnostics only; the stream itself is unchanged.
+
+v2.6 is the two-device fix. The founder's rig is a Moza R9 wheelbase
+plus a separate P1000 pedal unit — TWO controllers — and the pedals
+never produced data: enumeration used to require a device to answer
+joyGetPosEx at the single startup scan, so a pedal unit that woke
+late (or answered slowly) was dropped silently for the whole
+session, and nothing ever rescanned. Now enumeration reports every
+controller Windows can see (answering or not, with VID/PID identity
+— two devices that share one generic Windows name are told apart),
+the streamer reads the UNION of all of them, a device-set change
+re-scans mid-session, and persisted maps re-resolve by VID/PID
+first. The funnel gains a device_inventory event (startup + every
+set change), automap_state events (the mapper's candidate picture,
+with reasons), and a heartbeat carrying per-axis activity plus the
+mapper's candidate state — so the next silent rig is diagnosable
+from the other side of the world.
 """
 
 import ctypes
@@ -89,9 +105,22 @@ def _winmm():
         return None
 
 
-def list_devices():
-    """Connected game controllers: [{index, name, ranges:[(min,max)×6],
-    num_axes}]. Empty off Windows or when none are plugged in."""
+def enumerate_devices():
+    """Every game controller Windows' joystick API can enumerate:
+    [{index, name, vid, pid, ranges:[(min,max)×6], num_axes,
+    num_buttons, responding}].
+
+    A device whose caps read fine but which does not answer
+    joyGetPosEx right now (asleep, still waking, slow to its first
+    report) is INCLUDED with responding=False. v2.5 dropped it
+    silently — on a two-device rig the pedal unit could wake a
+    minute after the wheel and simply never exist for that session.
+
+    Identity is (index, vid, pid), never the name alone: Windows
+    hands every device without a registered OEM product name the
+    same generic driver name, so a wheel base and a pedal unit can
+    present as two identical strings. The name in the funnel label
+    cannot tell them apart; the VID/PID in the inventory can."""
     mm = _winmm()
     if mm is None:
         return []
@@ -100,12 +129,11 @@ def list_devices():
     for i in range(min(count, 16)):
         caps = _JOYCAPS()
         if mm.joyGetDevCapsW(i, ctypes.byref(caps), ctypes.sizeof(caps)) != MMRESULT_OK:
-            continue
+            continue  # nothing at this port — the normal empty case
         info = _JOYINFOEX()
         info.dwSize = ctypes.sizeof(info)
         info.dwFlags = JOY_RETURNALL
-        if mm.joyGetPosEx(i, ctypes.byref(info)) != MMRESULT_OK:
-            continue  # enumerated but not actually connected
+        responding = mm.joyGetPosEx(i, ctypes.byref(info)) == MMRESULT_OK
         ranges = [
             (caps.wXmin, caps.wXmax), (caps.wYmin, caps.wYmax),
             (caps.wZmin, caps.wZmax), (caps.wRmin, caps.wRmax),
@@ -114,10 +142,66 @@ def list_devices():
         out.append({
             "index": i,
             "name": (caps.szPname or f"Controller {i + 1}").strip(),
+            "vid": int(caps.wMid),
+            "pid": int(caps.wPid),
             "ranges": ranges,
             "num_axes": int(caps.wNumAxes) or MAX_AXES,
+            "num_buttons": int(caps.wNumButtons),
+            "responding": bool(responding),
         })
     return out
+
+
+def list_devices():
+    """Connected (answering) game controllers — the v2.5 view, kept
+    for the calibration wizard and any caller that needs devices it
+    can read this instant. The streamer works from the full
+    enumerate_devices() union instead."""
+    return [d for d in enumerate_devices() if d["responding"]]
+
+
+def device_signature(devices):
+    """Stable identity of a device SET: two enumerations with the
+    same signature are the same rig in the same state. The first
+    five fields are a device's identity; the sixth is whether it is
+    answering right now."""
+    return tuple(sorted(
+        (d["index"], d.get("vid"), d.get("pid"), d["name"],
+         d["num_axes"], bool(d.get("responding", True)))
+        for d in devices))
+
+
+def _device_public(d):
+    return {"index": d["index"], "name": d["name"],
+            "vid": d.get("vid"), "pid": d.get("pid"),
+            "numAxes": d["num_axes"],
+            "numButtons": d.get("num_buttons"),
+            "responding": bool(d.get("responding", True))}
+
+
+def inventory_event(devices, reason, mapper=None):
+    """The device_inventory funnel payload (v2.6): EVERY controller
+    Windows can enumerate — including ones not answering — with the
+    (index, VID/PID) identity that tells two identically named
+    devices apart, and what the streamer is doing with them. The
+    streamer never picks ONE device: it reads the union of all of
+    them and the auto-mapper assigns channels per (device, axis),
+    which is what a two-box rig (wheel base + separate pedals)
+    needs."""
+    ev = {
+        "event": "device_inventory",
+        "reason": reason,
+        "devices": [_device_public(d) for d in devices],
+        "observedDevices": [d["index"] for d in devices],
+        "selection": "union — streamer reads every enumerated "
+                     "controller; auto-mapper assigns channels per "
+                     "(device, axis)",
+    }
+    if mapper is not None:
+        ev["calibrated"] = bool(mapper.locked)
+        if mapper.locked:
+            ev["axisMap"] = mapper.axis_map_summary()
+    return ev
 
 
 def read_axes(index, ranges):
@@ -148,10 +232,18 @@ def config_path():
     return os.path.join(d, "hid_inputs.json")
 
 
-def _channel(device, axis, rest, full, center=None, device_name=None):
-    return {"device": device, "axis": axis,
-            "rest": rest, "full": full, "center": center,
-            "deviceName": device_name}
+def _channel(device, axis, rest, full, center=None, device_name=None,
+             device_vid=None, device_pid=None):
+    ch = {"device": device, "axis": axis,
+          "rest": rest, "full": full, "center": center,
+          "deviceName": device_name}
+    if device_vid is not None:
+        # The device DIMENSION (v2.6): VID/PID survive renumbering
+        # AND identical generic names; the index alone survives
+        # neither. Omitted (not null) on maps the wizard wrote.
+        ch["deviceVid"] = device_vid
+        ch["devicePid"] = device_pid
+    return ch
 
 
 def heuristic_mapping(devices):
@@ -184,9 +276,11 @@ def load_mapping(devices):
     """The persisted map, or None. Only a CONFIDENT map loads — one
     the AutoMapper locked ("auto": true) or the old wizard measured
     ("calibrated": true); a heuristic guess on disk is ignored.
-    Channel device indices are re-resolved by device NAME: Windows
+    Channel device indices are re-resolved by device identity:
+    VID/PID first (v2.6 — it survives renumbering AND the identical
+    generic names two devices can share), then by NAME (Windows
     re-numbers controllers across reboots, and a stale index reads
-    the wrong device (another flatline factory). Unresolvable maps
+    the wrong device — another flatline factory). Unresolvable maps
     are discarded — the mapper relearns from live data."""
     try:
         with open(config_path(), "r", encoding="utf-8") as f:
@@ -195,9 +289,23 @@ def load_mapping(devices):
         return None
     if not saved.get("channels") or not saved.get("calibrated"):
         return None
+    by_vidpid = {(d["vid"], d["pid"]): d for d in devices
+                 if d.get("vid") is not None}
     by_name = {d["name"]: d for d in devices}
     by_index = {d["index"]: d for d in devices}
     for ch in saved["channels"].values():
+        vid, pid = ch.get("deviceVid"), ch.get("devicePid")
+        if vid is not None and (vid, pid) in by_vidpid:
+            ch["device"] = by_vidpid[(vid, pid)]["index"]
+            continue
+        if vid is not None:
+            # The channel carries a recorded device identity and
+            # that device is NOT CONNECTED. Never fall back to the
+            # bare name — with two same-named controllers that would
+            # silently re-point the pedals at the wheel (the exact
+            # v2.5 failure, replayed from the saved map). The map is
+            # unusable as-is; the mapper relearns from live data.
+            return None
         name = ch.get("deviceName")
         if name and name in by_name:
             ch["device"] = by_name[name]["index"]
@@ -382,6 +490,17 @@ class AutoMapper:
         self._flat_since = {}     # channel -> t when flatness began
         self._driving_since = None
         self._snapshot = {}       # dev -> [axes] latest tick
+        # Diagnostics (v2.6): the mapper's current learning picture —
+        # stage + reason class + live candidates — stashed by every
+        # _evaluate pass for the heartbeat, and emitted as an
+        # automap_state event whenever the picture changes materially.
+        self._diag_stage = "locked" if self.locked else "no-data"
+        self._diag_reason = ("saved map loaded — re-validating"
+                             if self.locked else
+                             "no axis data observed yet")
+        self._diag_candidates = {"steer": None, "pedals": [],
+                                 "throttle": None, "brake": None}
+        self._state_sig = None
         if self.locked:
             log("Direct inputs: saved auto-map loaded — re-validating "
                 "against this session.")
@@ -413,17 +532,120 @@ class AutoMapper:
         return " + ".join(names) if names else None
 
     def axis_map_summary(self):
-        """{channel: {device, axis}} for the current map — what the
-        funnel (and a human debugging a rig) actually needs to see."""
+        """{channel: {device, axis, deviceVid, devicePid}} for the
+        current map — what the funnel (and a human debugging a rig)
+        actually needs to see: WHICH physical device each channel
+        lives on, identified past the display name (v2.6)."""
         out = {}
         for name, ch in (self.mapping or {}).get("channels", {}).items():
             ax = ch["axis"]
+            rec = self.devices.get(ch["device"]) or {}
             out[name] = {
                 "device": ch.get("deviceName")
                           or self.names.get(ch["device"]),
+                "deviceIndex": ch["device"],
+                "deviceVid": ch.get("deviceVid", rec.get("vid")),
+                "devicePid": ch.get("devicePid", rec.get("pid")),
                 "axis": AXIS_NAMES[ax] if 0 <= ax < len(AXIS_NAMES)
                         else ax,
             }
+        return out
+
+    # --------------------------------------------- diagnostics (v2.6) --
+
+    def _cand(self, key, f=None, gas=None, brake=None):
+        """One candidate axis as the funnel should see it: device
+        identity (name + index + VID/PID), axis, and its evidence."""
+        dev = key[0]
+        rec = self.devices.get(dev) or {}
+        out = {"device": self.names.get(dev),
+               "deviceIndex": dev,
+               "deviceVid": rec.get("vid"),
+               "devicePid": rec.get("pid"),
+               "axis": AXIS_NAMES[key[1]]
+                       if 0 <= key[1] < len(AXIS_NAMES) else key[1]}
+        if f is not None:
+            out["range"] = round(f["range"], 3)
+            out["duty"] = round(f["duty"], 3)
+        if gas is not None:
+            out["gasCorr"] = round(gas, 3)
+        if brake is not None:
+            out["brakeCorr"] = round(brake, 3)
+        return out
+
+    def _set_diag(self, stage, reason, steer=None, pedals=None,
+                  throttle=None, brake=None):
+        self._diag_stage = stage
+        self._diag_reason = reason
+        self._diag_candidates = {"steer": steer,
+                                 "pedals": pedals or [],
+                                 "throttle": throttle, "brake": brake}
+        self._note_state()
+
+    def _state_signature(self):
+        c = self._diag_candidates
+
+        def k(cand):
+            return None if cand is None else (cand["deviceIndex"],
+                                              cand["axis"])
+        return (self._diag_stage, k(c["steer"]),
+                tuple(sorted(k(p) for p in c["pedals"])),
+                k(c["throttle"]), k(c["brake"]))
+
+    def _note_state(self):
+        """automap_state funnel event (v2.6): the moment the mapper's
+        candidate picture changes materially — first candidate seen,
+        a candidate set lost, the stage moving — report it WITH the
+        reason class, so "why won't it lock" is answerable remotely.
+        Streak ticks alone are not material and do not emit."""
+        sig = self._state_signature()
+        if sig == self._state_sig:
+            return
+        self._state_sig = sig
+        self._emit_event({
+            "event": "automap_state",
+            "hidDevice": self.device_label(),
+            "calibrated": self.locked,
+            **self.diagnostics(),
+        })
+
+    def diagnostics(self):
+        """The mapper's current picture, for the funnel heartbeat and
+        automap_state events (v2.6): locked or not; if not, what
+        stage learning is at and WHY (the reason class), plus the
+        live candidates with their evidence."""
+        out = {
+            "locked": bool(self.locked),
+            "stage": "locked" if self.locked else self._diag_stage,
+            "reason": ("map locked" if self.locked
+                       else self._diag_reason),
+            "streak": self._streak,
+            "candidates": self._diag_candidates,
+        }
+        if self.locked:
+            out["axisMap"] = self.axis_map_summary()
+        return out
+
+    def axis_activity(self, now, window_s=60.0):
+        """Per-axis recent activity for the heartbeat (v2.6): for
+        every (device, axis) the mapper has been watching, sample
+        count, min/max and variance over the last window — values
+        only, no raw firehose. A pedal axis that never moves shows
+        up as var 0.0 (or is absent entirely, which says the device
+        it lives on was never read — the inventory separates those
+        two stories)."""
+        out = {}
+        for (dev, ax), s in self.series.items():
+            vals = [v for t, v in s if t > now - window_s]
+            if len(vals) < 2:
+                continue
+            mean = sum(vals) / len(vals)
+            var = sum((v - mean) ** 2 for v in vals) / len(vals)
+            name = self.names.get(dev) or f"Controller {dev + 1}"
+            out.setdefault(f"{name}#{dev}", {})[
+                AXIS_NAMES[ax] if 0 <= ax < len(AXIS_NAMES) else str(ax)
+            ] = {"n": len(vals), "min": round(min(vals), 3),
+                 "max": round(max(vals), 3), "var": round(var, 4)}
         return out
 
     # ------------------------------------------------------------ io --
@@ -544,9 +766,14 @@ class AutoMapper:
 
     def _evaluate(self, now):
         if not self.series:
+            self._set_diag("no-data", "no axis data observed yet")
             return
         t0 = min(s[0][0] for s in self.series.values() if s)
         if now - t0 < self.MIN_OBSERVE_S:
+            self._set_diag(
+                "observing",
+                f"observing — {int(now - t0)}s of "
+                f"{int(self.MIN_OBSERVE_S)}s needed before judging axes")
             return
         feats = {}
         for key in list(self.series):
@@ -554,12 +781,22 @@ class AutoMapper:
             if f and f["range"] >= 0.05:      # dead axes never qualify
                 feats[key] = f
         if not feats:
+            self._set_diag(
+                "no-travel",
+                "controllers are being read but no axis has moved "
+                "(every axis range < 0.05 in the window) — the rig "
+                "is sitting still, or the moving axes live on a "
+                "device that is not answering")
             return
         driving = (
             (self.motion.speed and max(v for _, v in self.motion.speed) > 25.0)
             or any(f["range"] > 0.3 for f in feats.values())
         )
         if not driving:
+            self._set_diag(
+                "not-driving",
+                "axes move but no driving detected (game speed "
+                "≤ 25 km/h and no axis range > 0.3)")
             return
         wheelish = ("moza", "wheel", "base", "simucube", "fanatec",
                     "logitech", "thrustmaster")
@@ -582,6 +819,10 @@ class AutoMapper:
                 steer_key, steer_score = key, score
         if steer_key is None:
             self._streak = 0
+            self._set_diag(
+                "no-steer-candidate",
+                "no axis travels both ways from a returning centre "
+                "(steering not identified yet)")
             return
         # --- pedals: one-sided excursions resting at an extreme.
         cands = []
@@ -598,8 +839,18 @@ class AutoMapper:
                                    -kf[1]["range"]))
         if len(cands) < 2:
             self._streak = 0
+            self._set_diag(
+                "pedal-candidates<2",
+                f"steering found, but only {len(cands)} pedal-like "
+                "axis(es) — need 2 (one-sided excursion resting at "
+                "an extreme, range ≥ 0.25). If the pedals are a "
+                "separate device, its axes are not in the read set",
+                steer=self._cand(steer_key, feats[steer_key]),
+                pedals=[self._cand(k, f) for k, f in cands])
             return
         (k1, f1), (k2, f2) = cands[0], cands[1]
+        cand1 = self._cand(k1, f1)
+        cand2 = self._cand(k2, f2)
         # --- throttle vs brake.
         thr_key, brk_key = None, None
         if self.motion.available:
@@ -618,10 +869,19 @@ class AutoMapper:
                     "throttleGasCorr": round(g_thr, 3),
                     "brakeBrakeCorr": round(b_brk, 3),
                 }
+            cand1 = self._cand(k1, f1, gas=g1, brake=b1)
+            cand2 = self._cand(k2, f2, gas=g2, brake=b2)
         if thr_key is None:
             # Duty cycle: throttle is worked far more of a lap.
             if abs(f1["duty"] - f2["duty"]) < 0.03:
                 self._streak = 0
+                self._set_diag(
+                    "undecided",
+                    "two pedal candidates, but throttle vs brake "
+                    "cannot be told apart yet (game correlation "
+                    "inconclusive, duty cycles within 0.03)",
+                    steer=self._cand(steer_key, feats[steer_key]),
+                    pedals=[cand1, cand2])
                 return
             thr_key, brk_key = (k1, k2) if f1["duty"] > f2["duty"] \
                 else (k2, k1)
@@ -637,6 +897,16 @@ class AutoMapper:
             self._streak += 1
         else:
             self._last_pick, self._streak = pick, 1
+        thr_cand = cand1 if thr_key == k1 else cand2
+        brk_cand = cand2 if thr_key == k1 else cand1
+        self._set_diag(
+            "candidate",
+            f"full candidate set (steer + throttle + brake) — "
+            f"must win {self.LOCK_STREAK} consecutive evaluations, "
+            f"streak {self._streak}/{self.LOCK_STREAK}",
+            steer=self._cand(steer_key, feats[steer_key]),
+            pedals=[cand1, cand2],
+            throttle=thr_cand, brake=brk_cand)
         if self._streak < self.LOCK_STREAK:
             return
         self._lock(pick)
@@ -645,19 +915,26 @@ class AutoMapper:
         steer_key, thr_key, brk_key = pick
         chans = {}
         f = self._features(steer_key)
+        rec = self.devices.get(steer_key[0]) or {}
         chans["steer"] = _channel(
             steer_key[0], steer_key[1], f["lo"], f["hi"],
-            center=f["med"], device_name=self.names.get(steer_key[0]))
+            center=f["med"], device_name=self.names.get(steer_key[0]),
+            device_vid=rec.get("vid"), device_pid=rec.get("pid"))
         for name, key in (("throttle", thr_key), ("brake", brk_key)):
             f = self._features(key)
             rest, full = (f["lo"], f["hi"]) if f["rest_is_lo"] \
                 else (f["hi"], f["lo"])
+            rec = self.devices.get(key[0]) or {}
             chans[name] = _channel(
                 key[0], key[1], rest, full,
-                device_name=self.names.get(key[0]))
+                device_name=self.names.get(key[0]),
+                device_vid=rec.get("vid"), device_pid=rec.get("pid"))
         self.mapping = {"channels": chans, "calibrated": True,
                         "auto": True, "version": 2}
         self.locked = True
+        self._diag_stage = "locked"
+        self._diag_reason = "map locked"
+        self._state_sig = self._state_signature()
         self._flat_since.clear()
         save_mapping(self.mapping)
         self.log("Direct inputs: auto-mapped — "
@@ -720,6 +997,10 @@ class AutoMapper:
                 self._streak = 0
                 self._last_pick = None
                 discard_mapping()
+                self._set_diag(
+                    "no-data",
+                    f"map dropped (mapped {name} flatlined) — "
+                    "relearning from live driving")
                 return
 
 
@@ -742,6 +1023,7 @@ class InputStreamer(threading.Thread):
         self._last_sent_at = 0.0
         self._announced = False
         self._mapper = None
+        self._last_sig = None    # last device-set signature posted
 
     def _emit_event(self, event):
         """Dev-funnel diagnostics (v2.5), fire-and-forget like the
@@ -766,9 +1048,23 @@ class InputStreamer(threading.Thread):
         # killed pedal streaming for the whole session with no sign
         # anywhere. Now: keep looking, and say what's happening.
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        # Device inventory (v2.6): post what Windows can enumerate
+        # before anything else — including the empty answer — and
+        # again whenever the SET changes. In v2.5 a pedal unit that
+        # woke after the startup scan was invisible for the whole
+        # session; now its arrival is an event, and the stream
+        # rebuilds around the fresh union.
+        devices = enumerate_devices()
+        self._last_sig = device_signature(devices)
+        self._emit_event(inventory_event(devices, "startup"))
         while True:
-            devices = list_devices()
-            if not devices:
+            devices = enumerate_devices()
+            sig = device_signature(devices)
+            if sig != self._last_sig:
+                self._last_sig = sig
+                self._emit_event(
+                    inventory_event(devices, "device-set change"))
+            if not any(d.get("responding", True) for d in devices):
                 if not self._announced:
                     self.log("Direct inputs: no wheel/pedals found yet — "
                              "will keep looking (they may be off or "
@@ -793,7 +1089,16 @@ class InputStreamer(threading.Thread):
         })
         announced_stream = False
         dead_reads = 0
+        ever_ok = False
         last_hb = time.time()
+        # Device-set watch (v2.6): this stream was built from one
+        # enumeration. A controller that appears later — pedals
+        # waking after the wheel — must JOIN the union mid-session,
+        # not wait for the next Link launch.
+        entered_sig = device_signature(devices)
+        entered_ids = {s[:5] for s in entered_sig}
+        last_set_check = time.time()
+        pending_sig = None
         while True:
             time.sleep(0.02)  # ~50 Hz
             snapshot = {}
@@ -803,7 +1108,37 @@ class InputStreamer(threading.Thread):
                 snapshot[d["index"]] = axes
                 if axes is not None:
                     any_ok = True
+            now = time.time()
+            if now - last_set_check >= 5.0:
+                last_set_check = now
+                fresh = enumerate_devices()
+                fsig = device_signature(fresh)
+                if fsig != entered_sig:
+                    if pending_sig == fsig:
+                        # Confirmed on two consecutive polls — a
+                        # flaky port can't thrash the mapper.
+                        if {s[:5] for s in fsig} != entered_ids:
+                            self.log("Direct inputs: controller set "
+                                     "changed — rescanning.")
+                            return  # run() re-enters with the union
+                        # Mere answering-state flip: report it, keep
+                        # streaming the same union.
+                        self._emit_event(inventory_event(
+                            fresh, "device-set change"))
+                        self._last_sig = fsig
+                        entered_sig = fsig
+                        pending_sig = None
+                    else:
+                        pending_sig = fsig
+                else:
+                    pending_sig = None
             if not any_ok:
+                if not ever_ok:
+                    # Nothing has answered yet in this stream (a
+                    # device enumerated but still waking) — probing
+                    # is not a disconnect; keep looking quietly.
+                    time.sleep(0.25)
+                    continue
                 # Devices vanished (USB sleep, replug) — after ~2 s of
                 # dead reads, go back to scanning.
                 dead_reads += 1
@@ -827,11 +1162,14 @@ class InputStreamer(threading.Thread):
                     return
                 continue
             dead_reads = 0
-            now = time.time()
+            ever_ok = True
             mapper.observe(snapshot, now)
             if now - last_hb >= 60.0:
-                # Funnel heartbeat (v2.5): proof of life with the
-                # numbers a remote diagnosis needs — no payload data.
+                # Funnel heartbeat (v2.5, extended v2.6): proof of
+                # life with the numbers a remote diagnosis needs —
+                # no payload data; v2.6 adds per-axis activity and
+                # the mapper's candidate state, so a silent axis is
+                # attributable to a device, an axis, or a stage.
                 last_hb = now
                 self._emit_event({
                     "event": "heartbeat",
@@ -839,6 +1177,9 @@ class InputStreamer(threading.Thread):
                     "calibrated": mapper.locked,
                     "devicePresent": True,
                     "framesSent": self._frames_sent,
+                    "deviceCount": len(devices),
+                    "axes": mapper.axis_activity(now),
+                    "mapper": mapper.diagnostics(),
                 })
             ip = self.get_phone_ip()
             if not ip:
