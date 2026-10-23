@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-RaceHero Link — dev-funnel diagnostics poster (v2.6.1, stdlib only).
+RaceHero Link — dev-funnel diagnostics poster (v2.7, stdlib only).
 
 Link's PC-side problems (a wheel that vanished, an auto-map that
 wouldn't lock, a stream that died) used to be inferable only from
@@ -22,7 +22,11 @@ moment they happen:
                                         materially, with the reason
                                         class for the current stage)
     The 60 s heartbeat also carries per-axis activity (min/max/
-    variance) and the mapper's candidate state since v2.6.
+    variance) and the mapper's candidate state since v2.6. Since
+    v2.7 it also names the input API doing the reading
+    ("inputApi": "directinput" | "winmm") and carries
+    "diFallback": true when DirectInput failed to initialise and
+    the legacy winmm reader took over.
 
 Design rules, in order:
   * NEVER block or delay the HID stream. post() only enqueues;
@@ -48,7 +52,7 @@ import time
 import urllib.error
 import urllib.request
 
-LINK_VERSION = "2.6.1"
+LINK_VERSION = "2.7"
 FUNNEL_URL = "https://racehero.ca/api/dev-ingest"
 FUNNEL_TOKEN = "fdfacc39fd1d684572fd573afb12b9ce56f06f0cc4c1798c88b2d49bb09c139f"
 ENABLED = True

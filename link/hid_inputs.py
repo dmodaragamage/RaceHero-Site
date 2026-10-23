@@ -56,6 +56,31 @@ absent. Link started before ACC therefore claimed the game's page
 name first, and ACC died with a fatal error when a session loaded.
 The reference reader is now open-only (see _GameMotion) — Link
 never creates another process's named objects.
+
+v2.7 pivots device reading from winmm to DirectInput8 — the API
+the games themselves read through. Live funnel data proved the
+legacy winmm joystick API cannot see this class of rig: on the
+founder's PC winmm enumerated three devices, ALL wearing the
+generic name "Microsoft PC-joystick driver", and through five
+driven laps the pedal unit's axes never moved in winmm's view —
+the mapper found steering plus exactly one pedal-like axis and
+stalled at "pedal-candidates<2". ACC's own controls screen, reading
+the same rig through DirectInput, names the devices plainly: a
+"MOZA R9 Base" and a SEPARATE "P1000" pedal unit, its axes in
+DirectInput object order. So Link now enumerates and reads through
+IDirectInput8 (pure ctypes, still stdlib-only): real product
+names, per-device VID/PID identity, and all eight DIJOYSTATE2
+axes — including the Rx/Ry rotation axes winmm has no slots for,
+which is where this pedal unit's brake lives. winmm remains,
+untouched, as the fallback if DirectInput cannot initialise at
+all (the heartbeat then carries "diFallback": true) and as the
+calibration wizard's reader. Everything downstream of the read —
+the AutoMapper, the (device, axis) channel model, the persisted
+map, the phone's frame format, the funnel event shapes — is
+unchanged; a map saved in the winmm era re-resolves by VID/PID
+under DirectInput (axis slots 0-5 mean the same physical axes in
+both layouts) or invalidates and relearns, exactly as v2.6.1
+maps do.
 """
 
 import ctypes
@@ -69,8 +94,30 @@ import time
 PHONE_INPUT_PORT = 20782
 JOY_RETURNALL = 0x000000FF
 MMRESULT_OK = 0
-MAX_AXES = 6
-AXIS_NAMES = ["X", "Y", "Z", "R", "U", "V"]
+MAX_AXES = 6        # winmm JOYINFOEX slots per device
+DI_MAX_AXES = 8     # DIJOYSTATE2 axis slots per device (v2.7)
+
+# The mapper's axis letters, by slot index. Slots 0-5 are shared by
+# both readers so a persisted channel means the same physical axis
+# whichever API read it; slots 6-7 exist only under DirectInput.
+#
+#   slot  letter  winmm field      DirectInput (DIJOYSTATE2)  ACC #
+#   ----  ------  ---------------  -------------------------  -----
+#     0     X     dwXpos           lX                           1
+#     1     Y     dwYpos           lY                           2
+#     2     Z     dwZpos           lZ                           3
+#     3     R     dwRpos           lRz                          6
+#     4     U     dwUpos           rglSlider[0]                 7
+#     5     V     dwVpos           rglSlider[1]                 8
+#     6     Rx        —            lRx                          4
+#     7     Ry        —            lRy                          5
+#
+# ACC numbers axes in DirectInput object order (X, Y, Z, Rx, Ry,
+# Rz, sliders) — so the founder's P1000 shows throttle/brake/clutch
+# as ACC 6/5/4, which are DI Rz/Ry/Rx: slots 3/7/6 here. Nothing is
+# hardcoded from that: the AutoMapper still DISCOVERS which slot is
+# which control by watching driving and correlating with the game.
+AXIS_NAMES = ["X", "Y", "Z", "R", "U", "V", "Rx", "Ry"]
 
 
 # ------------------------------------------------------------ winmm API --
@@ -114,10 +161,17 @@ def _winmm():
         return None
 
 
-def enumerate_devices():
-    """Every game controller Windows' joystick API can enumerate:
-    [{index, name, vid, pid, ranges:[(min,max)×6], num_axes,
-    num_buttons, responding}].
+def _enumerate_winmm():
+    """Every game controller the LEGACY winmm joystick API can
+    enumerate: [{index, name, vid, pid, ranges:[(min,max)×6],
+    num_axes, num_buttons, responding, backend:"winmm"}].
+
+    Since v2.7 this is the fallback path (used only when
+    DirectInput cannot initialise) and the calibration wizard's
+    view. Its limits are why it is no longer primary: identical
+    generic names on distinct devices, six axis slots with no
+    Rx/Ry, and — on the founder's rig — pedal axes that simply
+    never move in its reports.
 
     A device whose caps read fine but which does not answer
     joyGetPosEx right now (asleep, still waking, slow to its first
@@ -157,35 +211,45 @@ def enumerate_devices():
             "num_axes": int(caps.wNumAxes) or MAX_AXES,
             "num_buttons": int(caps.wNumButtons),
             "responding": bool(responding),
+            "backend": "winmm",
         })
     return out
 
 
 def list_devices():
-    """Connected (answering) game controllers — the v2.5 view, kept
-    for the calibration wizard and any caller that needs devices it
-    can read this instant. The streamer works from the full
+    """Connected (answering) game controllers in the winmm view —
+    the calibration wizard reads axes through read_axes(), which
+    is winmm, so the wizard keeps enumerating through winmm too
+    (unchanged since v2.5). The streamer works from the full
     enumerate_devices() union instead."""
-    return [d for d in enumerate_devices() if d["responding"]]
+    return [d for d in _enumerate_winmm() if d["responding"]]
 
 
 def device_signature(devices):
     """Stable identity of a device SET: two enumerations with the
     same signature are the same rig in the same state. The first
     five fields are a device's identity; the sixth is whether it is
-    answering right now."""
+    answering right now. Under DirectInput the identity slot is the
+    device's instance GUID, not its enumeration position — DI can
+    renumber a set between polls without the set changing, and a
+    renumbering must not read as a device-set change."""
     return tuple(sorted(
-        (d["index"], d.get("vid"), d.get("pid"), d["name"],
-         d["num_axes"], bool(d.get("responding", True)))
+        (d.get("key") or d["index"], d.get("vid"), d.get("pid"),
+         d["name"], d["num_axes"], bool(d.get("responding", True)))
         for d in devices))
 
 
 def _device_public(d):
-    return {"index": d["index"], "name": d["name"],
-            "vid": d.get("vid"), "pid": d.get("pid"),
-            "numAxes": d["num_axes"],
-            "numButtons": d.get("num_buttons"),
-            "responding": bool(d.get("responding", True))}
+    pub = {"index": d["index"], "name": d["name"],
+           "vid": d.get("vid"), "pid": d.get("pid"),
+           "numAxes": d["num_axes"],
+           "numButtons": d.get("num_buttons"),
+           "responding": bool(d.get("responding", True))}
+    if d.get("backend"):
+        pub["backend"] = d["backend"]
+    if d.get("key"):
+        pub["key"] = d["key"]
+    return pub
 
 
 def inventory_event(devices, reason, mapper=None):
@@ -202,6 +266,7 @@ def inventory_event(devices, reason, mapper=None):
         "reason": reason,
         "devices": [_device_public(d) for d in devices],
         "observedDevices": [d["index"] for d in devices],
+        "inputApi": input_api(),
         "selection": "union — streamer reads every enumerated "
                      "controller; auto-mapper assigns channels per "
                      "(device, axis)",
@@ -214,7 +279,10 @@ def inventory_event(devices, reason, mapper=None):
 
 
 def read_axes(index, ranges):
-    """Raw axis positions normalized 0..1 by the device caps range."""
+    """winmm: raw axis positions normalized 0..1 by the device caps
+    range. Returns a MAX_AXES (6) list or None. Since v2.7 the
+    streamer reads through _read_device(), which dispatches here
+    only for winmm-enumerated devices (the fallback + the wizard)."""
     mm = _winmm()
     if mm is None:
         return None
@@ -230,6 +298,576 @@ def read_axes(index, ranges):
         span = max(hi - lo, 1)
         out.append(min(1.0, max(0.0, (v - lo) / span)))
     return out
+
+
+# ------------------------------------------------- DirectInput (v2.7) --
+#
+# IDirectInput8 through pure ctypes COM: no headers, no third-party
+# packages — the vtable layouts, structures and constants below are
+# dinput.h transcribed. COM functions are called through function
+# pointers read out of the object's vtable; prototypes use
+# WINFUNCTYPE (stdcall) where the platform has it.
+#
+# DIJOYSTATE2 byte offsets (the state buffer GetDeviceState fills
+# under the c_dfDIJoystick2 data format we build below):
+#   lX 0 · lY 4 · lZ 8 · lRx 12 · lRy 16 · lRz 20 ·
+#   rglSlider 24/28 · rgdwPOV 32..47 · rgbButtons 48..175 ·
+#   velocity/acceleration/force blocks 176..271 — 272 bytes total.
+# Our snapshot slots read [lX, lY, lZ, lRz, slider0, slider1, lRx,
+# lRy] — see the AXIS_NAMES table at the top of the module.
+
+import uuid  # GUID <-> bytes_le is exactly the COM GUID memory layout
+
+_FT = getattr(ctypes, "WINFUNCTYPE", ctypes.CFUNCTYPE)  # stdcall on Win
+_HRESULT = ctypes.c_long
+_THIS = ctypes.c_void_p
+
+_DI_VERSION = 0x0800
+_DI8DEVCLASS_GAMECTRL = 4
+_DIEDFL_ATTACHEDONLY = 0x00000001
+_DIENUM_CONTINUE = 1
+_DISCL_NONEXCLUSIVE = 0x00000002
+_DISCL_BACKGROUND = 0x00000008
+_DIPH_DEVICE = 0
+_DIPH_BYOFFSET = 2
+# Property identifiers are pseudo-GUIDs: small integers carried in a
+# GUID* (MAKEDIPROP in dinput.h). A device that doesn't know one
+# fails the call and we fall back — see _di_vidpid/_di_range.
+_DIPROP_RANGE_PROP = 4
+_DIPROP_VIDPID_PROP = 11
+_DIDF_ABSAXIS = 0x00000001
+_DIDFT_OPTIONAL = 0x80000000
+_DIDFT_AXIS = 0x00000003
+_DIDFT_BUTTON = 0x0000000C
+_DIDFT_POV = 0x00000010
+_DIDFT_ANYINSTANCE = 0x00FFFF00
+
+_DI_STATE_SIZE = 272          # sizeof(DIJOYSTATE2)
+# Snapshot slot -> DIJOYSTATE2 byte offset, in AXIS_NAMES order.
+_DI_SLOT_OFFSETS = [0, 4, 8, 20, 24, 28, 12, 16]
+_DI_DEF_RANGE = (0, 65535)
+
+
+class _GUID(ctypes.Structure):
+    _fields_ = [("Data1", ctypes.c_uint32), ("Data2", ctypes.c_uint16),
+                ("Data3", ctypes.c_uint16),
+                ("Data4", ctypes.c_ubyte * 8)]
+
+
+def _make_guid(text):
+    g = _GUID()
+    ctypes.memmove(ctypes.byref(g), uuid.UUID(text).bytes_le, 16)
+    return g
+
+
+def _guid_text(g):
+    return str(uuid.UUID(
+        bytes_le=ctypes.string_at(ctypes.byref(g), 16)))
+
+
+_IID_IDirectInput8W = "{7844E811-73A5-11CF-9C04-00AA0061AC3C}"
+_GUID_XAXIS = _make_guid("{A36D02E0-C9F3-11CF-BFC7-444553540000}")
+_GUID_YAXIS = _make_guid("{A36D02E1-C9F3-11CF-BFC7-444553540000}")
+_GUID_ZAXIS = _make_guid("{A36D02E2-C9F3-11CF-BFC7-444553540000}")
+_GUID_RXAXIS = _make_guid("{A36D02F4-C9F3-11CF-BFC7-444553540000}")
+_GUID_RYAXIS = _make_guid("{A36D02F5-C9F3-11CF-BFC7-444553540000}")
+_GUID_RZAXIS = _make_guid("{A36D02F6-C9F3-11CF-BFC7-444553540000}")
+_GUID_SLIDER = _make_guid("{A36D02E4-C9F3-11CF-BFC7-444553540000}")
+_GUID_POV = _make_guid("{A36D02F2-C9F3-11CF-BFC7-444553540000}")
+_GUID_BUTTON = _make_guid("{A36D02E8-C9F3-11CF-BFC7-444553540000}")
+
+
+class _DIDEVICEINSTANCEW(ctypes.Structure):
+    _fields_ = [
+        ("dwSize", ctypes.c_uint32), ("guidInstance", _GUID),
+        ("guidProduct", _GUID), ("dwDevType", ctypes.c_uint32),
+        ("tszInstanceName", ctypes.c_wchar * 260),
+        ("tszProductName", ctypes.c_wchar * 260),
+        ("guidFFDriver", _GUID),
+        ("wUsagePage", ctypes.c_uint16), ("wUsage", ctypes.c_uint16),
+    ]
+
+
+class _DIDEVCAPS(ctypes.Structure):
+    _fields_ = [(n, ctypes.c_uint32) for n in (
+        "dwSize", "dwFlags", "dwDevType", "dwAxes", "dwButtons",
+        "dwPOVs", "dwFFSamplePeriod", "dwFFMinTimeResolution",
+        "dwFirmwareRevision", "dwHardwareRevision",
+        "dwFFDriverVersion")]
+
+
+class _DIPROPHEADER(ctypes.Structure):
+    _fields_ = [("dwSize", ctypes.c_uint32),
+                ("dwHeaderSize", ctypes.c_uint32),
+                ("dwObj", ctypes.c_uint32), ("dwHow", ctypes.c_uint32)]
+
+
+class _DIPROPDWORD(ctypes.Structure):
+    _fields_ = [("diph", _DIPROPHEADER), ("dwData", ctypes.c_uint32)]
+
+
+class _DIPROPRANGE(ctypes.Structure):
+    _fields_ = [("diph", _DIPROPHEADER), ("lMin", ctypes.c_long),
+                ("lMax", ctypes.c_long)]
+
+
+class _DIOBJECTDATAFORMAT(ctypes.Structure):
+    _fields_ = [("pguid", ctypes.POINTER(_GUID)),
+                ("dwOfs", ctypes.c_uint32),
+                ("dwType", ctypes.c_uint32),
+                ("dwFlags", ctypes.c_uint32)]
+
+
+class _DIDATAFORMAT(ctypes.Structure):
+    _fields_ = [("dwSize", ctypes.c_uint32),
+                ("dwObjSize", ctypes.c_uint32),
+                ("dwFlags", ctypes.c_uint32),
+                ("dwDataSize", ctypes.c_uint32),
+                ("dwNumObjs", ctypes.c_uint32),
+                ("rgodf", ctypes.POINTER(_DIOBJECTDATAFORMAT))]
+
+
+def _joystick2_format():
+    """c_dfDIJoystick2, rebuilt: DIJOYSTATE2's 140 objects in
+    c_df order (axes X/Y/Z/Rx/Ry/Rz, 2 sliders, 4 POVs, 128 buttons),
+    every object OPTIONAL so a device missing one is skipped rather
+    than failing SetDataFormat. Returns (format, objects) — the
+    objects array must stay alive across the SetDataFormat call."""
+    spec = []
+    for guid, ofs in ((_GUID_XAXIS, 0), (_GUID_YAXIS, 4),
+                      (_GUID_ZAXIS, 8), (_GUID_RXAXIS, 12),
+                      (_GUID_RYAXIS, 16), (_GUID_RZAXIS, 20),
+                      (_GUID_SLIDER, 24), (_GUID_SLIDER, 28)):
+        spec.append((guid, ofs, _DIDFT_AXIS))
+    for n in range(4):
+        spec.append((_GUID_POV, 32 + 4 * n, _DIDFT_POV))
+    for n in range(128):
+        spec.append((_GUID_BUTTON, 48 + n, _DIDFT_BUTTON))
+    objs = (_DIOBJECTDATAFORMAT * len(spec))()
+    for i, (guid, ofs, kind) in enumerate(spec):
+        objs[i].pguid = ctypes.pointer(guid)
+        objs[i].dwOfs = ofs
+        objs[i].dwType = _DIDFT_OPTIONAL | kind | _DIDFT_ANYINSTANCE
+        objs[i].dwFlags = 0
+    fmt = _DIDATAFORMAT()
+    fmt.dwSize = ctypes.sizeof(_DIDATAFORMAT)
+    fmt.dwObjSize = ctypes.sizeof(_DIOBJECTDATAFORMAT)
+    fmt.dwFlags = _DIDF_ABSAXIS
+    fmt.dwDataSize = _DI_STATE_SIZE
+    fmt.dwNumObjs = len(spec)
+    fmt.rgodf = objs
+    return fmt, objs
+
+
+# COM vtable method prototypes (index in the interface's vtable).
+def _vt(obj, index, proto):
+    vtbl = ctypes.cast(
+        obj, ctypes.POINTER(ctypes.POINTER(ctypes.c_void_p))).contents
+    return proto(vtbl[index])
+
+
+# IDirectInput8: 3 CreateDevice, 4 EnumDevices
+_DI_CreateDevice = _FT(_HRESULT, _THIS, ctypes.c_void_p,
+                       ctypes.c_void_p, ctypes.c_void_p)
+_DI_EnumDevices = _FT(_HRESULT, _THIS, ctypes.c_uint32, ctypes.c_void_p,
+                      ctypes.c_void_p, ctypes.c_uint32)
+# IDirectInputDevice8: 2 Release, 3 GetCapabilities, 5 GetProperty,
+# 7 Acquire, 8 Unacquire, 9 GetDeviceState, 11 SetDataFormat,
+# 13 SetCooperativeLevel, 25 Poll
+_DEV_Release = _FT(ctypes.c_ulong, _THIS)
+_DEV_GetCapabilities = _FT(_HRESULT, _THIS, ctypes.c_void_p)
+_DEV_GetProperty = _FT(_HRESULT, _THIS, ctypes.c_void_p, ctypes.c_void_p)
+_DEV_Acquire = _FT(_HRESULT, _THIS)
+_DEV_Unacquire = _FT(_HRESULT, _THIS)
+_DEV_GetDeviceState = _FT(_HRESULT, _THIS, ctypes.c_uint32,
+                          ctypes.c_void_p)
+_DEV_SetDataFormat = _FT(_HRESULT, _THIS, ctypes.c_void_p)
+_DEV_SetCooperativeLevel = _FT(_HRESULT, _THIS, ctypes.c_void_p,
+                               ctypes.c_uint32)
+_DEV_Poll = _FT(_HRESULT, _THIS)
+_EnumCallback = _FT(ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p)
+
+_VT = {"create": 3, "enum": 4}
+_DVT = {"release": 2, "caps": 3, "getprop": 5, "acquire": 7,
+        "unacquire": 8, "state": 9, "format": 11, "coop": 13,
+        "poll": 25}
+
+
+def _di_create(dll):
+    proto = _FT(_HRESULT, ctypes.c_void_p, ctypes.c_uint32,
+                ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p)
+    return proto(("DirectInput8Create", dll))
+
+
+def _di_vidpid(dev, guid_product):
+    """(vid, pid) for a DI device, or (None, None). Two routes,
+    each failure-tolerant: DIPROP_VIDPID (the low word is the
+    vendor ID, the high word the product ID), then the documented
+    HID behaviour that guidProduct's Data1 is MAKELONG(VID, PID)
+    (Microsoft's own IsXInputDevice sample relies on it)."""
+    try:
+        prop = _DIPROPDWORD()
+        prop.diph.dwSize = ctypes.sizeof(_DIPROPDWORD)
+        prop.diph.dwHeaderSize = ctypes.sizeof(_DIPROPHEADER)
+        prop.diph.dwObj = 0
+        prop.diph.dwHow = _DIPH_DEVICE
+        hr = _vt(dev, _DVT["getprop"], _DEV_GetProperty)(
+            dev, ctypes.c_void_p(_DIPROP_VIDPID_PROP),
+            ctypes.addressof(prop))
+        if hr == 0 and prop.dwData:
+            return prop.dwData & 0xFFFF, (prop.dwData >> 16) & 0xFFFF
+    except Exception:
+        pass
+    try:
+        data1 = guid_product.Data1
+        vid, pid = data1 & 0xFFFF, (data1 >> 16) & 0xFFFF
+        if vid:
+            return vid, pid
+    except Exception:
+        pass
+    return None, None
+
+
+def _di_range(dev, ofs):
+    """DIPROP_RANGE for one axis object (by DIJOYSTATE2 offset), or
+    the DI default. Failure-tolerant on purpose: the mapper learns
+    rest/full from observed travel anyway — this only scales the
+    snapshot into 0..1 the way the device itself reports."""
+    try:
+        rng = _DIPROPRANGE()
+        rng.diph.dwSize = ctypes.sizeof(_DIPROPRANGE)
+        rng.diph.dwHeaderSize = ctypes.sizeof(_DIPROPHEADER)
+        rng.diph.dwObj = ofs
+        rng.diph.dwHow = _DIPH_BYOFFSET
+        hr = _vt(dev, _DVT["getprop"], _DEV_GetProperty)(
+            dev, ctypes.c_void_p(_DIPROP_RANGE_PROP),
+            ctypes.addressof(rng))
+        if hr == 0 and rng.lMax > rng.lMin:
+            return int(rng.lMin), int(rng.lMax)
+    except Exception:
+        pass
+    return _DI_DEF_RANGE
+
+
+class _DiDevice:
+    """One opened IDirectInputDevice8, read-ready. Created lazily
+    by the backend's reader cache; a read that fails re-acquires
+    once and retries before reporting the device silent."""
+
+    def __init__(self, backend, guid_instance):
+        self._be = backend
+        self._guid = guid_instance    # _GUID (owned copy)
+        self._dev = None
+
+    def _open(self):
+        dev = self._be._create_device(self._guid)
+        if dev is None:
+            return False
+        try:
+            fmt, _objs = _joystick2_format()  # array lives for the call
+            hr = _vt(dev, _DVT["format"], _DEV_SetDataFormat)(
+                dev, ctypes.addressof(fmt))
+            if hr != 0:
+                self._release(dev)
+                return False
+            hwnd = self._be._coop_hwnd()
+            if hwnd:
+                # DISCL_BACKGROUND | DISCL_NONEXCLUSIVE: read the
+                # rig while the game owns the foreground, share it
+                # with every other tool. A failure here is not
+                # fatal — acquisition decides what we can read.
+                try:
+                    _vt(dev, _DVT["coop"], _DEV_SetCooperativeLevel)(
+                        dev, hwnd,
+                        _DISCL_BACKGROUND | _DISCL_NONEXCLUSIVE)
+                except Exception:
+                    pass
+            _vt(dev, _DVT["acquire"], _DEV_Acquire)(dev)
+        except Exception:
+            self._release(dev)
+            return False
+        self._dev = dev
+        return True
+
+    @staticmethod
+    def _release(dev):
+        try:
+            _vt(dev, _DVT["release"], _DEV_Release)(dev)
+        except Exception:
+            pass
+
+    def close(self):
+        if self._dev is not None:
+            try:
+                _vt(self._dev, _DVT["unacquire"], _DEV_Unacquire)(
+                    self._dev)
+            except Exception:
+                pass
+            self._release(self._dev)
+            self._dev = None
+
+    def read(self, ranges):
+        """8 normalized axis values (AXIS_NAMES order), or None."""
+        if self._dev is None and not self._open():
+            return None
+        buf = ctypes.create_string_buffer(_DI_STATE_SIZE)
+        for attempt in (0, 1):
+            try:
+                _vt(self._dev, _DVT["poll"], _DEV_Poll)(self._dev)
+                hr = _vt(self._dev, _DVT["state"], _DEV_GetDeviceState)(
+                    self._dev, _DI_STATE_SIZE, ctypes.addressof(buf))
+            except Exception:
+                hr = -1
+            if hr == 0:
+                break
+            if attempt == 0:
+                # Input lost / not acquired (the game took the
+                # foreground, a replug): re-acquire and retry once.
+                try:
+                    _vt(self._dev, _DVT["acquire"], _DEV_Acquire)(
+                        self._dev)
+                except Exception:
+                    pass
+        else:
+            return None
+        out = []
+        for slot, ofs in enumerate(_DI_SLOT_OFFSETS):
+            raw = struct.unpack_from("<l", buf.raw, ofs)[0]
+            lo, hi = ranges[slot] if slot < len(ranges) \
+                else _DI_DEF_RANGE
+            span = max(hi - lo, 1)
+            out.append(min(1.0, max(0.0, (raw - lo) / span)))
+        return out
+
+
+class _WNDCLASSW(ctypes.Structure):
+    _fields_ = [("style", ctypes.c_uint),
+                ("lpfnWndProc", ctypes.c_void_p),
+                ("cbClsExtra", ctypes.c_int),
+                ("cbWndExtra", ctypes.c_int),
+                ("hInstance", ctypes.c_void_p),
+                ("hIcon", ctypes.c_void_p),
+                ("hCursor", ctypes.c_void_p),
+                ("hbrBackground", ctypes.c_void_p),
+                ("lpszMenuName", ctypes.c_wchar_p),
+                ("lpszClassName", ctypes.c_wchar_p)]
+
+
+class _DirectInput8:
+    """The DirectInput backend: enumerate + read. Construction IS
+    the initialisation test — any failure raises, and the module
+    falls back to winmm for the life of the process."""
+
+    API = "directinput"
+
+    def __init__(self):
+        if os.name != "nt":
+            raise RuntimeError("DirectInput is Windows-only")
+        dll = ctypes.WinDLL("dinput8.dll")
+        k32 = ctypes.windll.kernel32
+        k32.GetModuleHandleW.restype = ctypes.c_void_p
+        hinst = k32.GetModuleHandleW(None)
+        iid = _make_guid(_IID_IDirectInput8W)
+        out = ctypes.c_void_p()
+        hr = _di_create(dll)(hinst, _DI_VERSION,
+                             ctypes.addressof(iid),
+                             ctypes.addressof(out), None)
+        if hr != 0 or not out.value:
+            raise RuntimeError(f"DirectInput8Create failed: {hr:#x}")
+        self._di = out.value
+        self._readers = {}     # instance-guid text -> _DiDevice
+        self._hwnd = False     # False = untried, None = unavailable
+
+    # ---------------------------------------------------------- com --
+
+    def _create_device(self, guid_instance):
+        out = ctypes.c_void_p()
+        try:
+            hr = _vt(self._di, _VT["create"], _DI_CreateDevice)(
+                self._di, ctypes.addressof(guid_instance),
+                ctypes.addressof(out), None)
+        except Exception:
+            return None
+        return out.value if hr == 0 and out.value else None
+
+    def _enum_instances(self):
+        """[(guidInstance _GUID, productName, instanceName,
+        guidProduct _GUID)] for every ATTACHED game controller."""
+        found = []
+
+        def _cb(ptr, _ref):
+            try:
+                inst = ctypes.cast(
+                    ptr, ctypes.POINTER(_DIDEVICEINSTANCEW)).contents
+                gi, gp = _GUID(), _GUID()
+                ctypes.memmove(ctypes.byref(gi),
+                               ctypes.byref(inst.guidInstance), 16)
+                ctypes.memmove(ctypes.byref(gp),
+                               ctypes.byref(inst.guidProduct), 16)
+                found.append((gi, inst.tszProductName or "",
+                              inst.tszInstanceName or "", gp))
+            except Exception:
+                pass
+            return _DIENUM_CONTINUE
+
+        cb = _EnumCallback(_cb)
+        try:
+            _vt(self._di, _VT["enum"], _DI_EnumDevices)(
+                self._di, _DI8DEVCLASS_GAMECTRL, cb, None,
+                _DIEDFL_ATTACHEDONLY)
+        except Exception:
+            return []
+        return found
+
+    def _coop_hwnd(self):
+        """A never-shown window of our own process for
+        SetCooperativeLevel (BACKGROUND needs a window handle).
+        The window proc is user32's DefWindowProcW itself, so no
+        Python callback has to outlive anything. Any failure ->
+        None: cooperative level is skipped, reads still work for
+        devices that acquire without it."""
+        if self._hwnd is not False:
+            return self._hwnd
+        self._hwnd = None
+        try:
+            user32 = ctypes.windll.user32
+            k32 = ctypes.windll.kernel32
+            k32.GetModuleHandleW.restype = ctypes.c_void_p
+            user32.CreateWindowExW.restype = ctypes.c_void_p
+            wc = _WNDCLASSW()
+            wc.lpfnWndProc = ctypes.cast(
+                user32.DefWindowProcW, ctypes.c_void_p).value
+            wc.hInstance = k32.GetModuleHandleW(None)
+            wc.lpszClassName = "RaceHeroLinkDI"
+            user32.RegisterClassW(ctypes.byref(wc))  # may already exist
+            hwnd = user32.CreateWindowExW(
+                0, "RaceHeroLinkDI", "RaceHero Link", 0,
+                0, 0, 0, 0, None, None, wc.hInstance, None)
+            self._hwnd = hwnd or None
+        except Exception:
+            self._hwnd = None
+        return self._hwnd
+
+    # ------------------------------------------------------ backend --
+
+    def enumerate(self):
+        """The DI device dicts (same shape as _enumerate_winmm's,
+        plus backend/key and EIGHT ranges). Identity comes from a
+        brief CreateDevice probe per device (caps, VID/PID, axis
+        ranges) — created and released here; the streaming readers
+        open their own handles lazily in read()."""
+        out = []
+        live_keys = set()
+        for i, (gi, prod_name, inst_name, gp) in enumerate(
+                self._enum_instances()):
+            key = _guid_text(gi)
+            live_keys.add(key)
+            name = (prod_name or inst_name
+                    or f"Controller {i + 1}").strip()
+            vid = pid = None
+            num_axes, num_buttons = DI_MAX_AXES, 0
+            ranges = [_DI_DEF_RANGE] * DI_MAX_AXES
+            responding = False
+            dev = self._create_device(gi)
+            if dev is not None:
+                responding = True
+                try:
+                    caps = _DIDEVCAPS()
+                    caps.dwSize = ctypes.sizeof(_DIDEVCAPS)
+                    if _vt(dev, _DVT["caps"], _DEV_GetCapabilities)(
+                            dev, ctypes.addressof(caps)) == 0:
+                        num_axes = min(int(caps.dwAxes), DI_MAX_AXES) \
+                            or DI_MAX_AXES
+                        num_buttons = int(caps.dwButtons)
+                    vid, pid = _di_vidpid(dev, gp)
+                    ranges = [_di_range(dev, ofs)
+                              for ofs in _DI_SLOT_OFFSETS]
+                except Exception:
+                    pass
+                _DiDevice._release(dev)
+            out.append({
+                "index": i, "name": name, "vid": vid, "pid": pid,
+                "ranges": ranges, "num_axes": num_axes,
+                "num_buttons": num_buttons,
+                "responding": responding,
+                "backend": "di", "key": key,
+            })
+        # Forget readers for devices that have left the set, so a
+        # replugged namesake never inherits a dead handle.
+        for key in list(self._readers):
+            if key not in live_keys:
+                self._readers.pop(key).close()
+        return out
+
+    def read(self, dev):
+        reader = self._readers.get(dev.get("key") or "")
+        if reader is None:
+            try:
+                guid = _make_guid(dev["key"])
+            except Exception:
+                return None
+            reader = _DiDevice(self, guid)
+            self._readers[dev["key"]] = reader
+        return reader.read(dev.get("ranges")
+                           or [_DI_DEF_RANGE] * DI_MAX_AXES)
+
+
+_DI_TRIED = False
+_DI_BACKEND = None
+_DI_FALLBACK = False
+
+
+def _di():
+    """The process-wide DirectInput backend, or None. Tried once:
+    before Windows there is nothing to try; ON Windows a failed
+    init means the winmm fallback for the rest of the run, and
+    _DI_FALLBACK remembers so the heartbeat can say so."""
+    global _DI_TRIED, _DI_BACKEND, _DI_FALLBACK
+    if _DI_TRIED:
+        return _DI_BACKEND
+    _DI_TRIED = True
+    if os.name != "nt":
+        return None
+    try:
+        _DI_BACKEND = _DirectInput8()
+    except Exception:
+        _DI_BACKEND = None
+        _DI_FALLBACK = True
+    return _DI_BACKEND
+
+
+def di_fallback_active():
+    """True when DirectInput failed to initialise on Windows and
+    devices are being read through legacy winmm instead."""
+    _di()
+    return _DI_FALLBACK
+
+
+def input_api():
+    return "directinput" if _di() is not None else "winmm"
+
+
+def enumerate_devices():
+    """Every game controller the ACTIVE reader can enumerate —
+    DirectInput since v2.7 (real product names, VID/PID identity,
+    eight axis slots), winmm when DirectInput is unavailable.
+    [{index, name, vid, pid, ranges, num_axes, num_buttons,
+    responding, backend, key?}] — see _enumerate_winmm for why
+    non-answering devices are included rather than dropped."""
+    be = _di()
+    if be is not None:
+        return be.enumerate()
+    return _enumerate_winmm()
+
+
+def _read_device(d):
+    """One tick of axes (0..1 list) for an enumerated device dict,
+    through whichever reader enumerated it; None if it does not
+    answer this tick."""
+    if d.get("backend") == "di":
+        be = _di()
+        return be.read(d) if be is not None else None
+    return read_axes(d["index"], d["ranges"])
 
 
 # ------------------------------------------------------------- mapping ---
@@ -1106,6 +1744,27 @@ class InputStreamer(threading.Thread):
         return m.status_text() if m is not None \
             else "Pedals: no controllers yet"
 
+    def _heartbeat_event(self, label, mapper, devices, now):
+        """The 60 s funnel heartbeat payload. v2.7 adds which input
+        API is reading the rig — and, when DirectInput failed to
+        initialise and the legacy winmm reader took over, a
+        "diFallback": true flag so that state is visible from the
+        funnel instead of masquerading as a healthy DI rig."""
+        ev = {
+            "event": "heartbeat",
+            "hidDevice": label,
+            "calibrated": mapper.locked,
+            "devicePresent": True,
+            "framesSent": self._frames_sent,
+            "deviceCount": len(devices),
+            "inputApi": input_api(),
+            "axes": mapper.axis_activity(now),
+            "mapper": mapper.diagnostics(),
+        }
+        if di_fallback_active():
+            ev["diFallback"] = True
+        return ev
+
     def run(self):
         # NEVER die silently. The v2.2 streamer listed controllers once
         # at startup and exited if none were visible — wheels wake up
@@ -1169,7 +1828,7 @@ class InputStreamer(threading.Thread):
             snapshot = {}
             any_ok = False
             for d in devices:
-                axes = read_axes(d["index"], d["ranges"])
+                axes = _read_device(d)
                 snapshot[d["index"]] = axes
                 if axes is not None:
                     any_ok = True
@@ -1230,22 +1889,14 @@ class InputStreamer(threading.Thread):
             ever_ok = True
             mapper.observe(snapshot, now)
             if now - last_hb >= 60.0:
-                # Funnel heartbeat (v2.5, extended v2.6): proof of
-                # life with the numbers a remote diagnosis needs —
-                # no payload data; v2.6 adds per-axis activity and
+                # Funnel heartbeat (v2.5, extended v2.6/v2.7): proof
+                # of life with the numbers a remote diagnosis needs
+                # — no payload data; v2.6 adds per-axis activity and
                 # the mapper's candidate state, so a silent axis is
                 # attributable to a device, an axis, or a stage.
                 last_hb = now
-                self._emit_event({
-                    "event": "heartbeat",
-                    "hidDevice": label,
-                    "calibrated": mapper.locked,
-                    "devicePresent": True,
-                    "framesSent": self._frames_sent,
-                    "deviceCount": len(devices),
-                    "axes": mapper.axis_activity(now),
-                    "mapper": mapper.diagnostics(),
-                })
+                self._emit_event(
+                    self._heartbeat_event(label, mapper, devices, now))
             ip = self.get_phone_ip()
             if not ip:
                 continue
@@ -1296,7 +1947,7 @@ def _snapshot_all(devices):
     """{(device_index, axis): value} for every connected controller."""
     snap = {}
     for d in devices:
-        axes = read_axes(d["index"], d["ranges"])
+        axes = _read_device(d)
         if axes is None:
             continue
         for a, v in enumerate(axes):
