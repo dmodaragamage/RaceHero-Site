@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-RaceHero Link — dev-funnel diagnostics poster (v2.7, stdlib only).
+RaceHero Link — dev-funnel diagnostics poster (v2.7.1, stdlib only).
 
 Link's PC-side problems (a wheel that vanished, an auto-map that
 wouldn't lock, a stream that died) used to be inferable only from
@@ -27,6 +27,12 @@ moment they happen:
     ("inputApi": "directinput" | "winmm") and carries
     "diFallback": true when DirectInput failed to initialise and
     the legacy winmm reader took over.
+    v2.7.1 adds the failure DETAIL that flag never had: a di_error
+    event the moment any DirectInput stage fails (stage name,
+    exception, HRESULT), an input_api event on every API
+    transition, and a "diError" field in every heartbeat while
+    DirectInput is unhealthy — the fallback can never be silent
+    again.
 
 Design rules, in order:
   * NEVER block or delay the HID stream. post() only enqueues;
@@ -52,7 +58,7 @@ import time
 import urllib.error
 import urllib.request
 
-LINK_VERSION = "2.7"
+LINK_VERSION = "2.7.1"
 FUNNEL_URL = "https://racehero.ca/api/dev-ingest"
 FUNNEL_TOKEN = "fdfacc39fd1d684572fd573afb12b9ce56f06f0cc4c1798c88b2d49bb09c139f"
 ENABLED = True

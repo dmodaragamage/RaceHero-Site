@@ -81,6 +81,30 @@ unchanged; a map saved in the winmm era re-resolves by VID/PID
 under DirectInput (axis slots 0-5 mean the same physical axes in
 both layouts) or invalidates and relearns, exactly as v2.6.1
 maps do.
+
+v2.7.1 is the silence killer. v2.7's first night on the founder's
+real machine fell back to winmm for the WHOLE session and nobody
+could say why — _di() swallowed the init exception, so the only
+evidence was "diFallback": true in the heartbeats. The post-mortem
+audit (two independent dinput.h transcriptions diffed against this
+file, slot by slot and value by value) found the vtable indices
+and struct layouts transcribed correctly but FOUR constants wrong:
+the IID_IDirectInput8W below carried a DX7-era GUID the in-box
+dinput8.dll does not recognise (DirectInput8Create answers
+E_NOINTERFACE — that was the init failure); GUID_RzAxis and
+GUID_Button had wrong Data1 values (the Rz error alone would have
+kept the P1000 throttle at 0 even with DirectInput up); and
+DIPROP_VIDPID / DIPH_BYOFFSET carried the wrong MAKEDIPROP/DIPH
+numbers (both masked by fallbacks). All four are fixed. And the
+defect class is closed structurally: every DirectInput stage —
+DLL load, DirectInput8Create, EnumDevices, CreateDevice,
+GetCapabilities, SetDataFormat, SetCooperativeLevel, Acquire,
+first Poll/GetDeviceState — records a staged di_error funnel
+event (stage, exception, HRESULT) on failure, every heartbeat
+carries the current problem as "diError" until DirectInput is
+healthy, an input_api event fires on any API transition, and a
+SetCooperativeLevel failure is non-fatal (BACKGROUND reads can
+proceed without it) but reported. No silent fallback, ever again.
 """
 
 import ctypes
@@ -329,12 +353,16 @@ _DIENUM_CONTINUE = 1
 _DISCL_NONEXCLUSIVE = 0x00000002
 _DISCL_BACKGROUND = 0x00000008
 _DIPH_DEVICE = 0
-_DIPH_BYOFFSET = 2
+_DIPH_BYOFFSET = 1   # dinput.h: DIPH_DEVICE 0, DIPH_BYOFFSET 1,
+                     # DIPH_BYID 2 (v2.7 shipped 2 — wrong)
 # Property identifiers are pseudo-GUIDs: small integers carried in a
 # GUID* (MAKEDIPROP in dinput.h). A device that doesn't know one
 # fails the call and we fall back — see _di_vidpid/_di_range.
 _DIPROP_RANGE_PROP = 4
-_DIPROP_VIDPID_PROP = 11
+_DIPROP_VIDPID_PROP = 24   # MAKEDIPROP(24); 11 is DIPROP_CALIBRATION
+                           # (v2.7 shipped 11 — the VID/PID property
+                           # never answered; the guidProduct fallback
+                           # in _di_vidpid masked it)
 _DIDF_ABSAXIS = 0x00000001
 _DIDFT_OPTIONAL = 0x80000000
 _DIDFT_AXIS = 0x00000003
@@ -365,16 +393,22 @@ def _guid_text(g):
         bytes_le=ctypes.string_at(ctypes.byref(g), 16)))
 
 
-_IID_IDirectInput8W = "{7844E811-73A5-11CF-9C04-00AA0061AC3C}"
+# IID_IDirectInput8W per dinput.h — verified against two
+# independent transcriptions of the header (Wine + mingw-w64).
+# v2.7 shipped the DX7-era IID {7844E811-73A5-11CF-9C04-00AA0061
+# AC3C} here; the in-box dinput8.dll does not recognise it, so
+# DirectInput8Create returned E_NOINTERFACE and DirectInput never
+# initialised on real Windows. This value is the convicted bug.
+_IID_IDirectInput8W = "{BF798031-483A-4DA2-AA99-5D64ED369700}"
 _GUID_XAXIS = _make_guid("{A36D02E0-C9F3-11CF-BFC7-444553540000}")
 _GUID_YAXIS = _make_guid("{A36D02E1-C9F3-11CF-BFC7-444553540000}")
 _GUID_ZAXIS = _make_guid("{A36D02E2-C9F3-11CF-BFC7-444553540000}")
 _GUID_RXAXIS = _make_guid("{A36D02F4-C9F3-11CF-BFC7-444553540000}")
 _GUID_RYAXIS = _make_guid("{A36D02F5-C9F3-11CF-BFC7-444553540000}")
-_GUID_RZAXIS = _make_guid("{A36D02F6-C9F3-11CF-BFC7-444553540000}")
+_GUID_RZAXIS = _make_guid("{A36D02E3-C9F3-11CF-BFC7-444553540000}")
 _GUID_SLIDER = _make_guid("{A36D02E4-C9F3-11CF-BFC7-444553540000}")
 _GUID_POV = _make_guid("{A36D02F2-C9F3-11CF-BFC7-444553540000}")
-_GUID_BUTTON = _make_guid("{A36D02E8-C9F3-11CF-BFC7-444553540000}")
+_GUID_BUTTON = _make_guid("{A36D02F0-C9F3-11CF-BFC7-444553540000}")
 
 
 class _DIDEVICEINSTANCEW(ctypes.Structure):
@@ -499,6 +533,107 @@ def _di_create(dll):
     return proto(("DirectInput8Create", dll))
 
 
+# ------------------------------------------- DI telemetry (v2.7.1) --
+#
+# Every DirectInput stage that can fail records what happened here:
+# a queued di_error funnel event (stage, exception type/message,
+# HRESULT where the stage produced one), a current-problem record
+# the heartbeat flattens into "diError", and an input_api event on
+# every API transition. The streamer drains the queue; nothing in
+# this block ever raises into the read path.
+
+_DI_EVENTS = []            # queued funnel events (dicts)
+_DI_EVENTS_LOCK = threading.Lock()
+_DI_ERROR = None           # blocking DI problem (init), dict | None
+_DI_NOTE = None            # latest non-blocking DI problem
+_DI_LAST_SIG = None        # (stage, error, hresult) last recorded
+_DI_API_STATE = None       # last input_api state reported
+
+
+class _DiHresultError(RuntimeError):
+    """A COM call returned a failing HRESULT; carries it so the
+    telemetry record can name it exactly."""
+
+    def __init__(self, what, hr):
+        super().__init__(f"{what} returned {hr & 0xFFFFFFFF:#010x}")
+        self.hresult = hr & 0xFFFFFFFF
+
+
+def _record_di_error(stage, exc=None, hresult=None, fatal=True):
+    """Record one DI stage failure. Identical consecutive failures
+    record once — the read path can fail at 50 Hz and the funnel
+    must not drown in copies of the same fact."""
+    global _DI_ERROR, _DI_NOTE, _DI_LAST_SIG
+    err = None
+    if exc is not None:
+        err = f"{type(exc).__name__}: {exc}"
+        if hresult is None:
+            hresult = getattr(exc, "hresult", None)
+    hr_txt = (f"{hresult & 0xFFFFFFFF:#010x}"
+              if hresult is not None else None)
+    sig = (stage, err, hr_txt)
+    with _DI_EVENTS_LOCK:
+        if sig == _DI_LAST_SIG:
+            return
+        _DI_LAST_SIG = sig
+        rec = {"stage": stage, "error": err, "hresult": hr_txt,
+               "fatal": bool(fatal)}
+        if fatal:
+            _DI_ERROR = rec
+        else:
+            _DI_NOTE = rec
+        _DI_EVENTS.append({"event": "di_error", **rec})
+
+
+def _clear_di_note(stage):
+    """A stage that just succeeded clears its own stale note, so a
+    recovered device stops reporting a problem it no longer has."""
+    global _DI_NOTE, _DI_LAST_SIG
+    with _DI_EVENTS_LOCK:
+        if _DI_NOTE is not None and _DI_NOTE["stage"] == stage:
+            _DI_NOTE = None
+            _DI_LAST_SIG = None
+
+
+def _record_api_state(api, reason):
+    """Queue an input_api event on TRANSITIONS only — the funnel
+    learns the moment DirectInput comes up or the fallback engages,
+    without heartbeat archaeology."""
+    global _DI_API_STATE
+    with _DI_EVENTS_LOCK:
+        if _DI_API_STATE == api:
+            return
+        _DI_API_STATE = api
+        _DI_EVENTS.append({"event": "input_api", "api": api,
+                           "reason": reason})
+
+
+def di_status():
+    """The current DI problem as one dict (the blocking init error
+    preferred over the latest non-blocking note), or None when
+    DirectInput is healthy."""
+    return _DI_ERROR or _DI_NOTE
+
+
+def di_error_text():
+    """di_status() flattened for the heartbeat — "stage: detail",
+    length-capped: WHICH stage died, visible at a glance."""
+    st = di_status()
+    if not st:
+        return None
+    detail = st.get("error") or st.get("hresult") or ""
+    return f"{st['stage']}: {detail}"[:220]
+
+
+def pop_di_events():
+    """Drain the queued DI telemetry events (streamer posts them
+    through its funnel emit callback)."""
+    with _DI_EVENTS_LOCK:
+        out = _DI_EVENTS[:]
+        del _DI_EVENTS[:]
+    return out
+
+
 def _di_vidpid(dev, guid_product):
     """(vid, pid) for a DI device, or (None, None). Two routes,
     each failure-tolerant: DIPROP_VIDPID (the low word is the
@@ -568,22 +703,36 @@ class _DiDevice:
             hr = _vt(dev, _DVT["format"], _DEV_SetDataFormat)(
                 dev, ctypes.addressof(fmt))
             if hr != 0:
+                _record_di_error("SetDataFormat", hresult=hr,
+                                 fatal=False)
                 self._release(dev)
                 return False
+            _clear_di_note("SetDataFormat")
             hwnd = self._be._coop_hwnd()
             if hwnd:
                 # DISCL_BACKGROUND | DISCL_NONEXCLUSIVE: read the
                 # rig while the game owns the foreground, share it
-                # with every other tool. A failure here is not
-                # fatal — acquisition decides what we can read.
+                # with every other tool. A failure here is NOT
+                # fatal — BACKGROUND reads can proceed without our
+                # never-shown window — but since v2.7.1 it is
+                # REPORTED (stage in the heartbeat's diError), not
+                # swallowed.
                 try:
-                    _vt(dev, _DVT["coop"], _DEV_SetCooperativeLevel)(
+                    hr = _vt(dev, _DVT["coop"],
+                             _DEV_SetCooperativeLevel)(
                         dev, hwnd,
                         _DISCL_BACKGROUND | _DISCL_NONEXCLUSIVE)
-                except Exception:
-                    pass
+                    if hr != 0:
+                        _record_di_error("SetCooperativeLevel",
+                                         hresult=hr, fatal=False)
+                    else:
+                        _clear_di_note("SetCooperativeLevel")
+                except Exception as exc:
+                    _record_di_error("SetCooperativeLevel", exc,
+                                     fatal=False)
             _vt(dev, _DVT["acquire"], _DEV_Acquire)(dev)
-        except Exception:
+        except Exception as exc:
+            _record_di_error("device_open", exc, fatal=False)
             self._release(dev)
             return False
         self._dev = dev
@@ -629,7 +778,14 @@ class _DiDevice:
                 except Exception:
                     pass
         else:
+            # Both attempts failed: say WHICH stage, once (the
+            # recorder dedupes) — a dead read must not be silent.
+            _record_di_error(
+                "GetDeviceState",
+                hresult=(hr if hr not in (0, -1) else None),
+                fatal=False)
             return None
+        _clear_di_note("GetDeviceState")
         out = []
         for slot, ofs in enumerate(_DI_SLOT_OFFSETS):
             raw = struct.unpack_from("<l", buf.raw, ofs)[0]
@@ -663,17 +819,29 @@ class _DirectInput8:
     def __init__(self):
         if os.name != "nt":
             raise RuntimeError("DirectInput is Windows-only")
-        dll = ctypes.WinDLL("dinput8.dll")
-        k32 = ctypes.windll.kernel32
-        k32.GetModuleHandleW.restype = ctypes.c_void_p
-        hinst = k32.GetModuleHandleW(None)
-        iid = _make_guid(_IID_IDirectInput8W)
-        out = ctypes.c_void_p()
-        hr = _di_create(dll)(hinst, _DI_VERSION,
-                             ctypes.addressof(iid),
-                             ctypes.addressof(out), None)
-        if hr != 0 or not out.value:
-            raise RuntimeError(f"DirectInput8Create failed: {hr:#x}")
+        # Staged init (v2.7.1): each stage names itself before it
+        # runs, so a failure is recorded against the stage that
+        # actually died — DLL load, module handle, or the create
+        # call itself (with its HRESULT).
+        stage = "dll_load"
+        try:
+            dll = ctypes.WinDLL("dinput8.dll")
+            stage = "get_module_handle"
+            k32 = ctypes.windll.kernel32
+            k32.GetModuleHandleW.restype = ctypes.c_void_p
+            hinst = k32.GetModuleHandleW(None)
+            stage = "DirectInput8Create"
+            iid = _make_guid(_IID_IDirectInput8W)
+            out = ctypes.c_void_p()
+            hr = _di_create(dll)(hinst, _DI_VERSION,
+                                 ctypes.addressof(iid),
+                                 ctypes.addressof(out), None)
+            if hr != 0 or not out.value:
+                raise _DiHresultError("DirectInput8Create", hr)
+        except Exception as exc:
+            _record_di_error(stage, exc)
+            raise
+        _record_api_state("directinput", "DirectInput8Create ok")
         self._di = out.value
         self._readers = {}     # instance-guid text -> _DiDevice
         self._hwnd = False     # False = untried, None = unavailable
@@ -686,9 +854,13 @@ class _DirectInput8:
             hr = _vt(self._di, _VT["create"], _DI_CreateDevice)(
                 self._di, ctypes.addressof(guid_instance),
                 ctypes.addressof(out), None)
-        except Exception:
+        except Exception as exc:
+            _record_di_error("CreateDevice", exc, fatal=False)
             return None
-        return out.value if hr == 0 and out.value else None
+        if hr != 0 or not out.value:
+            _record_di_error("CreateDevice", hresult=hr, fatal=False)
+            return None
+        return out.value
 
     def _enum_instances(self):
         """[(guidInstance _GUID, productName, instanceName,
@@ -715,7 +887,8 @@ class _DirectInput8:
             _vt(self._di, _VT["enum"], _DI_EnumDevices)(
                 self._di, _DI8DEVCLASS_GAMECTRL, cb, None,
                 _DIEDFL_ATTACHEDONLY)
-        except Exception:
+        except Exception as exc:
+            _record_di_error("EnumDevices", exc, fatal=False)
             return []
         return found
 
@@ -774,11 +947,15 @@ class _DirectInput8:
                 try:
                     caps = _DIDEVCAPS()
                     caps.dwSize = ctypes.sizeof(_DIDEVCAPS)
-                    if _vt(dev, _DVT["caps"], _DEV_GetCapabilities)(
-                            dev, ctypes.addressof(caps)) == 0:
+                    hr = _vt(dev, _DVT["caps"], _DEV_GetCapabilities)(
+                        dev, ctypes.addressof(caps))
+                    if hr == 0:
                         num_axes = min(int(caps.dwAxes), DI_MAX_AXES) \
                             or DI_MAX_AXES
                         num_buttons = int(caps.dwButtons)
+                    else:
+                        _record_di_error("GetCapabilities",
+                                         hresult=hr, fatal=False)
                     vid, pid = _di_vidpid(dev, gp)
                     ranges = [_di_range(dev, ofs)
                               for ofs in _DI_SLOT_OFFSETS]
@@ -833,6 +1010,9 @@ def _di():
     except Exception:
         _DI_BACKEND = None
         _DI_FALLBACK = True
+        _record_api_state(
+            "winmm", "DirectInput init failed — winmm fallback "
+                     "(see di_error)")
     return _DI_BACKEND
 
 
@@ -1738,6 +1918,13 @@ class InputStreamer(threading.Thread):
         except Exception:
             pass
 
+    def _drain_di_events(self):
+        """Post any queued DirectInput telemetry (v2.7.1): staged
+        di_error records and input_api transitions the DI layer
+        collected since the last drain."""
+        for ev in pop_di_events():
+            self._emit_event(ev)
+
     def mapper_status(self):
         """One line for the tray: where auto-mapping stands."""
         m = self._mapper
@@ -1763,6 +1950,15 @@ class InputStreamer(threading.Thread):
         }
         if di_fallback_active():
             ev["diFallback"] = True
+        err = di_error_text()
+        if err:
+            # v2.7.1: the current DI problem rides EVERY heartbeat
+            # until DirectInput is healthy — which stage died is
+            # never again a matter of archaeology.
+            st = di_status()
+            ev["diError"] = err
+            ev["diErrorStage"] = st["stage"]
+            ev["diErrorFatal"] = st["fatal"]
         return ev
 
     def run(self):
@@ -1781,6 +1977,7 @@ class InputStreamer(threading.Thread):
         devices = enumerate_devices()
         self._last_sig = device_signature(devices)
         self._emit_event(inventory_event(devices, "startup"))
+        self._drain_di_events()   # DI init verdict, if any (v2.7.1)
         while True:
             devices = enumerate_devices()
             sig = device_signature(devices)
@@ -1811,6 +2008,7 @@ class InputStreamer(threading.Thread):
             "hidDevice": label,
             "calibrated": mapper.locked,
         })
+        self._drain_di_events()
         announced_stream = False
         dead_reads = 0
         ever_ok = False
@@ -1897,6 +2095,7 @@ class InputStreamer(threading.Thread):
                 last_hb = now
                 self._emit_event(
                     self._heartbeat_event(label, mapper, devices, now))
+                self._drain_di_events()
             ip = self.get_phone_ip()
             if not ip:
                 continue
