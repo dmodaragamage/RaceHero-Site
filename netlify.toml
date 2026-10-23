@@ -35,8 +35,7 @@
 # /api/dev-ingest is the DEV FUNNEL endpoint (founder test builds only):
 # the app POSTs session data + diagnostics here during test drives, held
 # in Netlify Blobs behind the DEV_FUNNEL_TOKEN env var. Inert (503)
-# until that env var is set; never linked from any page.
-[[redirects]]
-  from = "/api/dev-ingest"
-  to = "/.netlify/functions/dev-ingest"
-  status = 200
+# until that env var is set; never linked from any page. It is a v2
+# function (netlify/functions/dev-ingest.mjs) that declares its own path
+# via `export const config`, so it needs — and must not have — a
+# redirect rule here.
