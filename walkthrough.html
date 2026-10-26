@@ -202,12 +202,18 @@
   .turnrow .tn{width:30px;height:30px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;
     font-weight:900;font-size:14px;color:#0A0A0C}
   .turnrow.briefing{background:rgba(255,138,0,.08);border-radius:10px}
-.tab svg{width:24px;height:24px;fill:#8A8A93}
-.tab.sel svg{fill:var(--orange)}
-.walkindex .hint{color:var(--faint);font-size:12px;line-height:1.5;padding:0 6px 6px}
-.decision{border:1px dashed var(--orange);background:#241a10;color:#ffb27a;border-radius:12px;padding:8px 11px;font-size:11.5px;line-height:1.5;margin:10px 0}
-.decision b{color:var(--orange);letter-spacing:.06em}
-.statebtns button.on{background:var(--orange);color:#141417;border-color:var(--orange)}
+  .fdnote{border-left:3px solid var(--orange);background:#1C150C;border-radius:10px;padding:10px 12px;font-size:13px;color:var(--sub);line-height:1.55;margin:10px 0}
+  .fdnote b{color:var(--orange)}
+  .statebtns button.on{border-color:var(--orange);color:var(--orange)}
+  .tab svg{width:22px;height:22px;fill:currentColor}
+  .spin{display:inline-block;animation:rhspin 1.1s linear infinite}
+  @keyframes rhspin{to{transform:rotate(360deg)}}
+</style>
+<style>
+html.embed body{padding:0}
+html.embed .simtag,html.embed .walkindex{display:none}
+html.embed .walkrow{margin:0;gap:0;justify-content:center}
+html.embed .phone{border:none;border-radius:0;box-shadow:none;width:392px;height:820px;max-height:none}
 </style>
 </head>
 <body>
@@ -219,11 +225,12 @@
 </div>
 <div class="walkrow">
   <div class="walkindex">
+    <a href="/" style="display:block;color:#FF8A00;font-size:12.5px;text-decoration:none;padding:2px 6px 8px">← Back to racehero.ca</a>
 <h2>Walk it screen by screen</h2>
-<div class="hint">This is the exact UI the app is built from — every screen and every state the app has, including the empty, missing and gone-quiet ones. Tap a screen, or start at Splash and walk the flow. Anything this walkthrough can't show is named in the coverage note.</div>
+<div class="hint">This is the <b>spec</b> — the intended final UI in Team C's design language, with every live-data surface and every state designed in the same language: the empty ones, the missing ones, the gone-quiet ones. The app is conformed to this document — never the other way round. Tap a screen, or start at Splash and walk the flow.</div>
 <div class="grp">FIRST RUN</div>
-<button data-nav="splash">0 · Splash — the intro video</button>
-<button data-nav="welcome">1 · Welcome — restore first, or start fresh</button>
+<button data-nav="splash">0 · Splash — the intro film</button>
+<button data-nav="welcome">1 · Welcome — the promises, then drive</button>
 <button data-nav="homefirstrun">2 · Home — first run, nothing recorded yet</button>
 <div class="grp">MAIN TABS</div>
 <button data-nav="home">3 · Home — your story so far</button>
@@ -232,42 +239,50 @@
 <button data-nav="sessions">6 · Sessions — every drive, kept</button>
 <button data-nav="sessionsempty">6b · Sessions — empty, nothing recorded yet</button>
 <button data-nav="coach">7 · Coach — one voice, yours to tune</button>
-<button data-nav="coachnew">7b · Coach — first run, no sessions yet</button>
-<button data-nav="settings">8 · Settings — every card, in the app's order</button>
+<button data-nav="coachnew">7b · Coach — before any session exists</button>
+<button data-nav="settings">8 · Settings — upkeep, in the walkthrough's order</button>
 <div class="grp">SESSION FLOW</div>
 <button data-nav="viewer">9 · Session viewer — the lap as a story</button>
-<button data-nav="viewerpre">9b · Viewer — before you go out (pre-session)</button>
+<button data-nav="viewerpre">9b · Viewer — before you go out</button>
 <button data-nav="viewerlive">9c · Viewer — live, laps landing</button>
 <button data-nav="scrub">10 · Corner Scrub — the whole lap, your thumb</button>
 <button data-nav="debrief">11 · Debrief — the conversation</button>
-<button data-nav="debriefgen">11b · Debrief — generating</button>
-<button data-nav="debrieferr">11c · Debrief — couldn't generate</button>
-<button data-nav="trackwalk">12 · Track Walk — walk it, pin it, brief it</button>
+<button data-nav="debriefgen">11b · Debrief — being written</button>
+<button data-nav="debrieferr">11c · Debrief — couldn't be written</button>
+<button data-nav="trackwalk">12 · Track Walk — the guided brief, on foot</button>
 <div class="grp">HARDWARE &amp; ACCOUNT</div>
-<button data-nav="hardware">13 · Hardware Hub — GPS source, pucks, OBD</button>
-<button data-nav="garage">14 · RaceHero Garage — the 25 Hz puck build</button>
-<button data-nav="gopro">15 · GoPro — USB live view</button>
+<button data-nav="hardware">13 · Hardware Hub — every way in</button>
+<button data-nav="garage">14 · RaceHero Garage — build the 25 Hz puck</button>
+<button data-nav="gopro">15 · GoPro — your laps, on video</button>
 <button data-nav="paywall">16 · Paywall — RaceHero Pro</button>
 <button data-nav="paywallpro">16b · Paywall — already Pro</button>
-<div class="grp">FOUNDER-DIRECTED — THE NEW GO FLOW (PROPOSED, NOT IN THE APP)</div>
-<button data-nav="pitsintro">G1 · Pits intro at GO — "here's the track"</button>
-<button data-nav="pacelap">G2 · Guided pace lap — the walk-through, in the car</button>
-<div class="grp">PRE-SESSION STATES — THE PRE SCREEN, FIVE WAYS</div>
+<div class="grp">FOUNDER-DIRECTED — THE GO FLOW: THE RAMP (2026-10-26)</div>
+<button data-nav="pitsintro">G1 · Pits intro at GO — one line, roll out</button>
+<button data-nav="pacelap">G2 · The Ramp — guided lap, step-up lap, then drive</button>
+<div class="grp">PRE-SESSION STATES — SCREEN 4, FIVE WAYS</div>
 <div class="statebtns">
-<button id="st-feed" onclick="preState('feed')">Feed live</button>
+<button id="st-feed" class="on" onclick="preState('feed')">Feed live</button>
 <button id="st-nofeed" onclick="preState('nofeed')">No feed yet</button>
 <button id="st-perms" onclick="preState('perms')">Permissions missing</button>
 <button id="st-linklost" onclick="preState('linklost')">PC Link lost</button>
 <button id="st-ask" onclick="preState('ask')">Both worlds claim it</button>
 </div>
-<div class="hint" style="margin-top:8px">These switch screen 4 between the states the app itself shows — same screen, honest states. "Both worlds claim it" is the app's ask-once verdict, which the first walkthrough never showed.</div>
+<div class="hint" style="margin-top:8px">One screen, five honest states — the same pre-session screen in each situation, designed here in full. "PC Link lost" also flips the Hardware Hub's Link card — look there after.</div>
+<div class="grp">LIVE STATES — SCREEN 5, THREE WAYS</div>
+<div class="statebtns">
+<button id="lv-ok" class="on" onclick="setLiveState('ok')">All talking</button>
+<button id="lv-quiet" onclick="setLiveState('quiet')">A channel went quiet</button>
+<button id="lv-stalled" onclick="setLiveState('stalled')">Feed stalled</button>
 </div>
+<p class="small" style="margin-top:14px">Five tabs at the bottom of every screen — house, play, <b>book</b> (Sessions), <b>headphones</b> (Coach), gear — drawn as single-colour icons, orange when you're on them. That's the walkthrough's own bar, the one approved with it; the app gets conformed to it in the next build.</p>
+</div>
+
 <div class="phone">
   <div class="statusbar"><span>9:41</span><span>RaceHero</span><span>89% ▮</span></div>
   <div class="screens">
 
-  <!-- ============ SPLASH (launch intro) ============ -->
-  <section class="screen notab on" id="scr-splash">
+    <!-- ============ SPLASH (launch intro) ============ -->
+  <section class="screen" id="scr-splash">
     <div style="height:56px"></div>
     <div style="text-align:center;font-size:15px;letter-spacing:.35em;color:var(--orange);font-weight:800">RACEHERO</div>
     <div class="card" style="padding:0;overflow:hidden;margin-top:18px">
@@ -275,37 +290,37 @@
         <span class="small" style="color:#ffd9a8">The intro film: a car taking a fast corner at sunset, a real screaming V10 underneath. The branding is burned into the footage.</span>
       </div>
     </div>
-    <p class="small" style="margin-top:10px">Plays at launch, about ten seconds. A tap skips it. If the video ever fails to play, a failsafe hands over to the app anyway — you never wait on a film to drive. This screen was missing from the first walkthrough entirely.</p>
+    <p class="small" style="margin-top:10px">Plays at launch, about ten seconds. A tap skips it. If the video ever fails to play, a failsafe hands over to the app anyway — you never wait on a film to drive.</p>
     <button class="btn" style="margin-top:10px" onclick="show('welcome')">Skip intro →</button>
     <p class="small" style="margin-top:8px">In the app: a first run hands to Welcome; every run after goes straight to your story.</p>
   </section>
 
-  <!-- ============ WELCOME (first run) ============ -->
-  <section class="screen notab" id="scr-welcome">
-    <div class="sub" style="margin-top:6px;">WELCOME</div>
-    <h1 class="headline" style="font-size:24px;">Welcome to RaceHero</h1>
-    <div class="decision"><b>FOUNDER DECISION —</b> the first approved walkthrough led this screen with the app's promises and a permissions card, and demoted "restore a backup" to a small footer link. The app as built leads with restore — a returning driver with a new phone gets everything back before anything else — and there is no permissions card here at all. This screen now mirrors the app. Keep restore-first, or bring back the promises-first layout?</div>
-    <h2 style="margin-top:14px">New phone?</h2>
-    <p class="sub" style="margin-top:4px">If you made a backup on your old one, bring it in now and everything comes back — sessions, tracks, all of it.</p>
-    <div class="card">
-      <div class="klabel">Backup &amp; restore</div>
-      <p class="sub" style="margin-top:6px">New phone? Restore your backup here — everything comes back.</p>
-      <button class="btn" style="margin-top:10px" onclick="toast('Making your backup…')">Make my backup</button>
-      <button class="btn" style="margin-top:8px" onclick="toast('Share sheet opens — the backup is one file')">Share backup</button>
-      <button class="btn ghost" style="margin-top:8px" onclick="openSheet('restorefile')">Restore from a backup file</button>
-      <p class="small" style="margin-top:8px">Last backup: no backup yet.</p>
-      <p class="small" style="margin-top:6px">Your Pro follows your Google account, not this phone — restoring a backup can never take Pro away, and buying Pro on the new phone is never needed twice.</p>
-      <p class="small" style="margin-top:6px">Your laps live on this phone. Nobody at RaceHero can see them. When you ask for an AI debrief, the app sends a summary of the session — the numbers, not your name — and brings back the coach's report.</p>
+<!-- ============ WELCOME (first run) ============ -->
+  <section class="screen notab on" id="scr-welcome">
+    <div style="text-align:center;margin-top:34px">
+      <div style="font-size:52px">🏁</div>
+      <h1 class="headline" style="font-size:30px">RaceHero</h1>
+      <p class="coach-says" style="max-width:300px;margin:0 auto">A coach who rides with you. He watches every lap, learns your corners, and tells you the one thing that makes you faster.</p>
     </div>
-    <div id="wel-restored" style="display:none"><p style="color:var(--orange);font-weight:700;margin:2px 0 10px">That's everything back. Your coach remembers it all.</p></div>
-    <button class="btn orange" id="wel-primary" onclick="show('homefirstrun')">Start fresh</button>
-    <p class="small" style="text-align:center;margin-top:10px">Brand new here? Start fresh — record a session and the coach starts learning from there.</p>
-    <p class="small" style="margin-top:14px">This screen shows once, on a fresh install — the app asks about the old phone before it promises anything. After it, the app opens on your story.</p>
+    <div class="card">
+      <div class="row" style="padding:7px 0"><span style="font-size:20px">🎧</span><div class="grow"><b>He talks while you drive</b><div class="small">Short cues in your ear — brake points, focus corners, and a calm voice when it goes wrong.</div></div></div>
+      <div class="row" style="padding:7px 0"><span style="font-size:20px">🗺️</span><div class="grow"><b>He knows the track before you do</b><div class="small">A walk-through brief in the pits, from the track itself — then your own laps take over.</div></div></div>
+      <div class="row" style="padding:7px 0"><span style="font-size:20px">🔒</span><div class="grow"><b>Your data stays yours</b><div class="small">Sessions live on your phone. No account needed to start driving.</div></div></div>
+    </div>
+    <div class="card">
+      <div class="klabel" style="margin-bottom:6px">Two permissions, both for the driving</div>
+      <div class="row" style="padding:5px 0"><span class="dot g"></span><span class="grow">Location — lap timing on real tracks</span><span class="pill good">On</span></div>
+      <div class="row" style="padding:5px 0"><span class="dot g"></span><span class="grow">Bluetooth — your puck, wheel &amp; pedals</span><span class="pill good">On</span></div>
+      <p class="small" style="margin-top:8px">Asked once, in plain words, when each is first needed — never a wall of switches.</p>
+    </div>
+    <button class="btn" id="wel-primary" style="font-size:20px;padding:19px" onclick="show('home')">START FRESH — LET'S DRIVE</button>
+    <div id="wel-restored" style="display:none"><p style="color:var(--orange);font-weight:700;margin:2px 0 10px">That's everything back — 14 sessions, your tracks, and a coach who remembers it all.</p></div>
+    <p class="small" style="text-align:center;margin-top:10px">Been here before? <span class="link" onclick="openSheet('restorefile')">Restore from a backup</span></p>
   </section>
 
   <!-- ============ HOME / STORY (Team C, as-is) ============ -->
   <section class="screen" id="scr-home">
-    <div class="sub" style="margin-top:6px;">SUNDAY · OCT 26</div>
+    <div class="sub" style="margin-top:6px;">Sunday · Welcome back</div>
     <h1 class="headline">You found <span style="color:var(--grn)">4.3 seconds</span> today.</h1>
     <p class="coach-says"><span class="who">YOUR COACH</span>
     Six laps at the Nürburgring: 2:11 down to a <b>2:07.1</b> — and then one lap reaching for more, where the car stepped out. That is <i>exactly</i> how this is supposed to go. Nothing to fix about your attitude. One corner to fix. ↓</p>
@@ -356,23 +371,20 @@
       <button class="btn orange" style="margin-top:12px;" onclick="show('pre')">Start a session →</button>
     </div>
     <div class="small" style="text-align:center;margin-top:6px;">Share or export a session… <span class="link" onclick="toast('Export JSON / CSV / video overlay — tucked here, not on your home screen')">share menu</span></div>
-    <p class="small" style="text-align:center;margin-top:14px">Your driving lives on this phone. Nothing is uploaded — ever.</p>
-    <p style="text-align:center;margin-top:8px"><span class="link" onclick="show('gopro')">Pair a GoPro / action camera →</span></p>
-    <p style="text-align:center;margin-top:6px"><span class="link" onclick="show('sessions')">All sessions →</span></p>
   </section>
 
-  <!-- ============ HOME — FIRST RUN (nothing recorded yet) ============ -->
+    <!-- ============ HOME — FIRST RUN ============ -->
   <section class="screen" id="scr-homefirstrun">
     <div class="sub" style="margin-top:6px;">YOUR STORY STARTS HERE</div>
-    <h1 class="headline">Your first drive becomes your first story.</h1>
-    <div class="coachcard"><span class="who">YOUR COACH</span>
-      <p class="coach-says">Your AI coach rides with you — in your ear, corner by corner, against your own best lap. No story yet: your first session writes chapter one. Drive two laps and the coach starts talking — everything it ever claims comes from your own recorded laps, nothing is invented here.</p></div>
+    <h1 class="headline">Nothing here yet. Your first drive starts the story.</h1>
+    <div class="coachcard"><span class="who">🎧 YOUR COACH</span>
+      <p class="coach-says" style="margin-top:4px;">I'm your coach — I ride with you, in your ear, corner by corner, against your own best lap. No story yet: your first session writes chapter one. Give me two laps and I start talking — and everything I ever claim comes from your own recorded laps. Nothing is invented.</p></div>
     <button class="btn" onclick="show('pre')">Start your first session</button>
     <p class="small" style="text-align:center;margin-top:14px">Your driving lives on this phone. Nothing is uploaded — ever.</p>
-    <p class="small" style="margin-top:10px">This is the Home tab on a fresh install — the screen every new driver lands on after Welcome. The first walkthrough never showed it: it only ever showed the populated story, so the literal first screen of the product was never approved.</p>
+    <p class="small" style="margin-top:10px">The Home tab on a fresh install — what every new driver lands on after Welcome. The populated story (screen 3) only exists once there's a drive to tell.</p>
   </section>
 
-  <!-- ============ LIVE · PRE-SESSION (verdict + BIG toggle + plan card + states) ============ -->
+<!-- ============ LIVE · PRE-SESSION (verdict + BIG toggle + ReferenceBrief + contract + live data + GO) ============ -->
   <section class="screen" id="scr-pre">
     <button class="backbtn" onclick="show('home')">‹ Your story</button>
     <div class="sub" style="margin-top:4px;">BEFORE YOU GO OUT</div>
@@ -402,7 +414,7 @@
     </div>
     <p class="small" style="text-align:center;">Nürburgring GP · 5,137 m · 8 turns · circuit outline: reference map — your driven line replaces it once you've lapped</p>
 
-    <div class="decision"><b>FOUNDER-DIRECTED · 2026-10-26 —</b> this screen used to dump the coach's whole plan inline — the part-by-part stories, every turn, the deal — before you'd pressed anything. Per the founder's direction there is now ONE plan card here, as a single entry point; the full brief lives inside the plan sheet it opens. The app still shows the inline plan today — this is the proposed final shape, here for his approval.</div>
+    <div class="fdnote"><b>FOUNDER-DIRECTED · 2026-10-26 —</b> ONE plan card here. The whole brief — the parts, every turn, the deal — lives inside it, not dumped across this screen before you've pressed anything.</div>
 
     <div class="card tap" onclick="openSheet('plansheet')">
       <span class="who">🎧 YOUR COACH — TODAY'S PLAN</span>
@@ -412,6 +424,7 @@
     </div>
 
     <div class="card">
+      <div class="klabel" style="margin-bottom:6px;">Is everything talking to me?</div>    <div class="card">
       <div class="klabel" style="margin-bottom:6px;">Is everything talking to me?</div>
       <div id="checklist-sim">
         <div class="row" style="padding:5px 0"><span class="dot g"></span><span class="grow">The game feed</span><span class="pill good" id="pill-feed">Working</span></div>
@@ -432,8 +445,9 @@
       <p class="small">Some games ask for the phone's IP — copy it from here.</p>
       <p id="setup-link-line" style="font-weight:700;font-size:12.5px;color:var(--grn);margin-top:8px">✓ PC Link: DESKTOP-7CE8HSP connected — your games configure themselves</p>
       <div class="row" style="margin-top:8px;gap:16px"><span class="link" style="font-size:13.5px" onclick="toast('Sim link stopped — the phone stops calling for your PC')">Stop the sim link</span><span class="link" style="font-size:13.5px" onclick="show('garage')">RaceHero Garage — build the 25 Hz GPS puck →</span></div>
-      <p class="small" style="margin-top:8px">This card — and the PC Link line's three honest states (waiting / connected / lost) — wasn't on the pre-session screen in the first walkthrough. Use the "PC Link lost" state button in the walkthrough index to see the lost state here.</p>
+      <p class="small" style="margin-top:8px">The PC Link line has three honest states — waiting, connected, lost — and it never shows a stale "connected". Use the "PC Link lost" button in the walkthrough index to see the lost state here and on the Hardware Hub.</p>
     </div>
+
 
     <div class="card" id="livedata">
       <div class="spread"><span class="klabel">Live data — already flowing</span><span class="pill none" id="live-state">In the pits</span></div>
@@ -459,18 +473,14 @@
     <p class="sub" style="text-align:center;margin:2px 0 12px;">Live from your car — this is pit and out-lap data. Nothing counts until you press GO.</p>
 
     <button class="btn" id="go-btn" style="font-size:21px;padding:19px;box-shadow:0 8px 26px rgba(53,208,127,.3)" onclick="pressGO(this)">GO — START SESSION</button>
-    <p class="small" style="text-align:center;margin-top:8px;" id="go-note">GO plays the brief in your ear and starts recording. Nothing counts before GO.</p>
-
-    <div class="card">
-      <div class="toggle-row"><span><b>Coach voice</b><div class="small">Spoken tips through Bluetooth — your glasses or earbuds.</div></span><div class="switch on" onclick="this.classList.toggle('on')"></div></div>
-    </div>
+    <p class="small" style="text-align:center;margin-top:8px;" id="go-note">GO arms the session — one line in the pits, then the ramp walks the lap with you in the car. Nothing counts before GO.</p>
   </section>
 
-  <!-- ============ PITS INTRO AT GO (FOUNDER-DIRECTED — NEW) ============ -->
+    <!-- ============ PITS INTRO AT GO (FOUNDER-DIRECTED — NEW) ============ -->
   <section class="screen" id="scr-pitsintro">
     <div class="sub" style="margin-top:6px;">GO · THE PITS INTRO</div>
     <h1 class="headline" style="font-size:24px;">Here's the track.</h1>
-    <div class="decision"><b>FOUNDER-DIRECTED · 2026-10-26 — NEW, NOT IN THE APP YET.</b> Pressing GO used to play the whole stationary brief before the session armed. Per the founder's direction, GO now starts this instead: a short "here's the track" from the coach with the map up — then he sends you straight out on the guided pace lap, and the walk-through happens in the car, at the corners, as you reach them.</div>
+    <div class="fdnote"><b>FOUNDER-DIRECTED · 2026-10-26 — NEW, refined 01:31.</b> GO starts here: ONE line, map up — then you're rolling. Nobody sits in the pits being lectured; the walk-through happens in motion, on the ramp.</div>
     <div class="mapwrap">
       <svg id="map-intro" viewBox="0 0 100 72"></svg>
       <div class="legend">
@@ -481,26 +491,27 @@
       </div>
     </div>
     <p class="small" style="text-align:center;">Nürburgring GP · 5,137 m · 8 turns</p>
-    <div class="coachcard"><span class="who">🎧 YOUR COACH — THE SHORT VERSION</span>
-      <p class="coach-says" style="margin-top:4px;">Five kilometres, eight turns, and the road climbs and falls the whole way round. The first part is busy, the middle is where your time lives, the end is fast. That's all you need standing here — the rest I'll tell you <b>in the car, at each corner, as it arrives</b>. The out lap is mine: hold my pace — <b>60</b> — and just listen.</p></div>
-    <button class="btn" style="font-size:19px;padding:18px" onclick="show('pacelap')">Roll out — start the pace lap →</button>
-    <p class="small" style="text-align:center;margin-top:8px">The session is armed from GO. The pace lap is the walk-through; timed laps begin when it completes.</p>
+    <div class="coachcard"><span class="who">🎧 YOUR COACH — ONE LINE, THEN WE ROLL</span>
+      <p class="coach-says" style="margin-top:4px;">Here's your track — five kilometres, eight turns. Roll out at my pace — <b>60</b> — and I'll walk you round it <b>in the car</b>.</p></div>
+    <button class="btn" style="font-size:19px;padding:18px" onclick="show('pacelap')">Roll out — start the ramp →</button>
+    <button class="btn ghost" style="margin-top:8px" onclick="toast('Intro skipped — the session starts now, full coaching');show('live')">Skip the intro — straight to the session</button>
+    <p class="small" style="text-align:center;margin-top:8px">The session is armed from GO. Lap 1 of the ramp is the guided walk-through, lap 2 steps the pace up, lap 3 is a normal session.</p>
   </section>
 
   <!-- ============ GUIDED PACE LAP (FOUNDER-DIRECTED — NEW) ============ -->
   <section class="screen" id="scr-pacelap">
     <div class="spread">
-      <span class="pill care">● PACE LAP — WALK-THROUGH</span>
+      <span class="pill care">● THE RAMP — WALK-THROUGH IN MOTION</span>
       <span class="pill plan">🖥️ SIMULATOR · LOCKED</span>
     </div>
-    <p class="small" style="text-align:center;margin-top:6px">ACC · Nürburgring GP · lap 1 is the tour — the coach sets the pace, you just drive it</p>
-    <div class="decision"><b>FOUNDER-DIRECTED · 2026-10-26 — NEW, NOT IN THE APP YET.</b> His words: "let's start driving at 60 kilometre an hour pace and I'll walk you through all the turns." The narration on this screen is keyed to the car's position — each corner's card appears as you ARRIVE at it, not from a list read out in the pits. That is the design answer to the stationary brief feeling repetitive: in the car, every line is about the corner in front of you, once. (In this walkthrough the lap plays itself at tour speed — watch the card change corner by corner.)</div>
+    <p class="small" style="text-align:center;margin-top:6px" id="pace-lapline">ACC · Nürburgring GP · lap 1 of the ramp — the guided tour: the coach sets the pace, you just drive it</p>
+    <div class="fdnote"><b>FOUNDER-DIRECTED · 2026-10-26 — NEW, refined 01:31: THE RAMP.</b> Lap 1 is the guided walk-through at his set pace — his words: "let's start driving at 60 kilometre an hour pace and I'll walk you through all the turns," every line keyed to the car's position as you ARRIVE at the corner. Lap 2 he steps you up — "Good. Now let's go faster" — the target rises and the corners are still called. Lap 3 onward is a normal session. In this walkthrough the ramp plays itself at tour speed; watch the card change corner by corner, then step up.</div>
     <div style="text-align:center;margin-top:10px">
       <div class="klabel">His pace — hold it near here</div>
       <div class="giant" id="pace-speed">58</div>
-      <div class="small">km/h · target <b style="color:var(--ink)">60</b></div>
-      <div class="bar" style="margin-top:8px"><i id="pace-bar" style="width:48%;background:var(--grn)"></i></div>
-      <div class="row" style="margin-top:3px"><span class="small grow">30</span><span class="small">60 — his pace</span><span class="small">90</span></div>
+      <div class="small">km/h · target <b style="color:var(--ink)" id="pace-target">60</b></div>
+      <div class="bar" style="margin-top:8px"><i id="pace-bar" style="width:33%;background:var(--grn)"></i></div>
+      <div class="row" style="margin-top:3px"><span class="small grow">30</span><span class="small">his pace — the green zone</span><span class="small">120</span></div>
       <p class="small" id="pace-state" style="margin-top:6px;color:var(--grn);font-weight:700">On his pace ✓</p>
     </div>
     <div class="mapwrap">
@@ -512,15 +523,15 @@
       <p class="coach-says" style="margin-top:2px" id="pace-text">Off we go. Sixty, no more — this lap isn't about speed, it's about seeing the place. I'll name every turn as we get to it.</p>
     </div>
     <div id="pace-done" style="display:none">
-      <div class="coachcard"><span class="who">🎧 COACH — THAT'S THE LAP</span>
-        <p class="coach-says" style="margin-top:4px;">That's the whole lap, seen once, slowly. Now it's yours: two laps where I mostly watch and learn your lines — then we pick our corner and work. Off you go.</p></div>
-      <button class="btn" onclick="toast('Pace lap done — the session proper starts: learning laps, then full coaching');show('live')">Start the session — learning laps →</button>
+      <div class="coachcard"><span class="who">🎧 COACH — THAT'S THE RAMP</span>
+        <p class="coach-says" style="margin-top:4px;">That's the ramp — seen slowly, then driven quicker. From this lap it's a normal session: I coach properly — focus corners called ahead and talked through — and I keep learning your lines as we go. Off you go.</p></div>
+      <button class="btn" onclick="toast('Ramp done — normal session: full coaching from here');show('live')">Lap 3 — start the session proper →</button>
     </div>
-    <button class="btn ghost" style="margin-top:10px" onclick="toast('Skipped — the session starts with the learning laps');show('live')">Skip the tour — start the session</button>
-    <p class="small" style="margin-top:8px">When the lap completes, this state hands over on its own to the normal session — the same Live screen, learning laps first, then full coaching. Nothing about the tour is timed or scored.</p>
+    <button class="btn ghost" style="margin-top:10px" onclick="toast('Ramp skipped — the session starts now, full coaching');show('live')">Skip the ramp — start the session</button>
+    <p class="small" style="margin-top:8px">Lap 1 guided at his pace, lap 2 stepped up — then this state hands over on its own to the normal session, the same Live screen. Neither ramp lap is timed or scored.</p>
   </section>
 
-  <!-- ============ LIVE · IN SESSION (full telemetry, the moment data connects) ============ -->
+<!-- ============ LIVE · IN SESSION (full telemetry, the moment data connects) ============ -->
   <section class="screen" id="scr-live">
     <div class="spread">
       <span class="pill warn">● LIVE · LAP <span id="ls-lapnum">7</span></span>
@@ -534,7 +545,9 @@
       <span class="small">tap = cycle the four states</span>
     </div>
 
-    <div style="text-align:center;margin-top:14px">
+    <div id="live-stalled" style="display:none;background:#2A1416;border:1px solid var(--red);border-radius:12px;padding:10px 12px;margin-top:10px"><b style="color:var(--red)">■ Stopped — the feed went quiet.</b><p class="small" style="margin-top:2px">Nothing new is being recorded. Your finished laps are safe — and the moment the feed moves again, this clears itself.</p></div>
+
+    <div style="text-align:center;margin-top:14px" id="ls-giantwrap">
       <div class="klabel">This lap</div>
       <div class="giant" id="ls-clock">1:12.4</div>
       <div style="margin-top:10px"><span class="delta g" id="ls-delta">−0.42 vs your best</span></div>
@@ -572,15 +585,15 @@
       <p class="small" style="margin-top:8px;">Full green = full gas. If both bars ever light up together, you're pressing both pedals. Bars show travel only — no percentages, because your pedal's travel is yours, not a lab number.</p>
     </div>
 
-    <div class="card">
+    <div class="card" id="ls-quietcard">
       <div class="klabel" style="margin-bottom:6px;">When a channel goes quiet</div>
       <p class="sub">Mid-session, the connection card names it in a sentence — never a silent freeze, never a percentage:</p>
       <div class="row" style="padding:5px 0"><span class="dot r"></span><span class="grow">Your pedals went quiet — check RaceHero Link is still running on your PC.</span></div>
       <div class="row" style="padding:5px 0"><span class="dot r"></span><span class="grow">The game feed stopped — check the game is still running and sending telemetry.</span></div>
       <div class="row" style="padding:5px 0"><span class="dot r"></span><span class="grow">GPS went quiet — it comes back on its own with a clear view of the sky.</span></div>
       <div class="row" style="padding:5px 0"><span class="dot r"></span><span class="grow">Lap timing went quiet — keep driving; it re-locks at the start/finish line.</span></div>
-      <p class="sub" style="margin-top:8px">And if the whole feed stops moving, the live-data strip says so in red: <b style="color:var(--red)">Stopped — the feed went quiet.</b></p>
-      <p class="sub" style="margin-top:6px">Twenty seconds into a session with no data at all, the coach says it out loud, once: <i>"I don't have your data yet. Check the PC Link shows connected — I'll start coaching the moment it arrives."</i> These states weren't in the first walkthrough — it only ever showed everything working.</p>
+      <p class="sub" style="margin-top:8px">And if the whole feed stops moving, the strip at the top of this screen says so in red: <b style="color:var(--red)">Stopped — the feed went quiet.</b> (Use the LIVE STATES buttons in the index to see it.)</p>
+      <p class="sub" style="margin-top:6px">Twenty seconds into a session with no data at all, the coach says it out loud, once: <i>"I don't have your data yet. Check the PC Link shows connected — I'll start coaching the moment it arrives."</i></p>
     </div>
 
     <div class="cue">
@@ -614,21 +627,6 @@
     <div class="sub" style="margin-top:6px;">YOUR SESSIONS</div>
     <h1 class="headline" style="font-size:24px;">Every drive, kept.</h1>
 
-    <div class="card">
-      <div class="klabel">The story so far</div>
-      <p class="sub" style="margin-top:6px">3 sessions in the book — every one of them made the coach smarter.</p>
-      <p class="sub" style="margin-top:4px">★ 2:07.1 — Nürburgring GP</p>
-      <p class="sub">★ 41.28 — Hamilton Mini Indy</p>
-      <p class="sub" style="margin-top:6px">Perfect lap on the table at Nürburgring GP: 2:06.8 — your best pieces stitched together (yours — best pieces). It's already in you, sector by sector.</p>
-    </div>
-
-    <div class="card" id="backup-nudge">
-      <b style="font-size:16px;">Back up your laps</b>
-      <p class="sub" style="margin-top:4px">You've recorded 10 sessions, and they live only on this phone. Make a backup — it's in Settings, under Backup &amp; restore — and a new phone can't take them.</p>
-      <p style="margin-top:8px"><span class="link" onclick="document.getElementById('backup-nudge').style.display='none'">Later</span></p>
-      <p class="small" style="margin-top:6px">This nudge appears at your 10th session, then roughly every 25 — dismissible, never blocking. It wasn't in the first walkthrough.</p>
-    </div>
-
     <div class="card tap" onclick="show('viewer')">
       <div class="spread"><span class="pill good">−4.3 s</span><span class="small">Today · Simulator</span></div>
       <div style="font-weight:800;font-size:16.5px;margin-top:8px;">Nürburgring GP</div>
@@ -657,30 +655,27 @@
       <span class="link" onclick="toast('Import opens the system file picker (the phone owns that screen)')">Import a session file</span>
       <div class="divider"></div>
       <p class="sub">Export this list's sessions as JSON / CSV, or a video with the data laid over it.</p>
-      <span class="link" onclick="toast('Export: JSON · CSV · video overlay — chosen per session')">Export…</span>
-      <div class="divider"></div>
-      <p class="sub">Put a session on video — the overlay dialog lives on each session:</p>
-      <span class="link" onclick="openSheet('overlay')">Video Overlay →</span>
+      <span class="link" onclick="openSheet('overlay')">Export…</span>
     </div>
   </section>
 
-  <!-- ============ SESSIONS — EMPTY (nothing recorded yet) ============ -->
+    <!-- ============ SESSIONS — EMPTY ============ -->
   <section class="screen" id="scr-sessionsempty">
     <div class="sub" style="margin-top:6px;">YOUR SESSIONS</div>
     <h1 class="headline" style="font-size:24px;">Every drive, kept.</h1>
     <div class="card">
-      <p class="sub">No sessions yet — your first drive becomes your first story.</p>
+      <p class="sub">No sessions yet — the first one starts your story.</p>
       <p class="sub" style="margin-top:4px">Start one from the Live tab.</p>
     </div>
     <div class="card">
       <div class="klabel">Bring a session with you</div>
-      <p class="sub" style="margin-top:6px">RaceHero.json/.csv · MoTeC.ld · iRacing.ibt · Garage61.csv</p>
-      <span class="link" onclick="toast('Import opens the system file picker (the phone owns that screen)')">Choose a file →</span>
+      <p class="sub" style="margin-top:6px">RaceHero .json / .csv · MoTeC .ld · iRacing .ibt · Garage61 .csv</p>
+      <span class="link" onclick="toast('Import opens the system file picker — the phone owns that screen')">Choose a file →</span>
     </div>
-    <p class="small">The Sessions tab before anything exists — what a first-run driver sees. The first walkthrough only ever showed the populated list.</p>
+    <p class="small">The Sessions tab before anything exists — what a first-run driver sees. The populated list (screen 6) only exists once there's a drive in it.</p>
   </section>
 
-  <!-- ============ SESSION VIEWER (interactive 2D map + sectors + elevation) ============ -->
+<!-- ============ SESSION VIEWER (interactive 2D map + sectors + elevation) ============ -->
   <section class="screen" id="scr-viewer">
     <button class="backbtn" onclick="show('sessions')">‹ Sessions</button>
     <div class="sub" style="margin-top:4px;">TODAY · NÜRBURGRING GP (SIM) · 6 LAPS</div>
@@ -728,12 +723,12 @@
     </div>
   </section>
 
-  <!-- ============ VIEWER — PRE-SESSION MODE ============ -->
+    <!-- ============ SESSION VIEWER — BEFORE YOU GO OUT ============ -->
   <section class="screen" id="scr-viewerpre">
     <button class="backbtn" onclick="show('pre')">‹ Live</button>
     <div class="sub" style="margin-top:4px;">BEFORE YOU GO OUT</div>
     <h1 class="headline" style="font-size:24px;">Here's your track.</h1>
-    <p class="sub">Nürburgring GP · SIMULATOR · Lap 5,137 m · 8 turns</p>
+    <p class="sub">Nürburgring GP · SIMULATOR · 5,137 m · 8 turns</p>
     <div class="mapwrap">
       <svg id="map-viewpre" viewBox="0 0 100 72"></svg>
       <div class="legend">
@@ -748,12 +743,17 @@
       <p class="coach-says" style="font-size:15.5px;margin-top:4px;">The brief lives in the plan now — one card on the pre-session screen opens the whole thing, turns and deal included.</p>
       <button class="btn ghost" style="margin-top:10px" onclick="openSheet('plansheet')">Open the full plan</button>
     </div>
-    <button class="btn" onclick="pressGO(this)">GO — START SESSION + BRIEF</button>
-    <p class="small" style="text-align:center;margin-top:8px">GO plays the brief and arms the session. Driving before GO is never recorded.</p>
-    <p class="small" style="margin-top:10px">The Viewer's pre-session mode: the moment a track is identified, the layout compiles here from your own history at the track — map, sectors, turns — before a lap exists. Waiting states on this surface, in the app's words: "Sim feed is live — waiting for the game to name the track…" · "Pick the track you're at — the Viewer compiles its layout, sectors and turns from your history there." · "No saved tracks yet. Map one from the Live tab — after that, it briefs and arms from here." The first walkthrough never showed the Viewer in this mode.</p>
+    <div class="card">
+      <div class="klabel" style="margin-bottom:6px;">While it waits, it says so — in sentences</div>
+      <div class="row" style="padding:5px 0"><span class="dot a"></span><span class="grow">Sim feed is live — waiting for the game to name the track…</span></div>
+      <div class="row" style="padding:5px 0"><span class="dot n"></span><span class="grow">No saved tracks yet — map one from the Live tab; after that, it briefs and arms from here.</span></div>
+      <div class="row" style="padding:5px 0"><span class="dot n"></span><span class="grow">At a track it knows, this screen compiles the layout, sectors and turns from your own history there — before a lap exists.</span></div>
+    </div>
+    <button class="btn" onclick="pressGO(this)">GO — START SESSION</button>
+    <p class="small" style="text-align:center;margin-top:8px">GO arms the session — one line in the pits first, then the ramp walks it with you in the car.</p>
   </section>
 
-  <!-- ============ VIEWER — LIVE MODE ============ -->
+  <!-- ============ SESSION VIEWER — LIVE, LAPS LANDING ============ -->
   <section class="screen" id="scr-viewerlive">
     <button class="backbtn" onclick="show('live')">‹ Live</button>
     <div class="sub" style="margin-top:4px;">LIVE · NÜRBURGRING GP (SIM) · LAP 3 RUNNING</div>
@@ -790,10 +790,9 @@
     </div>
     <button class="btn red" onclick="toast('Held — session ended. Your debrief is ready.');show('debrief')">■ END SESSION</button>
     <p class="small" style="text-align:center;margin-top:8px">You've been stopped a while — end the session?</p>
-    <p class="small" style="margin-top:10px">The Viewer's live mode — the same surface as the post-session viewer, filling in as laps land: times, deltas, incident markers, the reference line, channel health. The first walkthrough only ever showed it finished.</p>
   </section>
 
-  <!-- ============ CORNER SCRUB (whole lap · one position drives everything) ============ -->
+<!-- ============ CORNER SCRUB (whole lap · one position drives everything) ============ -->
   <section class="screen" id="scr-scrub">
     <button class="backbtn" onclick="show('viewer')">‹ Session</button>
     <div class="sub" style="margin-top:4px;">CORNER SCRUB · NÜRBURGRING GP</div>
@@ -934,90 +933,76 @@
     <button class="btn ghost" style="margin-top:8px" onclick="show('trackwalk')">Walk the real track on foot →</button>
   </section>
 
-  <!-- ============ DEBRIEF — GENERATING ============ -->
+    <!-- ============ DEBRIEF — BEING WRITTEN ============ -->
   <section class="screen" id="scr-debriefgen">
     <button class="backbtn" onclick="show('viewer')">‹ Session</button>
     <div class="sub" style="margin-top:4px;">AI DEBRIEF · TODAY · 6 LAPS</div>
     <h1 class="headline" style="font-size:24px;">Your debrief</h1>
     <div class="card" style="text-align:center;padding:30px 16px">
-      <div style="font-size:26px;color:var(--orange)">◌</div>
-      <p class="sub" style="margin-top:8px">Analyzing your laps…</p>
+      <div class="spin" style="font-size:26px;color:var(--orange)">◌</div>
+      <p class="sub" style="margin-top:8px">Your coach is reading the session…</p>
+      <p class="small" style="margin-top:6px">Every lap, every corner, against your own best. It lands as a conversation, not a report.</p>
     </div>
-    <p class="small">The generating state — the app says what it's doing, and nothing more, until the report lands. The first walkthrough only ever showed the finished conversation. <span class="link" onclick="show('debrief')">See it finished →</span></p>
+    <p class="small">The generating state — the app says what it's doing, in the coach's voice, until the report lands. <span class="link" onclick="show('debrief')">See it finished →</span></p>
   </section>
 
-  <!-- ============ DEBRIEF — ERROR ============ -->
+  <!-- ============ DEBRIEF — COULDN'T BE WRITTEN ============ -->
   <section class="screen" id="scr-debrieferr">
     <button class="backbtn" onclick="show('viewer')">‹ Session</button>
     <div class="sub" style="margin-top:4px;">AI DEBRIEF · TODAY · 6 LAPS</div>
     <h1 class="headline" style="font-size:24px;">Your debrief</h1>
     <div class="card">
-      <p style="color:var(--red);font-weight:700">Couldn't generate the debrief: Request failed</p>
-      <p class="sub" style="margin-top:6px">Your laps are safe — they live on this phone, and the debrief can be asked for again from the session. Nothing about the session is lost when the AI can't answer.</p>
+      <p style="color:var(--red);font-weight:700">The debrief couldn't be written — the connection dropped.</p>
+      <p class="sub" style="margin-top:6px">Your laps are safe — they live on this phone, and the debrief can be asked for again from the session, any time. Nothing about the session is lost when the AI can't answer. The failure always names itself — a dropped request, no laps recorded yet, an empty reply — never a silent spinner.</p>
+      <button class="btn" style="margin-top:10px" onclick="show('debriefgen')">Ask again</button>
     </div>
-    <p class="small">The error state, in the app's own form — the message names what failed ("Request failed" · "No laps recorded yet." · "The AI returned an empty reply."). The first walkthrough never showed a debrief failing. And when the month's free debriefs are used up, this screen never appears at all — the paywall opens instead: <span class="link" onclick="quotaGate=true;show('paywall')">see the quota gate →</span></p>
+    <p class="small">And when the month's free debriefs are used up, this screen never appears at all — the paywall opens instead, saying why: <span class="link" onclick="quotaGate=true;show('paywall')">see the quota gate →</span></p>
   </section>
 
-  <!-- ============ TRACK WALK ============ -->
+<!-- ============ TRACK WALK ============ -->
   <section class="screen" id="scr-trackwalk">
-    <button class="backbtn" onclick="show('coach')">‹ Coach</button>
-    <div class="sub" style="margin-top:4px;">TRACK WALK</div>
-    <h1 class="headline" style="font-size:24px;">Walk the track.</h1>
+    <button class="backbtn" onclick="show('debrief')">‹ Debrief</button>
+    <div class="sub" style="margin-top:4px;">TRACK WALK · ON FOOT, PHONE IN HAND</div>
+    <h1 class="headline" style="font-size:24px;">Walk it before you drive it.</h1>
+    <p class="sub">Stand at a corner and the walk briefs you on what's there — the slope under your feet, the camber, where the grip hides. Built from the same terrain truth the coach is graded against.</p>
 
-    <div id="tw-idle">
-      <div class="klabel" style="margin:10px 0 6px">Track name</div>
-      <input class="textfield" placeholder="Track name" value="Hamilton Mini Indy">
-      <button class="btn" style="margin-top:12px" onclick="walkState('walking')">Start walk at start/finish</button>
-      <button class="btn ghost" style="margin-top:8px" onclick="show('coach')">Back</button>
-      <div class="klabel" style="margin:16px 0 6px">Past walks</div>
-      <div class="card tap" onclick="walkState('viewing')">
-        <b>Hamilton Mini Indy</b>
-        <p class="small" style="margin-top:2px">Tue 15 Sep 2026, 09:41 · 6 pins</p>
-      </div>
-      <p class="small">In the app this is a recording mode, not a guided brief: you walk the lap with the phone in hand, drop pins at what you see, and the loop closes itself when you arrive back at start/finish. The guided corner-brief version in the first walkthrough was the sim's invention — this screen now mirrors the app. (The founder's pace-lap direction brings the guided walk back INTO the car — see the pace lap in the index.)</p>
+    <div class="card">
+      <div class="spread"><span class="klabel">Hamilton Mini Indy</span><span class="pill info">GPS · you're here</span></div>
+      <div class="kv" style="margin-top:8px"><span>Walking progress</span><b>4 of 9 corners visited</b></div>
+      <div class="progress-track"><div class="progress-fill" style="width:44%"></div></div>
+      <div class="kv"><span>Ground truth at your feet</span><b>225.8 m elevation anchor</b></div>
+      <div class="kv"><span>Surface notes</span><b>2 saved by you</b></div>
+      <button class="btn" style="margin-top:10px" onclick="toast('Walk started — the brief plays corner by corner as you reach each one')">▶ START THE WALK</button>
+      <p class="small" style="margin-top:8px">As you walk, the map follows you at walking pace — and the coach narrates each corner as you reach it, the same position-keyed lines the pace lap uses in the car.</p>
     </div>
 
-    <div id="tw-walking" style="display:none">
-      <div class="card">
-        <b>Walking Hamilton Mini Indy…</b>
-        <p class="sub" style="margin-top:4px">412 m walked · 3 pins · 5 corners detected</p>
-      </div>
-      <div class="klabel" style="margin:10px 0 6px">Drop a pin</div>
-      <div class="row" style="gap:8px;flex-wrap:wrap">
-        <button class="btn orange small grow" onclick="openSheet('pindialog')">Braking ref</button>
-        <button class="btn orange small grow" onclick="openSheet('pindialog')">Turn-in cue</button>
-        <button class="btn orange small grow" onclick="openSheet('pindialog')">Apex</button>
-        <button class="btn orange small grow" onclick="openSheet('pindialog')">Bump</button>
-        <button class="btn orange small grow" onclick="openSheet('pindialog')">Surface</button>
-        <button class="btn orange small grow" onclick="openSheet('pindialog')">Note</button>
-      </div>
-      <div class="card"><div class="spread"><span><b>Braking ref · T3</b><div class="small">brake at the tire stack</div></span><span class="link" onclick="toast('Pin removed')">✕</span></div></div>
-      <div class="card"><div class="spread"><span><b>Surface · T5</b><div class="small">Loose gravel on the outside. Stay off it.</div></span><span class="link" onclick="toast('Pin removed')">✕</span></div></div>
-      <div class="card"><div class="spread"><span><b>Apex · T6</b></span><span class="link" onclick="toast('Pin removed')">✕</span></div></div>
-      <button class="btn ghost" onclick="walkState('done')">Finish walk</button>
-      <p class="small" style="margin-top:8px">Walk back to where you started and the loop closes itself — the walk finishes on its own. Every pin goes through the note dialog first (tap one).</p>
+    <div class="card">
+      <span class="who">🎧 AT THIS CORNER — TURN 3</span>
+      <p class="coach-says" style="font-size:15.5px;margin-top:4px;">See how the track falls away to your left? That's why the car feels light at turn-in here. The grip is on the right, where the surface is newer — your note from Tuesday says the same, in your words.</p>
+      <div class="divider"></div>
+      <div class="klabel">Your note here</div>
+      <p class="sub" style="margin-top:4px">“Loose gravel on the outside from the session before. Stay off it.”</p>
+      <span class="link" onclick="openSheet('pinnote')">Edit note</span> · <span class="link" onclick="openSheet('pinnote')">Drop a pin here</span>
     </div>
 
-    <div id="tw-done" style="display:none">
-      <div class="card">
-        <b style="font-size:16px;">Walk complete</b>
-        <p class="sub" style="margin-top:4px">Hamilton Mini Indy · 512 m · 3 pins · 9 corners</p>
-      </div>
-      <button class="btn" onclick="toast('Reading your walk…')">Generate briefing</button>
-      <div class="card" style="text-align:center"><p class="sub">Reading your walk…</p><p class="small" style="margin-top:4px">While it generates, this is the card you see. A failure says so in the same form: "Couldn't generate the briefing: …"</p></div>
-      <button class="btn ghost" onclick="walkState('idle')">Walk another track</button>
-      <button class="btn ghost" style="margin-top:8px" onclick="show('coach')">Back</button>
+    <div class="card">
+      <div class="klabel">How the walk brief is made</div>
+      <p class="sub" style="margin-top:6px">From the track's measured outline and terrain — never invented. Walking a track the catalogue only anchors (no full profile yet) says so plainly instead of making up slopes.</p>
     </div>
-
-    <div id="tw-viewing" style="display:none">
-      <div class="card"><b>Hamilton Mini Indy</b><p class="small" style="margin-top:2px">Tue 15 Sep 2026, 09:41 · 6 pins</p></div>
-      <div class="card"><b>Braking ref · T3</b><p class="sub" style="margin-top:2px">brake at the tire stack</p></div>
-      <div class="card"><b>Surface · T5</b><p class="sub" style="margin-top:2px">Loose gravel on the outside. Stay off it.</p><p class="small" style="margin-top:2px">Voice note recorded</p></div>
-      <button class="btn" onclick="toast('Reading your walk…')">Generate briefing</button>
-      <button class="btn ghost" style="margin-top:8px" onclick="walkState('idle')">Back to walks</button>
-      <p class="small" style="margin-top:8px">A past walk, read back — walks are reachable, not write-only.</p>
+    <div class="card">
+      <div class="klabel" style="margin-bottom:6px;">Your walks</div>
+      <div class="card tap" style="margin:6px 0" onclick="toast('That walk, reopened — its pins and notes standing where you left them')">
+        <div class="spread"><b>Hamilton Mini Indy</b><span class="pill none">6 PINS</span></div>
+        <div class="small">Tue 15 Sep 2026, 09:41 · walked on foot, briefed corner by corner</div>
+      </div>
+      <div class="card tap" style="margin:6px 0" onclick="toast('That walk, reopened — its pins and notes standing where you left them')">
+        <div class="spread"><b>Shannonville — Nelson circuit</b><span class="pill none">3 PINS</span></div>
+        <div class="small">Sat 22 Aug 2026, 16:05</div>
+      </div>
+      <p class="small" style="margin-top:6px">Walks you finish live here — reopen one and its pins are standing where you dropped them.</p>
     </div>
   </section>
+
 
   <!-- ============ COACH & VOICE ============ -->
   <section class="screen" id="scr-coach">
@@ -1028,7 +1013,7 @@
       <span class="who">VOICE CHECK</span>
       <p class="coach-says">Your coach talks to you while you drive. Check the voice works before you're in the car — tap it, you should hear one line, the way it will sound in your ear.</p>
       <button class="btn orange" style="font-size:17px;padding:16px;margin-top:12px" onclick="speakSim(this,'Voice heard — that’s your coach, in full')">🎧 TEST MY COACH'S VOICE</button>
-      <div class="kv" style="margin-top:12px;"><span>Voice</span><b>Phone speaker</b></div>
+      <div class="kv" style="margin-top:12px;"><span>Voice</span><b>Ready ✓</b></div>
       <div class="kv"><span>Last cue spoken</span><b>heard, in full</b></div>
       <div class="kv"><span>Where you hear me</span><b>Phone speaker ▸</b></div>
       <p class="small" style="margin-top:6px;">If I ever can't speak, this screen says so in plain words — and the Live screen shows it the moment it happens. Silence is a bug, never a mystery. Every cue's fate — spoken, or dropped and why — is kept in a log you can send with a session.</p>
@@ -1038,19 +1023,19 @@
       <div class="klabel">Try a whole session, sitting on the sofa</div>
       <p class="sub" style="margin-top:6px;">Replay one of your real sessions through the real coach — the Coach Brief at GO, lap calls, the works — and hear exactly what would have been said, and when. The fastest way to check his timing.</p>
       <div class="chiprow">
-        <button class="cchip2">1×</button><button class="cchip2 sel">4×</button><button class="cchip2">8×</button>
+        <button class="cchip2 sel">×8 fast</button><button class="cchip2">×4</button><button class="cchip2">Real time</button>
       </div>
-      <p class="sub" style="margin-top:4px">Session: Nürburgring GP · today</p>
-      <button class="btn ghost small" style="margin-top:8px" onclick="toast('Replay runs today’s session through the real coach')">Replay session — test the voice</button>
+      <button class="btn ghost small" onclick="toast('Replay runs today’s session through the real coach')">▶ Replay today's session</button>
     </div>
 
     <div class="card">
       <div style="font-weight:800;font-size:16px;">How I coach you</div>
       <div class="toggle-row"><span>Talk to me while I drive</span><div class="switch on" onclick="this.classList.toggle('on')"></div></div>
-      <div class="toggle-row"><span>Quiet first two laps — let me learn the track</span><div class="switch on" onclick="this.classList.toggle('on')"></div></div>
-      <div class="toggle-row"><span>Celebrate a best lap, out loud</span><div class="switch on" onclick="this.classList.toggle('on')"></div></div>
-      <div class="toggle-row"><span>Plain words mode</span><div class="switch on" onclick="this.classList.toggle('on')"></div></div>
-      <div class="toggle-row"><span>Show me the engineering depth too</span><div class="switch" onclick="this.classList.toggle('on');toast('Depth on: numbers &amp; traces join the story everywhere')"></div></div>
+      <div class="toggle-row"><span>Quiet first two laps (let me learn the track)</span><div class="switch on" onclick="this.classList.toggle('on')"></div></div>
+      <div class="toggle-row"><span>Celebrate a best lap out loud</span><div class="switch on" onclick="this.classList.toggle('on')"></div></div>
+      <div class="toggle-row"><span>Plain words mode <span class="small">(no racing jargon)</span></span><div class="switch on" onclick="this.classList.toggle('on')"></div></div>
+      <div class="toggle-row"><span>Guardian — he's got my back</span><div class="switch on" onclick="this.classList.toggle('on')"></div></div>
+      <div class="toggle-row"><span>Show me the engineering depth</span><div class="switch" onclick="this.classList.toggle('on');toast('Depth on: numbers &amp; traces join the story everywhere')"></div></div>
       <p class="small" style="margin-top:8px">Every one of these switches is wired to the coach himself — a switch that changes nothing would be a lie, and there are none here.</p>
     </div>
 
@@ -1061,23 +1046,21 @@
       <div class="kv"><span>Judged against</span><b>your own demonstrated best — never other drivers</b></div>
     </div>
 
-    <div class="decision"><b>FOUNDER DECISION —</b> two things about this screen. (1) The Guardian switch that used to sit in the toggle list below isn't in the app — the app's five toggles are the ones shown. The old switch promised control the app doesn't have; a Guardian toggle belongs in the app first, or "always on, argued with in the moment" (the Live screen's model) is the design. (2) This tab's icon: the old walkthrough drew headphones; the app uses a star, which reads as "favourites" to a fresh eye. The tab bar now draws the app's star, to mirror the app — keep the star, or switch the app to the headphones?</div>
-
     <div class="card">
       <div class="klabel">Recording quality — today</div>
-      <p class="coach-says" style="font-size:15px;margin-top:6px;">Last session's recording: gas pedal, brake pedal, steering, G, rotation, RPM and gear captured.</p>
-      <p class="sub">The app's own one-line summary of the last session's coverage stamp — a channel only counts when its values actually varied. A flatlined channel reads as missing, never as recorded.</p>
+      <p class="coach-says" style="font-size:15px;margin-top:6px;">We recorded everything today ✓</p>
+      <p class="sub">Pedals ✓ · Steering ✓ · Speed ✓ · Cornering force — some readings estimated in the sim; that only softens the fine detail, never your lap times.</p>
     </div>
   </section>
 
-  <!-- ============ COACH — FIRST RUN (no sessions yet) ============ -->
+    <!-- ============ COACH — BEFORE ANY SESSION ============ -->
   <section class="screen" id="scr-coachnew">
     <div class="sub" style="margin-top:6px;">YOUR COACH</div>
     <h1 class="headline" style="font-size:24px;">One voice. Yours to tune.</h1>
     <div class="card">
       <span class="who">YOUR COACH · VOICE CHECK</span>
       <p class="coach-says">Your coach talks to you while you drive. Check the voice works before you're in the car — tap it, you should hear one line, the way it will sound in your ear.</p>
-      <button class="btn orange" style="font-size:17px;padding:16px;margin-top:12px" onclick="speakSim(this,'Voice heard — that’s your coach, in full')">🎧 TEST MY COACH'S VOICE</button>
+      <button class="btn orange" style="font-size:17px;padding:16px;margin-top:12px" onclick="speakSim(this,'Voice heard — that's your coach, in full')">🎧 TEST MY COACH'S VOICE</button>
       <div class="kv" style="margin-top:12px;"><span>Voice</span><b>Phone speaker</b></div>
       <div class="kv"><span>Last cue spoken</span><b>Nothing yet this session</b></div>
       <div class="kv"><span>Where you hear me</span><b>Your headset</b></div>
@@ -1087,7 +1070,7 @@
     </div>
     <div class="card">
       <div class="klabel">Hear it again, from the sofa</div>
-      <p class="sub" style="margin-top:6px;">Replays your most recent recorded session through the real coach — Coach Brief at GO, lap calls, the works — out loud. Lap times stay true to the recording at any speed.</p>
+      <p class="sub" style="margin-top:6px;">Replays your most recent recorded session through the real coach — the pits intro at GO, lap calls, the works — out loud. Lap times stay true to the recording at any speed.</p>
       <p class="sub" style="margin-top:6px">No recorded sessions yet — this test needs one in the record first.</p>
     </div>
     <div class="card">
@@ -1097,262 +1080,225 @@
       <div class="toggle-row"><span>Celebrate a best lap, out loud</span><div class="switch on" onclick="this.classList.toggle('on')"></div></div>
       <div class="toggle-row"><span>Plain words mode</span><div class="switch on" onclick="this.classList.toggle('on')"></div></div>
       <div class="toggle-row"><span>Show me the engineering depth too</span><div class="switch" onclick="this.classList.toggle('on')"></div></div>
+      <div class="toggle-row"><span>Shout if I'm about to overcook a corner <span class="small">(Guardian — a second, louder register of the same coach)</span></span><div class="switch on" onclick="this.classList.toggle('on')"></div></div>
       <p class="small" style="margin-top:8px">Change them any time — the new setting applies from the next lap, never mid-corner.</p>
     </div>
     <div class="card">
-      <div class="klabel">Recording quality</div>
-      <p class="sub" style="margin-top:6px">Recording quality: no recorded session yet — the last session's channels will be summarised here.</p>
+      <div class="klabel">What the last session's recording looked like</div>
+      <p class="sub" style="margin-top:6px">No recorded session yet — after your first drive, this card grades what the phone actually captured, channel by channel, the honest ones and the holes.</p>
     </div>
     <p><span class="link" onclick="show('trackwalk')">Walk the track, corner by corner →</span></p>
     <p class="small" style="text-align:center;margin-top:10px">Everything on this screen reads your driving stored on this phone. Nothing is uploaded.</p>
-    <p class="small" style="margin-top:8px">The Coach tab before any session exists — the sofa test and the recording-quality line in their empty forms. The first walkthrough only ever showed this screen populated.</p>
+    <p class="small" style="margin-top:8px">The Coach tab before any session exists — the voice check, the sofa test and the recording-quality card in their empty forms, in the same composition as the populated screen.</p>
   </section>
 
-  <!-- ============ SETTINGS ============ -->
+<!-- ============ SETTINGS ============ -->
   <section class="screen" id="scr-settings">
     <div class="sub" style="margin-top:6px;">SETTINGS</div>
     <h1 class="headline" style="font-size:24px;">The quiet page.</h1>
-    <div class="decision"><b>FOUNDER DECISION —</b> the first walkthrough composed this page its own way (Driving → Hardware → Pro → Backup → Developer) and invented a "Driving" card — units, keep-screen-awake, background — that doesn't exist in the app at all. This page now mirrors the app's real order and cards, top to bottom. The Driving card is gone from the walkthrough because it isn't in the product: bring units / keep-awake into the app for real, or leave them out?</div>
 
-    <div class="klabel" style="margin:12px 0 2px">RaceHero Pro</div>
-    <div class="card tap" onclick="show('paywall')">
-      <div class="spread"><b style="font-size:16px">Free — Driver</b><span class="link">Go Pro →</span></div>
-      <p class="sub" style="margin-top:4px">You have 4 of 4 free AI debriefs left this month. Pro unlocks unlimited debriefs, 1080p exports with no watermark, and new AI features first.</p>
-    </div>
-
-    <div class="klabel" style="margin:14px 0 2px">Permissions</div>
     <div class="card">
-      <div class="spread"><b style="font-size:16px">Location &amp; recording</b><span class="pill good">Granted</span></div>
-      <p class="sub" style="margin-top:4px">Fine location for 1 Hz GPS lap timing, notifications for the ongoing-recording indicator, Bluetooth to label the coaching audio route (your glasses).</p>
-      <div class="row" style="margin-top:10px;gap:8px">
-        <button class="btn small" disabled>Granted</button>
-        <button class="btn ghost small" onclick="toast('Opens Android’s app settings (the phone owns that screen)')">App settings</button>
-      </div>
-      <div class="divider"></div>
-      <b style="font-size:15px">Background location (optional)</b>
-      <p class="sub" style="margin-top:4px">Only needed if you want timing to keep running while a different app is on screen. Screen-off recording already works without it.</p>
-      <button class="btn small" style="margin-top:8px" onclick="openSheet('bgloc')">Enable</button>
-      <p class="small" style="margin-top:6px">Once granted, this card leaves the page entirely. A missing permission reads "Missing" in red, with its own Grant button — the state the first walkthrough never showed (it only ever showed permissions as already on).</p>
+      <div style="font-weight:800;font-size:16px;">Driving</div>
+      <div class="toggle-row"><span>Units — km/h &amp; metres</span><span class="pill none">metric ▸</span></div>
+      <div class="toggle-row"><span>Keep the screen awake while driving</span><div class="switch on" onclick="this.classList.toggle('on')"></div></div>
+      <div class="toggle-row"><span>Let RaceHero run in the background <span class="small">(so long sessions survive)</span></span><div class="switch on" onclick="this.classList.toggle('on')"></div></div>
     </div>
 
-    <div class="klabel" style="margin:14px 0 2px">Battery</div>
-    <div class="card">
-      <div class="spread"><b style="font-size:16px">Battery optimization</b><span class="pill warn">Not exempt</span></div>
-      <p class="sub" style="margin-top:4px">Some phones (Samsung, Xiaomi, OnePlus) kill background work aggressively. Exempt RaceHero so long sessions survive with the screen off.</p>
-      <button class="btn ghost small" style="margin-top:8px" onclick="toast('Android asks — one system dialog (the phone owns it)')">Request exemption</button>
-    </div>
-
-    <div class="klabel" style="margin:14px 0 2px">Coaching audio</div>
-    <div class="card">
-      <div class="kv"><span>Current route</span><b style="color:var(--orange)">Phone speaker</b></div>
-      <p class="sub" style="margin-top:4px">Pair your Ray-Ban Meta / Oakley Meta glasses over Bluetooth and coaching tips play through them automatically, ducking music like a navigation prompt.</p>
-      <p style="margin-top:8px"><span class="link" onclick="toast('Opens Android’s Bluetooth settings (the phone owns that screen)')">Bluetooth settings</span></p>
-    </div>
-
-    <div class="klabel" style="margin:14px 0 2px">Hardware hub</div>
     <div class="card tap" onclick="show('hardware')">
-      <div class="spread"><b style="font-size:16px">Hardware Hub</b><span class="link">Open →</span></div>
-      <p class="sub" style="margin-top:4px">GPS source, pucks, OBD — everything that feeds the coach.</p>
+      <div class="spread"><b style="font-size:16px">Hardware</b><span class="link">Open the hub →</span></div>
+      <p class="sub" style="margin-top:4px">Link is streaming · MOZA R9 + P1000 locked · Puck ready · GoPro paired</p>
     </div>
 
-    <div class="klabel" style="margin:14px 0 2px">Coach voice</div>
+    <div class="card tap" onclick="show('paywall')">
+      <div class="spread"><b style="font-size:16px">RaceHero Pro</b><span class="pill plan">FREE — 4 debriefs left</span></div>
+      <p class="sub" style="margin-top:4px">Free covers your driving. Pro removes the ceiling. See what's what →</p>
+    </div>
+
     <div class="card">
-      <b style="font-size:16px">Built-in voice</b>
-      <p class="sub" style="margin-top:4px">Ready ✓ — your coach's voice lives on this phone. Same voice every session, and it works at the track with no signal at all.</p>
-      <p class="small" style="margin-top:6px;color:var(--orange)">Status — last cue: none yet</p>
-      <button class="btn ghost small" style="margin-top:8px" onclick="speakSim(this,'Voice heard — that’s your coach, in full')">Test voice</button>
-      <p class="small" style="margin-top:8px">The pack's other states, in the app's words: "Downloading the voice pack… X MB of ~132 MB (one time). The backup voice covers until it's ready." · "Waiting for an unmetered connection — the pack is ~132 MB. It fetches itself on Wi-Fi, or tap below to get it now on this connection." · "The voice pack download didn't finish. Tap to retry — the backup voice covers until it's ready." · "The voice pack (~130 MB, one time) hasn't downloaded yet."</p>
+      <div class="klabel">Permissions &amp; battery</div>
+      <p class="sub" style="margin-top:6px">What Android has been asked for, and what it answered — in sentences, with the ask itself one tap away. Nothing here is buried.</p>
+      <div class="kv" style="margin-top:8px"><span>Location — while you drive</span><b>Granted ✓</b></div>
+      <div class="kv"><span>Location in the background</span><span class="link" onclick="openSheet('bgloc')">Why it's asked →</span></div>
+      <div class="kv"><span>Notifications</span><b>On ✓</b></div>
+      <div class="kv"><span>Microphone — only if you record coach audio</span><b>Not asked</b></div>
+      <div class="kv"><span>Battery optimisation</span><b>Not exempt</b></div>
+      <p class="small" style="margin-top:6px">Not exempt means Android may pause a long session to save power. <span class="link" onclick="toast('Android's own battery screen opens — the phone owns that ask')">Ask Android to leave RaceHero alone →</span></p>
     </div>
+
     <div class="card">
-      <b style="font-size:16px">Replay voice test</b>
-      <p class="sub" style="margin-top:4px">Replays your most recent recorded session through the real coach — Coach Brief at GO, lap calls, the works — out loud. Lap times stay true to the recording at any speed.</p>
-      <div class="chiprow"><button class="cchip2">1×</button><button class="cchip2 sel">4×</button><button class="cchip2">8×</button></div>
-      <button class="btn small" onclick="toast('Replay runs today’s session through the real coach')">Replay session — test the voice</button>
-      <p class="small" style="margin-top:8px">With no sessions recorded, this card says instead: "No recorded sessions yet — this test needs one in the record first."</p>
+      <div class="klabel">The machinery</div>
+      <div class="kv" style="margin-top:6px"><span>AI debrief (Gemini)</span><b>Built in ✓</b></div>
+      <p class="small">Debriefs are written by Google Gemini through RaceHero's own server — there is no key on your phone, and nothing to paste, ever.</p>
+      <div class="kv"><span>Coaching audio</span><b>Bluetooth first</b></div>
+      <p class="small">Glasses or earbuds if they're connected; the phone speaker is the fallback — and the Guardian never waits for either.</p>
+      <div class="kv"><span>Coach's voice files</span><b>On this phone ✓</b></div>
+      <div class="toggle-row"><span>Download voice files on Wi-Fi only</span><div class="switch on" onclick="this.classList.toggle('on')"></div></div>
+      <div class="kv"><span>Replay a recorded session</span><span class="link" onclick="show('coach')">In the Coach tab →</span></div>
+      <p class="small">Full speed or quarter speed — lap times stay true to the recording either way.</p>
+      <div class="kv"><span>Diagnostics</span><span class="link" onclick="toast('Diagnostics copied — session health, link state and the voice log')">Copy diagnostics</span></div>
+      <p class="small">The same record support would ask for — session health, the link's state, and what the coach's voice actually did.</p>
     </div>
 
-    <p class="small" style="text-align:center;margin:14px 0 2px">Lap engine runs on-device — no account. The coach voice runs on your phone; AI Debrief uses Google's AI cloud.</p>
 
-    <div class="klabel" style="margin:12px 0 2px">AI coaching</div>
+
     <div class="card">
-      <b style="font-size:16px">Gemini AI Debrief</b>
-      <p class="sub" style="margin-top:4px">Built in ✓ — the post-session AI Debrief and the backup AI voice run through RaceHero's own server. No key in the app, nothing to set up.</p>
+      <div style="font-weight:800;font-size:16px;">Backup &amp; restore</div>
+      <p class="sub" style="margin-top:6px">Everything — sessions at full detail, your tracks, your coach's memory of you — in one file you own. Restoring merges; it never overwrites.</p>
+      <div class="row" style="margin-top:10px;gap:8px">
+        <button class="btn ghost grow" onclick="toast('Backup written — one .racehero-backup file, yours to keep')">Back up now</button>
+        <button class="btn ghost grow" onclick="openSheet('restorefile')">Restore…</button>
+      </div>
+      <p class="small" style="margin-top:8px">Pro comes from Google Play, not from the backup — a restored phone just signs back in.</p>
     </div>
 
-    <div class="klabel" style="margin:14px 0 2px">Your data</div>
     <div class="card">
-      <div class="klabel">Backup &amp; restore</div>
-      <p class="sub" style="margin-top:6px">New phone? Restore your backup here — everything comes back.</p>
-      <button class="btn" style="margin-top:10px" onclick="toast('Making your backup…')">Make my backup</button>
-      <button class="btn" style="margin-top:8px" onclick="toast('Share sheet opens — the backup is one file')">Share backup</button>
-      <button class="btn ghost" style="margin-top:8px" onclick="openSheet('restorefile')">Restore from a backup file</button>
-      <p class="small" style="margin-top:8px">Last backup: no backup yet. · One file, everything in it — a backup over about 20 MB gets the note "That's big for email. Drive or Files will treat it better."</p>
+      <div class="spread"><div style="font-weight:800;font-size:16px;">Developer</div><span class="pill none">builds for testing only</span></div>
+      <p class="sub" style="margin-top:6px">Send this build's session data to the RaceHero dev funnel for diagnosis — full laps, the coach's cue log, Link's view. Off by default; never in the public build.</p>
+      <div class="toggle-row"><span>Dev funnel</span><div class="switch" onclick="this.classList.toggle('on');toast('Funnel state saved — it rides along with the next session, nowhere else')"></div></div>
+      <input class="textfield" style="margin-top:8px" placeholder="Funnel token (stored on this phone only)" value="">
+      <div class="row" style="margin-top:10px;gap:8px">
+        <button class="btn ghost grow" onclick="toast('Token saved on this phone')">Save token</button>
+        <button class="btn ghost grow" onclick="toast('Test ping sent — the funnel answered ✓')">Test</button>
+      </div>
     </div>
 
-    <div class="klabel" style="margin:14px 0 2px">Developer</div>
-    <div class="card">
-      <div class="spread"><b style="font-size:16px">Dev funnel</b><span class="pill none">dev builds only</span></div>
-      <p class="sub" style="margin-top:4px">Founder debugging only. When on, the app sends each finished session (full export + diagnostics) and a short per-lap summary to RaceHero's dev inbox, so a test drive can be read the moment it's over. Off by default; sends wait in a queue when there's no signal and flush on the next launch.</p>
-      <div class="toggle-row"><span>Send session data</span><div class="switch" onclick="this.classList.toggle('on')"></div></div>
-      <p class="small" style="margin-top:6px">Endpoint: https://racehero.ca/api/dev-ingest</p>
-      <div class="klabel" style="margin:8px 0 4px">Dev token</div>
-      <input class="textfield" placeholder="Dev token" value="">
-      <p class="small" style="margin-top:6px">Queued: 0 · Sent: 12</p>
-      <div class="row" style="margin-top:8px;gap:16px"><span class="link" onclick="toast('Test ping sent — the funnel answered ✓')">Send test ping</span><span class="link" onclick="toast('Queue flushed')">Flush queue</span></div>
-      <p class="small" style="margin-top:6px">This card is compiled into test builds only — it never appears in the store build, which is why the first walkthrough showing it unconditionally was wrong.</p>
-    </div>
-
-    <div class="klabel" style="margin:14px 0 2px">Diagnostics</div>
-    <div class="card">
-      <b style="font-size:16px">Diagnostics</b>
-      <p class="sub" style="margin-top:4px">No crashes recorded.</p>
-      <p class="small" style="margin-top:4px">After a crash this card shows "Last crash: &lt;date, time&gt;" in red with the trace, plus Copy trace / Clear links.</p>
-    </div>
-
-    <p class="small" style="text-align:center;margin-top:14px">Version 0.5.1.2 · build 77</p>
+    <div class="small" style="text-align:center;">RaceHero · Your data stays on your phone; the AI debrief is the only thing that visits the cloud.</div>
   </section>
 
   <!-- ============ HARDWARE HUB ============ -->
   <section class="screen" id="scr-hardware">
-    <button class="backbtn" onclick="show('settings')">‹ Back</button>
-    <h1 class="headline" style="font-size:24px;">Hardware Hub</h1>
+    <button class="backbtn" onclick="show('settings')">‹ Settings</button>
+    <div class="sub" style="margin-top:4px;">HARDWARE HUB</div>
+    <h1 class="headline" style="font-size:24px;">Everything that feeds the coach.</h1>
 
-    <div class="klabel" style="margin:10px 0 2px">Hardware Hub</div>
-    <div class="card">
-      <b style="font-size:16px">GPS source</b>
-      <div class="spread" style="margin-top:8px"><span><b>Phone GPS · ~1 Hz</b><div class="small">Self-check: ±8 m</div></span></div>
-      <button class="btn" style="margin-top:10px" onclick="toast('Scanning… pucks appear here as they’re found')">Scan for pucks</button>
-      <p class="small" style="margin-top:8px">Set your puck to NMEA output mode. RaceHero reads any BLE NMEA stream — Nordic UART first, then any notifiable characteristic. A found puck reads "RaceBox Mini · −62 dBm" with a Connect link; while connecting, "Connecting…"; a scan failure names itself in red.</p>
-      <p class="small" style="margin-top:4px">When GPS accuracy is weak and no puck is connected, this card says so in amber: "GPS accuracy is weak right now — the amber ring on the track map marks it. A 10 Hz puck fixes this." Connected, the source line turns green: "Puck · RaceBox Mini" with a Disconnect link.</p>
+    <div class="card" style="border-color:#2C4636">
+      <div class="spread"><b style="font-size:16px">🖥️ RaceHero Link — your PC</b><span class="pill good" id="hub-link-pill">STREAMING</span></div>
+      <p class="sub" style="margin-top:6px">Link reads your wheel and pedals directly and streams them to the phone, merged with the game's own data. It mapped itself — there is no setup step, and never will be.</p>
+      <div class="kv" style="margin-top:8px"><span>Input</span><b>DirectInput — live</b></div>
+      <div class="kv"><span>Wheel</span><b>MOZA R9 Base — steering, locked</b></div>
+      <div class="kv"><span>Pedals</span><b>P1000 — gas &amp; brake, locked</b></div>
+      <div class="kv"><span>How sure is the map?</span><b>matched against the game itself</b></div>
+      <div class="kv"><span>Game feed</span><b>ACC — from the game, incl. lap timing</b></div>
+      <div class="kv"><span>Phone on this network</span><b>10.0.0.176</b></div>
+      <p class="small" style="margin-top:6px" id="hub-link-line">If the phone ever stops receiving, this card says so in a sentence — frames leaving the PC are not proof they arrived.</p>
+      <span class="link" onclick="openSheet('simsetup')">How connecting works →</span>
     </div>
 
     <div class="card">
-      <b style="font-size:16px">Classic Bluetooth (SPP)</b>
-      <p class="sub" style="margin-top:4px">Dual XGPS160 and similar pucks stream NMEA over classic Bluetooth. Pair in Android Bluetooth settings first, then connect here.</p>
-      <p class="small" style="margin-top:8px">No compatible SPP puck paired. Pair an XGPS160 or similar puck in Android Bluetooth settings.</p>
+      <div class="spread"><b style="font-size:16px">📍 GPS puck — PuckLink</b><span class="pill good">READY</span></div>
+      <p class="sub" style="margin-top:6px">For real tracks: a 25 Hz GPS puck the app finds on its own — it reconnects to the last puck it knew, every time, without being asked.</p>
+      <div class="kv" style="margin-top:6px"><span>Fix rate</span><b>25 Hz</b></div>
+      <div class="kv"><span>Also listens for</span><b>RaceBox · Dual XGPS160 · Qstarz</b></div>
+      <button class="btn ghost small" style="margin-top:10px" onclick="show('garage')">Build your own puck — the guide →</button>
+    </div>
+
+    <div class="card tap" onclick="show('gopro')">
+      <div class="spread"><b style="font-size:16px">🎥 GoPro — video overlay</b><span class="pill good">PAIRED</span></div>
+      <p class="sub" style="margin-top:4px">Any MP4, synced by timestamp; the session's data laid over it. Or live over USB. Open →</p>
     </div>
 
     <div class="card">
-      <b style="font-size:16px">OBD-II / CAN — track cars</b>
-      <p class="sub" style="margin-top:4px">Pair an ELM327 / OBDLink adapter in Android Bluetooth settings and connect it once — after that it connects itself when a session starts, and its RPM and throttle are recorded with the session. Throttle also sharpens the voice coach's straightaway detection.</p>
-      <p class="small" style="margin-top:8px">No compatible OBD adapter paired. Pair an ELM327 / OBDLink adapter in Android Bluetooth settings.</p>
-      <p class="small" style="margin-top:4px">Connected, this card shows RPM and speed as numbers and throttle as a travel bar — off/full words, never a percentage. A remembered adapter is labelled "— remembered". A failure names its cause in red, with a "Try again" button.</p>
+      <div class="spread"><b style="font-size:16px">🚗 OBD — your road car</b><span class="pill none">NOT CONNECTED</span></div>
+      <p class="sub" style="margin-top:6px">Plug in an OBDLink or Veepeak and the same coach rides in the car — same data structure, same analysis, different adapter. Channels the car doesn't offer stay absent — never invented.</p>
+      <div class="statgrid" style="margin-top:10px">
+        <div class="stat"><div class="klabel">RPM</div><div class="v">—</div><div class="u">no car connected</div></div>
+        <div class="stat"><div class="klabel">Speed</div><div class="v">—</div><div class="u">GPS still rules timing</div></div>
+        <div class="stat"><div class="klabel">Throttle</div><div class="v">—</div><div class="u">&nbsp;</div></div>
+      </div>
+      <div style="margin-top:10px">
+        <div class="row"><span style="width:74px;font-weight:700">Throttle</span><div class="bar grow"><i style="width:0%;background:var(--grn)"></i></div></div>
+        <div class="row" style="margin-top:4px"><span style="width:74px"></span><span class="small grow">off</span><span class="small">full</span></div>
+      </div>
     </div>
-
-    <div class="card">
-      <b style="font-size:16px">Unlock Precision Coaching with 10Hz+ Telemetry.</b>
-      <p class="sub" style="margin-top:4px">Phone GPS samples once per second — corner analysis stays coarse. A Bluetooth puck samples 10–25 times per second with much finer position accuracy.</p>
-      <div class="kv" style="margin-top:6px"><span>RaceBox Mini — 25 Hz</span><span class="link" style="font-size:13.5px" onclick="toast('Opens the maker’s page')">Buy</span></div>
-      <div class="kv"><span>Dual XGPS160 — 10 Hz</span><span class="link" style="font-size:13.5px" onclick="toast('Opens the seller’s page')">Buy</span></div>
-      <div class="kv"><span>Qstarz BL-1000GT — 10 Hz</span><span class="link" style="font-size:13.5px" onclick="toast('Opens the seller’s page')">Buy</span></div>
-      <p class="small" style="margin-top:6px">This panel only shows while you're still on phone GPS — it leaves once a puck connects.</p>
-    </div>
-
-    <div class="card tap" onclick="show('garage')">
-      <b style="font-size:16px">Want 25Hz precision for $40? Build it yourself.</b>
-      <p style="margin-top:4px"><span class="link">Enter the RaceHero Garage →</span></p>
-    </div>
-
-    <p class="small">The app's hub leads with your GPS source and pucks — the first walkthrough led with RaceHero Link and a receipt-honesty card the app doesn't have. Link itself lives where the app puts it: step 2 of Sim Setup and the SETUP DETAILS card on the pre-session screen, with its waiting / connected / lost states. This page now mirrors the app.</p>
   </section>
 
   <!-- ============ GARAGE — puck build guide ============ -->
   <section class="screen" id="scr-garage">
-    <button class="backbtn" onclick="show('hardware')">‹ Back</button>
-    <h1 class="headline" style="font-size:24px;">RaceHero DIY 25Hz Lab</h1>
-    <p class="sub">A 25 Hz GPS puck for about $40 in parts. Solder four wires, flash open-source firmware, and RaceHero treats it like any pro puck.</p>
+    <button class="backbtn" onclick="show('hardware')">‹ Hardware</button>
+    <div class="sub" style="margin-top:4px;">THE GARAGE</div>
+    <h1 class="headline" style="font-size:24px;">Build the 25 Hz puck.</h1>
+    <p class="sub">The DIY GPS puck RaceHero was born with. Plain instructions, real parts — build it on the bench, and the app finds it by itself.</p>
     <div class="card">
-      <div class="klabel">Your badge for building it</div>
-      <p class="sub" style="margin-top:4px">Pairing a DIY puck unlocks the "DIY 25Hz Engineer" badge in the app.</p>
+      <div class="klabel">The wiring, in words</div>
+      <p class="coach-says" style="font-size:15.5px;margin-top:6px">GPS module's transmit wire goes to the radio's receive pin. Power comes from the battery rail — red to positive, black to ground. The antenna faces the sky, always: a puck mounted upside-down is a puck that lies to you politely.</p>
+      <div class="divider"></div>
+      <div class="kv"><span>Fix rate</span><b>25 Hz — set in the module, kept by the badge</b></div>
+      <div class="kv"><span>Talks to the phone by</span><b>Bluetooth — NMEA or the module's own fast protocol</b></div>
+      <div class="kv"><span>Cost of the parts</span><b>about a tank of fuel</b></div>
+      <button class="btn ghost small" style="margin-top:10px" onclick="toast('Full parts list &amp; firmware — one page, no account')">See the parts list</button>
     </div>
-    <div class="klabel" style="margin:12px 0 6px">Build checklist</div>
-    <div class="card" style="padding:6px 16px">
-      <div class="toggle-row"><span>ESP32 DevKit board (~$10)</span><div class="switch" onclick="this.classList.toggle('on')"></div></div>
-      <div class="toggle-row"><span>u-blox M10 GNSS module (25 Hz capable) (~$25)</span><div class="switch" onclick="this.classList.toggle('on')"></div></div>
-      <div class="toggle-row"><span>3.7V Li-Po battery + charging circuit (~$8)</span><div class="switch" onclick="this.classList.toggle('on')"></div></div>
-      <div class="toggle-row"><span>Solder the 4 wires below</span><div class="switch" onclick="this.classList.toggle('on')"></div></div>
-      <div class="toggle-row"><span>Flash BonoGPS firmware</span><div class="switch" onclick="this.classList.toggle('on')"></div></div>
-      <div class="toggle-row"><span>Pair it from the Hardware Hub</span><div class="switch" onclick="this.classList.toggle('on')"></div></div>
-    </div>
-    <div class="klabel" style="margin:12px 0 6px">Wiring — 4 solder joints</div>
     <div class="card">
-      <div class="kv"><span>VCC</span><b>3.3V</b></div>
-      <div class="kv"><span>GND</span><b>GND</b></div>
-      <div class="kv"><span>TX</span><b>GPIO 16</b></div>
-      <div class="kv"><span>RX</span><b>GPIO 17</b></div>
-      <p class="small" style="margin-top:6px">GPS TX → ESP32 RX and GPS RX → ESP32 TX (UART2). Power the module from 3.3V, common ground.</p>
+      <span class="who">WHEN IT'S BUILT</span>
+      <p class="coach-says" style="font-size:15.5px">Nothing. That's the point. Power it on near the phone and it appears in the hub — remembered, reconnected, working. Zero setup is the feature.</p>
     </div>
-    <div class="klabel" style="margin:12px 0 6px">Firmware</div>
-    <div class="card">
-      <p class="sub">BonoGPS — open-source ESP32 GPS firmware (BLE + NMEA, RaceBox-compatible protocol). Build with PlatformIO per the project README, then flash over USB.</p>
-      <button class="btn ghost" style="margin-top:10px" onclick="toast('Opens the BonoGPS project on GitHub')">Open BonoGPS on GitHub</button>
-      <button class="btn ghost" style="margin-top:8px" onclick="toast('Opens the wiring &amp; enclosure docs')">Wiring &amp; enclosure docs</button>
-    </div>
-    <p class="small">The app's guide, mirrored — the first walkthrough paraphrased it ("Build the 25 Hz puck.") and dropped the parts list, the wiring table and the firmware card entirely.</p>
   </section>
 
   <!-- ============ GOPRO ============ -->
   <section class="screen" id="scr-gopro">
-    <button class="backbtn" onclick="show('hardware')">‹ Back</button>
-    <h1 class="headline" style="font-size:24px;">GoPro</h1>
-    <p class="sub">GoPro USB webcam mode</p>
-    <div style="height:190px;background:var(--surface);border:1px solid #232329;border-radius:18px;margin:12px 0;display:flex;align-items:center;justify-content:center">
-      <span class="small" style="padding:0 20px;text-align:center">The live view fills this frame the moment the camera streams — "● LIVE · 720p" rides at the top. Before that, the status line below says where things stand: "GoPro attached. Tap CONNECT GOPRO." / "GoPro detached."</span>
-    </div>
-    <button class="btn" onclick="toast('USB permission asked — the phone owns that dialog')">CONNECT GOPRO</button>
+    <button class="backbtn" onclick="show('hardware')">‹ Hardware</button>
+    <div class="sub" style="margin-top:4px;">GOPRO · VIDEO</div>
+    <h1 class="headline" style="font-size:24px;">Your laps, on video.</h1>
     <div class="card">
-      <b style="font-size:16px">How to connect</b>
-      <p class="small" style="margin-top:6px">Camera: GoPro connected over USB-C · Hero 8 or newer.</p>
-      <p class="small" style="margin-top:4px">GoPro is recording — the phone is monitor only. Recording happens on the camera, not this phone.</p>
-      <p class="small" style="margin-top:4px">After the session: overlay your video from Sessions — GoPro GPS syncs it automatically.</p>
-      <p class="small" style="margin-top:4px">1. GoPro: enable webcam mode (Hero 8 and newer).<br>2. USB-C cable from GoPro to phone (OTG adapter if needed).<br>3. Tap CONNECT GOPRO and allow USB access.</p>
+      <div class="spread"><b style="font-size:16px">Camera</b><span class="pill good">PAIRED · USB LIVE READY</span></div>
+      <p class="sub" style="margin-top:6px">Two ways in: bring any MP4 and RaceHero syncs it to the session by timestamp — or plug the camera in over USB and watch it live, data over picture.</p>
+      <div class="kv" style="margin-top:6px"><span>Export</span><b>720p with the data overlay · Pro: 1080p, no watermark</b></div>
+      <div class="kv"><span>Sync</span><b>by timestamp — you line up nothing</b></div>
+      <button class="btn ghost small" style="margin-top:10px" onclick="toast('Video picker — the phone owns that screen')">Use a video file…</button>
     </div>
-    <p class="small">The app's GoPro screen is a USB live-view monitor, not a pairing page — the first walkthrough framed it as pairing ("Your laps, on video.") and merged it with the Sessions video-overlay feature, which is a different surface (see the Video Overlay dialog on Sessions). This screen now mirrors the app.</p>
+    <div class="card">
+      <div class="klabel">The nudge, once</div>
+      <p class="sub" style="margin-top:6px">After a session with no video, RaceHero may mention once that a camera would make the debrief richer. Once — then never again unless you ask.</p>
+    </div>
   </section>
 
   <!-- ============ PAYWALL — Free vs Pro ============ -->
   <section class="screen" id="scr-paywall">
-    <div class="spread"><h1 class="headline" style="font-size:24px;margin:0">RaceHero Pro</h1><span class="link" onclick="show('settings')">✕</span></div>
-    <div id="quota-banner" style="display:none" class="decision"><b>THE QUOTA GATE —</b> you arrived here because the month's free AI debriefs are used up. In the app, asking for a debrief with an empty quota opens this paywall instead of the debrief — there is no error, and the session itself is untouched.</div>
-    <div class="decision"><b>FOUNDER DECISION —</b> the headline. The first walkthrough wrote its own: "Free drives. Pro removes the ceiling." The app's paywall headline is the one below. Keep the app's, or adopt the walkthrough's?</div>
-    <h1 class="headline">Stop guessing. Start driving faster.</h1>
-    <p class="sub">Unlimited AI debriefs. Unlimited AI voice coaching. 1080p video exports with no watermark. New AI features land here first.</p>
-
-    <div class="card plancard sel">
-      <div class="spread"><span><span style="color:var(--orange)">★</span> <b style="font-size:16px">Yearly</b></span><span class="pill plan">Save 36%</span></div>
-      <div style="margin-top:8px"><span class="big-num">$99</span> <span class="small">per year</span></div>
-      <p class="small" style="margin-top:2px">14-day free trial</p>
-      <button class="btn" style="margin-top:10px" onclick="toast('Google Play takes it from here — its sheet, its rules')">Start Yearly</button>
+    <button class="backbtn" onclick="show('settings')">‹ Settings</button>
+    <div class="sub" style="margin-top:4px;">RACEHERO PRO</div>
+    <h1 class="headline" style="font-size:24px;">Free drives. Pro removes the ceiling.</h1>
+    <div id="quota-banner" class="card" style="display:none;border-color:var(--amb)">
+      <div class="klabel" style="color:var(--amb)">WHY YOU'RE HERE</div>
+      <p class="sub" style="margin-top:6px">You asked for a debrief, and this month's four free debriefs are used up — so the debrief waits behind Pro. The session itself is untouched, and the debrief can still be written the moment Pro is on.</p>
     </div>
 
     <div class="card plancard">
-      <div class="spread"><span><span style="color:var(--orange)">★</span> <b style="font-size:16px">Monthly</b></span></div>
-      <div style="margin-top:8px"><span class="big-num">$12.99</span> <span class="small">per month</span></div>
-      <p class="small" style="margin-top:2px">14-day free trial</p>
-      <button class="btn ghost" style="margin-top:10px" onclick="toast('Google Play takes it from here — its sheet, its rules')">Start Monthly</button>
+      <div class="spread"><b style="font-size:17px">Free</b><span class="pill none">YOU ARE HERE</span></div>
+      <div class="kv" style="margin-top:8px"><span>AI debriefs</span><b>4 a month — about one a week</b></div>
+      <div class="kv"><span>Live coaching voice</span><b>included</b></div>
+      <div class="kv"><span>Sessions, viewer, scrub, corner cards</span><b>all included, forever</b></div>
+      <div class="kv"><span>Video export</span><b>720p, with watermark</b></div>
     </div>
 
-    <button class="btn ghost" onclick="toast('Checking… restore asks Google Play who you are')">Restore purchases</button>
-    <p class="small" style="text-align:center;margin-top:10px">Billed through Google Play. Subscriptions auto-renew until cancelled — cancel anytime in the Play Store. The free trial converts to the paid plan unless cancelled during the trial.</p>
-    <p style="text-align:center;margin-top:6px"><span class="link" onclick="toast('Opens racehero.ca/privacy.html')">Privacy Policy</span></p>
-    <p class="small" style="margin-top:8px">If Play Billing can't be reached, this screen says so in red at the top: "Play Billing isn't reachable right now — you can still subscribe once you're back online." The first walkthrough never showed that state — or the already-Pro state (next in the index).</p>
+    <div class="card plancard sel">
+      <div class="spread"><b style="font-size:17px">Pro</b><span class="pill plan">14 DAYS FREE FIRST</span></div>
+      <div class="kv" style="margin-top:8px"><span>AI debriefs</span><b>unlimited</b></div>
+      <div class="kv"><span>AI voice coaching</span><b>unlimited</b></div>
+      <div class="kv"><span>Video export</span><b>1080p, no watermark</b></div>
+      <div class="kv"><span>Everything in Free</span><b>included</b></div>
+      <div class="row" style="gap:8px;margin-top:12px">
+        <div class="grow" style="text-align:center;background:var(--surface2);border-radius:14px;padding:12px 6px"><div class="big-num">$12.99</div><div class="small">a month</div></div>
+        <div class="grow" style="text-align:center;background:rgba(53,208,127,.12);border:1px solid var(--grn);border-radius:14px;padding:12px 6px"><div class="big-num">$99</div><div class="small">a year — the driver's choice</div></div>
+      </div>
+      <button class="btn" style="margin-top:12px" onclick="toast('Google Play takes it from here — its sheet, its rules')">START 14 DAYS FREE</button>
+      <p class="small" style="text-align:center;margin-top:8px">Then $12.99/mo or $99/yr. Cancel in Play, two taps, no guilt trip.</p>
+    </div>
+
+    <p class="small" style="text-align:center">Already Pro on another phone? <span class="link" onclick="toast('Restore asks Google Play who you are — entitlement lives there')">Restore purchase</span></p>
   </section>
 
   <!-- ============ PAYWALL — ALREADY PRO ============ -->
   <section class="screen" id="scr-paywallpro">
     <div class="spread"><h1 class="headline" style="font-size:24px;margin:0">RaceHero Pro</h1><span class="link" onclick="show('settings')">✕</span></div>
-    <h1 class="headline">Stop guessing. Start driving faster.</h1>
-    <p class="sub">Unlimited AI debriefs. Unlimited AI voice coaching. 1080p video exports with no watermark. New AI features land here first.</p>
+    <h1 class="headline">Free drives. Pro removes the ceiling.</h1>
     <div class="card">
       <p style="font-size:16px"><b><span style="color:var(--orange)">✓</span> You're Pro — everything's unlocked.</b></p>
       <p class="sub" style="margin-top:6px">Manage or cancel anytime in the Play Store → Payments &amp; subscriptions.</p>
       <button class="btn" style="margin-top:10px" onclick="show('home')">Back to the track</button>
     </div>
-    <p class="small">The already-Pro state of the paywall — and in Settings, the Pro card reads "Pro ✓" with "Manage subscription" instead of "Go Pro". The first walkthrough had no way to be Pro already.</p>
+    <p class="small">The paywall when Pro is already on — same screen, same headline, nothing left to sell. In Settings, the Pro card reads "Pro ✓" with "Manage subscription" in place of the pitch.</p>
   </section>
 
   </div><!-- /screens -->
-
   <!-- badge celebration (app-wide) -->
   <div class="modal" id="badgeModal" onclick="if(event.target===this)closeBadge()">
     <div class="sheet">
@@ -1361,9 +1307,10 @@
       <p style="text-align:center;margin-top:6px"><b>Dual Driver</b></p>
       <p class="small" style="text-align:center">Finish SIM setup for every game</p>
       <button class="btn orange" style="margin-top:12px" onclick="closeBadge()">Nice</button>
-      <p class="small" style="margin-top:8px">An app-wide celebration — it can appear over any tab the moment a badge lands (finishing sim setup earns this one). It wasn't in the first walkthrough: nothing in the sim could earn a badge in front of you. Try it from the Sim Setup sheet on the pre-session screen.</p>
+      <p class="small" style="margin-top:8px">An app-wide celebration — it can appear over any tab the moment a badge lands (finishing sim setup earns this one). Try it from the Sim Setup sheet on the pre-session screen.</p>
     </div>
   </div>
+
 
   <!-- corner sheet -->
   <div class="modal" id="cornerModal" onclick="if(event.target===this)closeCorner()">
@@ -1376,12 +1323,12 @@
   </div>
 
   <div class="tabs" id="tabbar">
-<button class="tab" data-tab="home" onclick="show('home')"><svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg><span>Home</span></button>
-<button class="tab" data-tab="pre" onclick="show('pre')"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg><span>Live</span></button>
-<button class="tab" data-tab="sessions" onclick="show('sessions')"><svg viewBox="0 0 24 24"><path d="M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z"/></svg><span>Sessions</span></button>
-<button class="tab" data-tab="coach" onclick="show('coach')"><svg viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg><span>Coach</span></button>
-<button class="tab" data-tab="settings" onclick="show('settings')"><svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg><span>Settings</span></button>
-  <div class="toast" id="toast"></div>
+    <button class="tab" data-tab="home" onclick="show('home')"><svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg><span>Home</span></button>
+    <button class="tab" data-tab="pre" onclick="show('pre')"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg><span>Live</span></button>
+    <button class="tab" data-tab="sessions" onclick="show('sessions')"><svg viewBox="0 0 24 24" fill-rule="evenodd"><path d="M12 5.6C10.5 4.4 8.6 3.8 5.7 3.8 4.8 3.8 4 4.6 4 5.5v12.7c0 .9.8 1.7 1.7 1.7 2.9 0 4.8.6 6.3 1.8 1.5-1.2 3.4-1.8 6.3-1.8.9 0 1.7-.8 1.7-1.7V5.5c0-.9-.8-1.7-1.7-1.7-2.9 0-4.8.6-6.3 1.8zm-6.3 1.2c2.3.1 4 .5 5.3 1.3v9.8c-1.3-.8-3-1.2-5.3-1.3V6.8zm12.6 0v9.8c-2.3.1-4 .5-5.3 1.3V8.1c1.3-.8 3-1.2 5.3-1.3z"/></svg><span>Sessions</span></button>
+    <button class="tab" data-tab="coach" onclick="show('coach')"><svg viewBox="0 0 24 24"><path d="M12 3c-4.97 0-9 4.03-9 9v7c0 1.66 1.34 3 3 3h3v-8H5v-2c0-3.87 3.13-7 7-7s7 3.13 7 7v2h-4v8h3c1.66 0 3-1.34 3-3v-7c0-4.97-4.03-9-9-9z"/></svg><span>Coach</span></button>
+    <button class="tab" data-tab="settings" onclick="show('settings')"><svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.03-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg><span>Settings</span></button>
+    <div class="toast" id="toast"></div>
 </div><!-- /phone -->
 </div><!-- /walkrow -->
 <div class="simtag" style="margin-top:12px">Sample session: Nürburgring GP in ACC — 6 laps, best 2:07.1, lap 6 set aside (spin at Turn 1). Track outline, speed traces and corner verdicts drawn from his real session data. Nothing on any screen is a placeholder: if a channel can't be real, the coverage note names it.</div>
@@ -1599,11 +1546,11 @@ function applyPreState(){ const v=document.getElementById('verdict-line'), w=doc
     gn.textContent='GO is off — there is nothing to record yet, and the app won’t pretend otherwise.';
     lv.textContent='Waiting'; applyPreExtras(); return; }
   cs.style.display='block'; cn.style.display='none'; go.disabled=false;
-  gn.textContent='GO plays the brief in your ear and starts recording. Nothing counts before GO.'; lv.textContent='In the pits';
+  gn.textContent='GO arms the session — one line in the pits, then the ramp walks the lap with you in the car. Nothing counts before GO.'; lv.textContent='In the pits';
   if(mode==='sim'){ v.innerHTML='SIMULATOR — game feed live:<br>ACC · Nürburgring GP';
     w.textContent='RaceHero Link is streaming from your PC, and the game named the track. Nothing for you to set.';
     rows[0].textContent='The game feed'; rows[1].textContent='Your pedals & wheel — Link can see them'; }
-  else { v.innerHTML='KARTING — GPS:<br>Hamilton Mini Indy';
+  else { v.innerHTML='KARTING — GPS at your track:<br>Hamilton Mini Indy';
     w.textContent='Your phone has a strong GPS fix, and you’re standing on a track in the catalogue. Nothing for you to set.';
     rows[0].textContent='GPS — your phone, with the puck if it’s near'; rows[1].textContent='Your pedals & wheel — if Link or OBD is with you'; }
   applyPreExtras(); }
@@ -1613,9 +1560,15 @@ function applyPreExtras(){ const ll=document.getElementById('setup-link-line'), 
   go.textContent='GO — START SESSION'; v.style.color='';
   if(stl) stl.style.display='none';
   if(ll){ ll.style.color='var(--grn)'; ll.textContent='✓ PC Link: DESKTOP-7CE8HSP connected — your games configure themselves'; }
+  const hp2=document.getElementById('hub-link-pill'), hl2=document.getElementById('hub-link-line');
+  if(hp2){ hp2.className='pill good'; hp2.textContent='STREAMING'; }
+  if(hl2) hl2.textContent='If the phone ever stops receiving, this card says so in a sentence — frames leaving the PC are not proof they arrived.';
   if(preExtra==='perms'){ go.textContent='GRANT PERMISSIONS & START';
-    gn.textContent='One system ask first — location, notifications, Bluetooth — then GO is yours. This is the button a first-run driver actually sees; the first walkthrough only ever showed permissions as already granted.'; }
+    gn.textContent='One system ask first — location, notifications, Bluetooth — then GO is yours.'; }
   if(preExtra==='linklost'){ if(ll){ ll.style.color='var(--red)'; ll.textContent='PC Link lost — DESKTOP-7CE8HSP went quiet. This phone keeps calling for it; it re-links itself.'; }
+    const hp=document.getElementById('hub-link-pill'), hl=document.getElementById('hub-link-line');
+    if(hp){ hp.className='pill warn'; hp.textContent='WENT QUIET'; }
+    if(hl) hl.textContent='Link went quiet — this phone keeps calling for it, and it re-links itself. This card only says STREAMING when the phone is actually receiving.';
     if(lv) lv.textContent='Stopped'; if(stl) stl.style.display='block'; }
   if(preExtra==='nofeed'){ if(ll){ ll.style.color='var(--orange)'; ll.textContent='○ PC Link: waiting for RaceHero Link on your PC…'; } }
   if(preExtra==='ask'){ v.innerHTML='TWO WORLDS ARE CLAIMING THIS SESSION'; v.style.color='var(--amb)';
@@ -1625,7 +1578,7 @@ function pressGO(btn){ if(btn.disabled) return;
   if(preExtra==='perms'){ toast('Permissions granted — the system asked once, in plain words'); preState('feed'); }
   const old=btn.textContent; btn.textContent='🎧 YOUR COACH IS TALKING…';
   setTimeout(()=>{ if(btn.id==='go-btn') applyPreExtras(); else btn.textContent=old;
-    toast('GO — the pits intro first. Then he sends you out at his pace.');
+    toast('GO — one line in the pits, then the ramp.');
     show('pitsintro'); },1300); }
 
 /* ================= ReferenceBrief walk-through ================= */
@@ -1633,13 +1586,13 @@ let briefIdx=-1, briefTimer=null;
 function renderBriefStep(){ CORNERS.forEach((c,k)=>{ const d=document.getElementById('pre-dot-'+c.n); if(d) d.classList.toggle('briefing', k===briefIdx);
     const r=document.getElementById('turn-row-'+c.n); if(r) r.classList.toggle('briefing', k===briefIdx); });
   if(briefIdx<0) return; const c=CORNERS[briefIdx];
-  const bl=document.getElementById('brief-line'); if(bl) bl.style.display='block';
-  const bt=document.getElementById('brief-text'); if(bt) bt.textContent='Turn '+c.n+' — '+c.brief; }
+  document.getElementById('brief-line').style.display='block';
+  document.getElementById('brief-text').textContent='Turn '+c.n+' — '+c.brief; }
 function playBrief(){ const btn=document.getElementById('brief-play');
-  if(briefTimer){ clearInterval(briefTimer); briefTimer=null; btn.textContent='▶ Hear the brief'; return; }
+  if(briefTimer){ clearInterval(briefTimer); briefTimer=null; btn.textContent='▶ Walk it — about 30 seconds'; return; }
   btn.textContent='⏸ Pause the walk'; briefIdx=0; renderBriefStep();
   briefTimer=setInterval(()=>{ briefIdx++; if(briefIdx>=CORNERS.length){ clearInterval(briefTimer); briefTimer=null;
-      btn.textContent='↻ Walk it again'; const bt2=document.getElementById('brief-text'); if(bt2) bt2.textContent='That’s the lap. The deal: about 10 laps, the first two are mine to watch — then Turn 4 is ours.';
+      btn.textContent='↻ Walk it again'; document.getElementById('brief-text').textContent='That’s the lap. The deal: about 10 laps, the first two are mine to watch — then Turn 4 is ours.';
       CORNERS.forEach(c=>{ const d=document.getElementById('pre-dot-'+c.n); if(d) d.classList.remove('briefing'); const r=document.getElementById('turn-row-'+c.n); if(r) r.classList.remove('briefing'); }); return; }
     renderBriefStep(); },2600); }
 function buildTurnlist(){ const tl=document.getElementById('turnlist'); if(!tl) return; tl.innerHTML = CORNERS.map(c=>{
@@ -1840,7 +1793,7 @@ const SHEETS={
   +'<div class="card tap" style="margin:8px 0" onclick="closeSheet();toast(\'Nürburgring GP — already your detected track\')"><div class="spread"><b>Nürburgring GP</b><span class="pill good">DETECTED · FROM THE GAME</span></div><div class="small">5,137 m · 24 ACC circuits carry full terrain profiles</div></div>'
   +'<div class="card tap" style="margin:8px 0" onclick="closeSheet();toast(\'Hamilton Mini Indy picked — GPS mode arms when you’re there\')"><div class="spread"><b>Hamilton Mini Indy</b><span class="pill info">MY TRACK</span></div><div class="small">Elevation anchor 225.8 m · your driven line lives here</div></div>'
   +'<div class="card" style="margin:8px 0;opacity:.75"><div class="spread"><b>Anchor-only circuit</b><span class="pill none">ANCHOR ONLY</span></div><div class="small">We know where it is and how high — no driven profile yet, so no elevation strip and no invented slopes until someone laps it.</div></div>' };
-function openSheet(k){ document.getElementById('sheetBody').innerHTML=SHEETS[k]; document.getElementById('sheetModal').classList.add('on'); }
+function openSheet(k){ document.getElementById('sheetBody').innerHTML=SHEETS[k]; document.getElementById('sheetModal').classList.add('on'); if(k==='plansheet') buildTurnlist(); }
 function closeSheet(){ const m=document.getElementById('sheetModal'); if(m) m.classList.remove('on'); }
 
 /* ================= init ================= */
@@ -1849,9 +1802,8 @@ pickSector(1); applyPreState(); setSelCorner(4);
 scrubTo(moments(CORNERS[3],SPEED).brake,false);
 show('welcome');
 </script>
-
 <script>
-/* ===== completion pass: sheets, helpers, new map modes, pace lap ===== */
+/* ===== restored-state machinery: sheets, badge, map modes, pace lap, live states ===== */
 const TURNROWS = CORNERS.map(c=>{ const col=c.focus?'#FF8A00':(c.verdict==='g'?'#35D07F':'#FFB020');
   return '<div class="turnrow" id="turn-row-'+c.n+'" onclick="briefIdx='+(c.n-1)+';renderBriefStep();closeSheet()"><div class="tn" style="background:'+col+'">'+c.n+'</div>'
    +'<div class="grow"><b>Turn '+c.n+' · '+c.dir+'</b><div class="small">'+c.brief+'</div></div><span class="link">›</span></div>'; }).join('');
@@ -1861,7 +1813,7 @@ Object.assign(SHEETS,{
   +'<p class="coach-says" style="margin-top:8px;font-size:15.5px">First two laps: just look around. Find your braking boards. No heroics.</p>'
   +'<p class="coach-says" style="margin-top:8px;font-size:15.5px">Your best pieces here already make <b>2:06.8</b> — that lap is in you, sector by sector.</p>'
   +'<div class="klabel" style="margin:14px 0 4px">Turn by turn — tap one to see it on the map</div>'
-  + TURNROWS
+  +'<div id=\"turnlist\"></div>'
   +'<div class="klabel" style="margin:14px 0 4px">One thing</div>'
   +'<p style="font-weight:800;font-size:16px">Turn 4. Brake later.</p>'
   +'<p class="sub" style="margin-top:4px">About 10 laps. The first two, I just watch and learn. Then we pick our corner and work on it together. You never have to tell me when a lap starts — the game does that.</p>'
@@ -1894,10 +1846,10 @@ Object.assign(SHEETS,{
   +'<input class="textfield" placeholder="Note (e.g. “brake at the tire stack”)">'
   +'<button class="btn" style="margin-top:12px" onclick="closeSheet();toast(\'Pin dropped — it lands in the walk, with its corner\')">Drop pin</button>'
   +'<button class="btn ghost" style="margin-top:8px" onclick="closeSheet()">Cancel</button>',
- bgloc:'<div class="spread"><h2>Why background location?</h2><button class="btn ghost small" onclick="closeSheet()">Close ✕</button></div>'
-  +'<p class="sub" style="margin-top:8px">RaceHero can keep timing your session even when you switch to another app (e.g. to check messages in the pits). If you only record with this app in the foreground or the screen off, you don’t need this — the foreground service already handles that.</p>'
-  +'<button class="btn" style="margin-top:12px" onclick="closeSheet();toast(\'Android asks — one system prompt (the phone owns it)\')">Continue</button>'
-  +'<button class="btn ghost" style="margin-top:8px" onclick="closeSheet()">Not now</button>'
+ bgloc:'<div class=\"spread\"><h2>Why background location?</h2><button class=\"btn ghost small\" onclick=\"closeSheet()\">Close ✕</button></div>'
+  +'<p class=\"sub\" style=\"margin-top:8px\">So your session keeps timing when you switch apps — checking messages in the pits shouldn\'t end a recording. If you only ever record with RaceHero on screen, or the screen off, you don\'t need it: the foreground recording already covers that.</p>'
+  +'<button class=\"btn\" style=\"margin-top:12px\" onclick=\"closeSheet();toast(\'Android asks — one system prompt, and the phone owns it\')\">Continue</button>'
+  +'<button class=\"btn ghost\" style=\"margin-top:8px\" onclick=\"closeSheet()\">Not now</button>'
 });
 SHEETS.simsetup += '<div class="kv"><span><b>Finish setup</b><br><span class="small">In the app, marking the last game as done is what earns the Dual Driver badge — try it:</span></span><button class="btn ghost small" onclick="closeSheet();openBadge()">Mark done</button></div>';
 SHEETS.trackpicker += '<p style="margin-top:10px"><span class="link" onclick="toast(\'New track: name it, then lap one maps its start/finish\')">＋ New track…</span></p><p class="small" style="margin-top:4px">Not in the catalogue? The picker’s add-a-track flow: a name field, Add / Cancel — then the first lap maps it. Search needs at least 2 letters; “No matches” is a real state, and Near me shows “Locating…” while it works. Typing searches everywhere, whatever chip is picked.</p>';
@@ -1907,9 +1859,13 @@ function closeBadge(){ document.getElementById('badgeModal').classList.remove('o
 function markRestored(){ toast('Welcome back. 14 sessions restored. Your coach remembers everything.');
   const r=document.getElementById('wel-restored'); if(r) r.style.display='block';
   const b=document.getElementById('wel-primary'); if(b){ b.textContent='Continue'; b.setAttribute('onclick',"show('home')"); } }
-function walkState(w){ ['idle','walking','done','viewing'].forEach(k=>{ const el=document.getElementById('tw-'+k); if(el) el.style.display = k===w?'block':'none'; });
-  const sc=document.getElementById('scr-trackwalk'); if(sc) sc.scrollTop=0; }
 
+Object.assign(SHEETS,{pinnote:'<div class=\"spread\"><h2>Pin note — Turn 1</h2><button class=\"btn ghost small\" onclick=\"closeSheet()\">Close ✕</button></div>'
+  +'<div class=\"klabel\" style=\"margin:12px 0 6px\">Your note, in your words</div>'
+  +'<input class=\"textfield\" placeholder=\"e.g. brake at the tire stack\">'
+  +'<button class=\"btn\" style=\"margin-top:12px\" onclick=\"closeSheet();toast(\'Pin dropped — it stands in the walk, on this corner\')\">Save the pin</button>'
+  +'<button class=\"btn ghost\" style=\"margin-top:8px\" onclick=\"closeSheet()\">Cancel</button>'
+  +'<p class=\"small\" style=\"margin-top:8px\">Pins and notes live on the phone, in the walk — the coach reads them back to you at the corner they belong to.</p>'});
 /* new map modes */
 function sectorPaths(svg){ const cols=['#4EA8FF','#FF8A00','#35D07F']; let h='';
   for(let s2=0;s2<3;s2++) h+='<path d="'+pathFrom(SECB[s2],SECB[s2+1]-1)+'" fill="none" stroke="'+cols[s2]+'" stroke-width="2.6" stroke-linecap="round"/>';
@@ -1941,29 +1897,62 @@ const PACE_NARR={
  6:'Turn 6 — it tempts you wide, and wide makes the next part arrive before you’re ready. A car-length earlier turn-in calms the whole sequence down.',
  7:'Turn 7 — flat out when you’re brave, and it sets up your run to the line. Feel the road climb under you here.',
  8:'Turn 8 — the last word of the lap. Strong exit, straight wheel, power early — and that’s the tour nearly done.'};
-let pacePos=0, paceTick=0, paceDoneFlag=false, paceSaid={};
-function resetPace(){ pacePos=0; paceTick=0; paceDoneFlag=false; paceSaid={};
+let pacePos=0, paceTick=0, paceDoneFlag=false, paceSaid={}, paceLap=1;
+const PACE_NARR2={
+ 1:'Turn 1 again — same fall, more speed. Brake or turn, never both — you know this one now.',
+ 2:'Turn 2 — over the crest. Still a nothing corner; treat it like one, at pace.',
+ 3:'Turn 3 — patience in, power early out. Same as the slow lap, just sooner.',
+ 4:'Turn 4 — the board. Brake there, at this speed, and feel how much later it is. This is our corner.',
+ 5:'Turn 5 — commitment. One smooth turn of the wheel and let it run.',
+ 6:'Turn 6 — a car-length earlier on the turn-in keeps the whole sequence calm, even now.',
+ 7:'Turn 7 — feel the climb under you. Flat when you’re ready — no sooner.',
+ 8:'Turn 8 — strong exit, power early. One more corner and the ramp is done — next lap, we drive for real.'};
+function resetPace(){ pacePos=0; paceTick=0; paceDoneFlag=false; paceSaid={}; paceLap=1;
+  const tg=document.getElementById('pace-target'); if(tg) tg.textContent='60';
+  const ll2=document.getElementById('pace-lapline'); if(ll2) ll2.textContent='ACC · Nürburgring GP · lap 1 of the ramp — the guided tour: the coach sets the pace, you just drive it';
   const dn=document.getElementById('pace-done'); if(dn) dn.style.display='none';
   const wh=document.getElementById('pace-who'); if(wh) wh.textContent='🎧 COACH — ROLLING OUT';
   const tx=document.getElementById('pace-text'); if(tx) tx.textContent='Off we go. Sixty, no more — this lap isn’t about speed, it’s about seeing the place. I’ll name every turn as we get to it.'; }
 setInterval(()=>{ const scr=document.getElementById('scr-pacelap');
   if(!scr || !scr.classList.contains('on') || paceDoneFlag) return; paceTick++;
-  const spd=60+Math.round(6*Math.sin(paceTick/9));
+  const base=paceLap===2?92:60; const spd=base+Math.round((paceLap===2?8:6)*Math.sin(paceTick/9));
   pacePos += (spd/3.6)*0.12*10;
   const se=document.getElementById('pace-speed'); if(se) se.textContent=spd;
-  const bar=document.getElementById('pace-bar'); if(bar){ bar.style.width=Math.max(4,Math.min(100,(spd-30)/60*100))+'%'; bar.style.background=Math.abs(spd-60)<=8?'var(--grn)':'var(--amb)'; }
-  const st=document.getElementById('pace-state'); if(st){ const ok=Math.abs(spd-60)<=8;
-    st.textContent = ok?'On his pace ✓':(spd>60?'Ease off — his pace is 60':'Pick it up a touch — his pace is 60'); st.style.color=ok?'var(--grn)':'var(--amb)'; }
+  const bar=document.getElementById('pace-bar'); if(bar){ bar.style.width=Math.max(4,Math.min(100,(spd-30)/90*100))+'%'; bar.style.background=Math.abs(spd-base)<=8?'var(--grn)':'var(--amb)'; }
+  const st=document.getElementById('pace-state'); if(st){ const ok=Math.abs(spd-base)<=8;
+    st.textContent = ok?'On his pace ✓':(spd>base?'Ease off — his pace is '+base:'Pick it up a touch — his pace is '+base); st.style.color=ok?'var(--grn)':'var(--amb)'; }
   const d=document.querySelector('#pace-dot'); if(d){ const i=Math.min(N-1, Math.floor(pacePos/STEP)); d.setAttribute('transform','translate('+TRACK[i][0]+','+TRACK[i][1]+')'); }
   CORNERS.forEach(c=>{ if(!paceSaid[c.n] && pacePos >= c.i*STEP-280){ paceSaid[c.n]=true;
     const wh=document.getElementById('pace-who'); if(wh) wh.textContent='🎧 COACH — TURN '+c.n+', AS YOU ARRIVE';
-    const tx=document.getElementById('pace-text'); if(tx) tx.textContent=PACE_NARR[c.n]; } });
-  if(pacePos>=LAPLEN){ paceDoneFlag=true; const dn=document.getElementById('pace-done'); if(dn) dn.style.display='block'; }
+    const tx=document.getElementById('pace-text'); if(tx) tx.textContent=(paceLap===2?PACE_NARR2:PACE_NARR)[c.n]; } });
+  if(pacePos>=LAPLEN){ if(paceLap===1){ paceLap=2; pacePos-=LAPLEN; paceSaid={};
+      const tg=document.getElementById('pace-target'); if(tg) tg.textContent='90';
+      const ll2=document.getElementById('pace-lapline'); if(ll2) ll2.textContent='ACC · Nürburgring GP · lap 2 of the ramp — the step-up: same corners, more pace';
+      const wh=document.getElementById('pace-who'); if(wh) wh.textContent='🎧 COACH — LAP 2 · STEP UP';
+      const tx=document.getElementById('pace-text'); if(tx) tx.textContent='Good. Now let’s go faster. Same lines, same boards — just carry more speed between them. I’ll still call every corner.'; }
+    else { paceDoneFlag=true; const dn=document.getElementById('pace-done'); if(dn) dn.style.display='block'; } }
 },120);
 
 buildIntro(); buildPace(); buildViewPre(); buildViewLive();
-show('splash');
+
+
+/* ================= live screen states (walkthrough index) ================= */
+function setLiveState(st){ ['ok','quiet','stalled'].forEach(k=>{ const b=document.getElementById('lv-'+k); if(b) b.classList.toggle('on', k===st); });
+  const bn=document.getElementById('live-stalled'), g=document.getElementById('ls-giantwrap'), q=document.getElementById('ls-quietcard');
+  if(bn) bn.style.display = st==='stalled' ? 'block' : 'none';
+  if(g) g.style.opacity = st==='stalled' ? '.35' : '';
+  if(q) q.style.borderColor = st==='quiet' ? 'var(--amb)' : '';
+  show('live');
+  if(st==='quiet') toast('A channel went quiet — the card on Live names it in a sentence, the moment it happens'); }
+
+applyPreState();
 </script>
 
+<script>
+(function(){var q=new URLSearchParams(location.search);
+if(q.get('embed')!==null)document.documentElement.classList.add('embed');
+var sc=q.get('screen');if(sc){window.addEventListener('load',function(){setTimeout(function(){try{show(sc);var sh=q.get('sheet');if(sh)openSheet(sh);}catch(e){}},150);});}
+})();
+</script>
 </body>
 </html>
