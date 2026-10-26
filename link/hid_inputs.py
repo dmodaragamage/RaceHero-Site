@@ -1896,11 +1896,17 @@ class InputStreamer(threading.Thread):
     shows "identifying", and no guessed constant is ever presented
     as data."""
 
-    def __init__(self, get_phone_ip, log=print, emit=None):
+    def __init__(self, get_phone_ip, log=print, emit=None,
+                 get_link_diag=None):
         super().__init__(daemon=True, name="racehero-hid")
         self.get_phone_ip = get_phone_ip
         self.log = log
         self._emit = emit        # dev-funnel poster (v2.5), optional
+        # Discovery diagnostics provider (v2.7.2): racehero_link's
+        # Discovery.diag — phoneIp / lastBeaconAgeS / beaconCount ride
+        # every heartbeat so a dead PC<->phone discovery path is a
+        # visible state, not an inference from silence.
+        self.get_link_diag = get_link_diag
         self._frames_sent = 0
         self._last_sent = None
         self._last_sent_at = 0.0
@@ -1948,6 +1954,14 @@ class InputStreamer(threading.Thread):
             "axes": mapper.axis_activity(now),
             "mapper": mapper.diagnostics(),
         }
+        if self.get_link_diag is not None:
+            try:
+                d = self.get_link_diag() or {}
+                ev["phoneIp"] = d.get("phoneIp")
+                ev["lastBeaconAgeS"] = d.get("lastBeaconAgeS")
+                ev["beaconCount"] = d.get("beaconCount")
+            except Exception:
+                pass
         if di_fallback_active():
             ev["diFallback"] = True
         err = di_error_text()
@@ -2134,8 +2148,9 @@ class InputStreamer(threading.Thread):
                     pass
 
 
-def start_streamer(get_phone_ip, log=print, emit=None):
-    t = InputStreamer(get_phone_ip, log, emit=emit)
+def start_streamer(get_phone_ip, log=print, emit=None, get_link_diag=None):
+    t = InputStreamer(get_phone_ip, log, emit=emit,
+                      get_link_diag=get_link_diag)
     t.start()
     return t
 

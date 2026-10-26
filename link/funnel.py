@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-RaceHero Link — dev-funnel diagnostics poster (v2.7.1, stdlib only).
+RaceHero Link — dev-funnel diagnostics poster (v2.7.2, stdlib only).
 
 Link's PC-side problems (a wheel that vanished, an auto-map that
 wouldn't lock, a stream that died) used to be inferable only from
@@ -12,6 +12,14 @@ moment they happen:
     device connect / disconnect        (which controllers, by name)
     stream start / stop                (HID streaming lifecycle)
     heartbeat every 60 s while streaming (frames sent, map state)
+    phone_found / beacon_resumed / phone_ip_expired /
+    beacon_ip_mismatch                 (v2.7.2: PC<->phone DISCOVERY —
+                                        the 60 s heartbeat also carries
+                                        phoneIp, lastBeaconAgeS and
+                                        beaconCount, so a dead beacon
+                                        path is a visible state with an
+                                        age, never an absence to guess
+                                        at again)
     device_inventory (v2.6)            (startup + every device-set
                                         change: EVERY controller
                                         Windows can enumerate, with
@@ -58,7 +66,7 @@ import time
 import urllib.error
 import urllib.request
 
-LINK_VERSION = "2.7.1"
+LINK_VERSION = "2.7.2"
 FUNNEL_URL = "https://racehero.ca/api/dev-ingest"
 FUNNEL_TOKEN = "fdfacc39fd1d684572fd573afb12b9ce56f06f0cc4c1798c88b2d49bb09c139f"
 ENABLED = True
