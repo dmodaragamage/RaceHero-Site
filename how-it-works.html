@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<!-- How RaceHero Works — deployed 2026-10-25 (founder-approved).
+     All session data on this page: founder testing, ACC, Nürburgring GP, Session 4
+     (export: racecoach-session-4.json). Phone visuals: the app's real screens,
+     embedded from /walkthrough.html (the approved final UI). -->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>How RaceHero Works — RaceHero™</title>
+<meta name="description" content="How RaceHero works: story home, a pre-session live data strip, an in-seat voice coach, a debrief that reads like a conversation, and a Viewer where you scrub any corner with your finger. Shown on one real session.">
+<style>
+  :root { --bg: #0a0a0c; --panel: #131316; --line: #26262c; --txt: #f5f5f5; --mut: #a7a7ae; --acc: #ff8a00; --grn: #35d07f; --red: #ff5a5a; --amb: #ffb02e; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { background: var(--bg); color: var(--txt); font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; }
+  .wrap { max-width: 1140px; margin: 0 auto; padding: 0 1.5rem; }
+
+  nav { position: fixed; top: 0; left: 0; right: 0; z-index: 50; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); background: rgba(10,10,12,.55); border-bottom: 1px solid rgba(255,255,255,.07); }
+  nav .wrap { display: flex; justify-content: space-between; align-items: center; padding-top: 1rem; padding-bottom: 1rem; }
+  .brand { font-weight: 800; letter-spacing: .3em; text-indent: .3em; font-size: 1.05rem; }
+  .brand span { color: var(--acc); }
+  .tm{font-size:.5em;vertical-align:super;letter-spacing:0;margin-left:.15em;}
+  nav .links a { color: var(--mut); text-decoration: none; margin-left: 1.4rem; font-size: .92rem; }
+  nav .links a:hover { color: var(--txt); }
+  nav .links a.on { color: var(--txt); border-bottom: 2px solid var(--acc); padding-bottom: .2rem; }
+  @media (max-width: 640px) { nav .links a { margin-left: .9rem; font-size: .85rem; } }
+
+  .pagehead { padding: 9.5rem 0 3.5rem; border-bottom: 1px solid var(--line); background: linear-gradient(180deg, #101013, var(--bg)); }
+  .kicker { display: inline-block; font-size: .78rem; letter-spacing: .28em; text-indent: .28em; color: var(--acc); font-weight: 700; margin-bottom: 1rem; border: 1px solid rgba(255,138,0,.4); padding: .45rem .9rem; border-radius: 999px; background: rgba(10,10,12,.45); }
+  .pagehead h1 { font-size: clamp(2.4rem, 6.5vw, 4.2rem); font-weight: 800; letter-spacing: .03em; line-height: 1.05; }
+  .pagehead h1 span { color: var(--acc); }
+  .pagehead p.sub { color: #d7d7dc; font-size: clamp(1.02rem, 2.4vw, 1.25rem); max-width: 44rem; margin: 1.2rem 0 1.8rem; }
+  .pill { display: inline-block; font-size: .85rem; color: var(--mut); border: 1px dashed rgba(255,255,255,.3); padding: .5rem 1rem; border-radius: 999px; }
+  .pill b { color: var(--txt); }
+
+  .section { padding: 4.5rem 0; }
+  .section h2 { font-size: clamp(1.6rem, 4vw, 2.3rem); margin-bottom: .6rem; letter-spacing: .03em; }
+  .section h2 span { color: var(--acc); }
+  .section p.lead { color: var(--mut); max-width: 44rem; margin-bottom: 2rem; font-size: 1.06rem; }
+
+  .stage { display: grid; grid-template-columns: 320px 1fr; gap: 2.5rem; align-items: center; padding: 2.6rem 0; border-bottom: 1px solid var(--line); }
+  .stage:last-child { border-bottom: none; }
+  @media (max-width: 760px) { .stage { grid-template-columns: 1fr; } .phone { margin: 0 auto; } }
+  .stage .num { font-size: .8rem; letter-spacing: .25em; color: var(--acc); font-weight: 700; margin-bottom: .5rem; }
+  .stage h3 { font-size: 1.5rem; margin-bottom: .6rem; }
+  .stage p { color: var(--mut); max-width: 36rem; }
+  .stage p b { color: var(--txt); }
+  .stage ul { list-style: none; margin-top: .8rem; }
+  .stage ul li { color: var(--mut); padding: .25rem 0; }
+  .stage ul li::before { content: "✓ "; color: var(--grn); font-weight: 700; }
+
+  .phone { width: 300px; border: 1px solid var(--line); border-radius: 30px; background: #0d0d10; padding: 16px 14px 20px; box-shadow: 0 24px 60px rgba(0,0,0,.5); }
+  .phone .notch { width: 90px; height: 5px; border-radius: 3px; background: #26262c; margin: 0 auto 14px; }
+  .ph-label { font-size: .62rem; letter-spacing: .22em; color: var(--mut); font-weight: 700; margin: 12px 0 6px; }
+  .ph-label:first-of-type { margin-top: 0; }
+  .ph-big { font-size: 1.9rem; font-weight: 800; line-height: 1.1; }
+  .ph-big small { font-size: .85rem; color: var(--mut); font-weight: 600; }
+  .ph-row { display: flex; justify-content: space-between; align-items: baseline; padding: .3rem 0; border-bottom: 1px solid #1b1b20; font-size: .85rem; }
+  .ph-row:last-child { border-bottom: none; }
+  .ph-row .k { color: var(--mut); }
+  .ph-row .v { font-weight: 700; }
+  .g { color: var(--grn); } .r { color: var(--red); } .a { color: var(--amb); } .o { color: var(--acc); }
+  .ph-card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: .8rem .9rem; margin-top: 8px; }
+  .ph-card .t { font-size: .62rem; letter-spacing: .2em; color: var(--acc); font-weight: 700; margin-bottom: .3rem; }
+  .ph-card p { font-size: .86rem; color: #d7d7dc; line-height: 1.45; }
+  .strip-row { display: flex; align-items: center; gap: .5rem; font-size: .8rem; padding: .28rem 0; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: #3a3a42; flex: none; }
+  .dot.live { background: var(--grn); box-shadow: 0 0 8px rgba(53,208,127,.8); }
+  .dot.work { background: var(--amb); }
+  .strip-row .st { margin-left: auto; font-size: .68rem; letter-spacing: .12em; color: var(--mut); font-weight: 700; }
+  .footbar { height: 8px; background: #1b1b20; border-radius: 4px; overflow: hidden; margin: .25rem 0 .5rem; }
+  .footbar i { display: block; height: 100%; }
+  .dots { display: flex; gap: 6px; margin: .4rem 0; }
+  .dots i { width: 12px; height: 12px; border-radius: 50%; background: #3a3a42; }
+  .dots i.gd { background: var(--grn); } .dots i.rd { background: var(--red); } .dots i.ad { background: var(--amb); }
+  .stamp { display: inline-block; font-size: .7rem; font-weight: 800; letter-spacing: .08em; padding: .25rem .6rem; border-radius: 999px; border: 1px solid; }
+  .stamp.red { color: var(--red); border-color: rgba(255,90,90,.5); }
+  .stamp.grn { color: var(--grn); border-color: rgba(53,208,127,.5); }
+
+  .strip { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); background: var(--panel); }
+  .strip .wrap { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; padding-top: 1.4rem; padding-bottom: 1.4rem; }
+  .stat b { display: block; font-size: 1.5rem; color: var(--acc); letter-spacing: .02em; }
+  .stat span { color: var(--mut); font-size: .88rem; }
+
+  .proof { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  @media (max-width: 860px) { .proof { grid-template-columns: 1fr; } }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 1.4rem; }
+  .panel h3 { font-size: 1.05rem; margin-bottom: .3rem; }
+  .panel p { color: var(--mut); font-size: .93rem; }
+  .panel svg { width: 100%; height: auto; display: block; margin: .8rem 0; }
+  .legend { display: flex; gap: 1.2rem; flex-wrap: wrap; font-size: .82rem; color: var(--mut); }
+  .legend .sw { display: inline-block; width: 22px; height: 0; border-top: 3px solid #f5f5f5; vertical-align: middle; margin-right: .4rem; }
+  .legend .sw.dash { border-top-style: dashed; border-top-color: var(--acc); }
+  .src { font-size: .8rem; color: #666; margin-top: .8rem; }
+
+  .secbar { margin: .5rem 0; }
+  .secbar .lab { display: flex; justify-content: space-between; font-size: .85rem; color: var(--mut); }
+  .secbar .lab b { color: var(--txt); }
+  .secbar .bar { height: 10px; background: #1b1b20; border-radius: 5px; overflow: hidden; margin-top: .25rem; }
+  .secbar .bar i { display: block; height: 100%; background: var(--grn); }
+
+  .labels { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 1rem; }
+  .lab-card { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 1.4rem; }
+  .lab-card .tag { display: inline-block; font-size: .72rem; font-weight: 800; letter-spacing: .1em; padding: .3rem .7rem; border-radius: 999px; border: 1px solid rgba(255,138,0,.5); color: var(--acc); margin-bottom: .6rem; }
+  .lab-card p { color: var(--mut); font-size: .93rem; }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 1.7rem; }
+  .card .ico { font-size: 1.9rem; margin-bottom: .7rem; }
+  .card h3 { margin-bottom: .4rem; font-size: 1.08rem; }
+  .card p { color: var(--mut); font-size: .95rem; }
+  .btn { display: inline-block; background: var(--acc); color: #0d0d0f; font-weight: 700; padding: .95rem 2.1rem; border-radius: 999px; text-decoration: none; }
+  .btn.ghost { background: rgba(10,10,12,.5); color: var(--txt); border: 1px solid rgba(255,255,255,.25); }
+  .final { text-align: center; padding: 5rem 0; }
+  .final h2 { font-size: clamp(2rem, 6vw, 3.4rem); letter-spacing: .05em; margin-bottom: 1rem; }
+  .final h2 span { color: var(--acc); }
+  .final p { color: var(--mut); margin-bottom: 2rem; }
+
+  footer { border-top: 1px solid var(--line); padding: 2rem 0 3rem; color: #666; font-size: .9rem; }
+  footer .wrap { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
+  footer a { color: var(--acc); text-decoration: none; margin-left: 1.2rem; }
+  .checkers { height: 8px; background: repeating-conic-gradient(#111 0% 25%, #f5f5f5 0% 50%) 0 0 / 18px 18px; opacity: .85; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <div class="brand">RACE<span>HERO</span><sup class="tm">™</sup></div>
+    <div class="links">
+      <a href="/#features">Features</a>
+      <a href="/how-it-works.html" class="on">How it works</a>
+      <a href="/#sim">Sim racing</a><a href="/walkthrough.html">Walkthrough</a><a href="/gear.html">Gear</a>
+      <a href="https://www.instagram.com/racehero.ai">Instagram</a>
+    </div>
+  </div>
+</nav>
+
+<header class="pagehead">
+  <div class="wrap">
+    <span class="kicker">HOW IT WORKS</span>
+    <h1>A coach,<br>not a <span>dashboard.</span></h1>
+    <p class="sub">RaceHero rides with you: cues in your ear while you drive, a debrief that explains <i>why</i> after, and a Viewer where every claim can be scrubbed with your finger. Here is one session, end to end — every number on this page comes from it.</p>
+    <span class="pill">Status: <b>Google Play — internal testing</b> · racehero.ca</span>
+  </div>
+</header>
+
+<section class="section" style="padding-bottom:1rem">
+  <div class="wrap">
+    <h2>One session, <span>five screens</span></h2>
+    <p class="lead">The app is built around a single session's story — before, during, and after. No setup theatre: the path is download, drive, debrief.</p>
+
+    <div class="stage">
+      <div class="phone" style="padding:9px"><div style="width:280px;height:587px;overflow:hidden;border-radius:20px;background:#0a0a0c"><iframe title="RaceHero Home — your story" src="/walkthrough.html?embed=1&amp;screen=home" loading="lazy" style="width:392px;height:820px;border:0;transform:scale(.7143);transform-origin:top left;pointer-events:none"></iframe></div></div>
+      <div>
+        <div class="num">01 — HOME</div>
+        <h3>Your racing, as a story</h3>
+        <p>Home opens on <b>your last session</b> — the headline lap, your perfect lap built from your own best sectors, and the one corner the coach wants to work on. Not a menu of features: a story with a next chapter.</p>
+      </div>
+    </div>
+
+    <div class="stage">
+      <div class="phone" style="padding:9px"><div style="width:280px;height:587px;overflow:hidden;border-radius:20px;background:#0a0a0c"><iframe title="RaceHero pre-session" src="/walkthrough.html?embed=1&amp;screen=pre" loading="lazy" style="width:392px;height:820px;border:0;transform:scale(.7143);transform-origin:top left;pointer-events:none"></iframe></div></div>
+      <div>
+        <div class="num">02 — PRE-SESSION</div>
+        <h3>Green means go</h3>
+        <p>Before you roll, the <b>Live Data Strip</b> streams every channel in plain words — WAITING, WORKING, LIVE, or honestly stalled. If a channel isn't real, the app says so <b>before</b> it can coach from it, not after.</p>
+        <ul><li>No calibration wizards — RaceHero Link auto-maps your pedals and wheel</li><li>Pre-GO driving is never counted as session data</li></ul>
+      </div>
+    </div>
+
+    <div class="stage">
+      <div class="phone" style="padding:9px"><div style="width:280px;height:587px;overflow:hidden;border-radius:20px;background:#0a0a0c"><iframe title="RaceHero live session" src="/walkthrough.html?embed=1&amp;screen=live" loading="lazy" style="width:392px;height:820px;border:0;transform:scale(.7143);transform-origin:top left;pointer-events:none"></iframe></div></div>
+      <div>
+        <div class="num">03 — LIVE</div>
+        <h3>The coach in your ear</h3>
+        <p>An <b>in-seat voice instructor</b> that remembers lap to lap: it learns your brake and turn-in points, references your last lap at this corner, and explains corrections as causes, not slogans. On screen: the last lap, big; sector dots in green, red, amber; your feet as travel bars — <b>never a percentage</b>, because a % promises calibration precision that isn't real.</p>
+      </div>
+    </div>
+
+    <div class="stage">
+      <div class="phone" style="padding:9px"><div style="width:280px;height:587px;overflow:hidden;border-radius:20px;background:#0a0a0c"><iframe title="RaceHero debrief" src="/walkthrough.html?embed=1&amp;screen=debrief" loading="lazy" style="width:392px;height:820px;border:0;transform:scale(.7143);transform-origin:top left;pointer-events:none"></iframe></div></div>
+      <div>
+        <div class="num">04 — DEBRIEF</div>
+        <h3>A debrief, not a data dump</h3>
+        <p>The debrief reads like a <b>conversation with your instructor</b>: what I saw, the moment that mattered, the one thing, one drill. The full lap table and engineering numbers sit one tap below — verdicts first, evidence attached, every claim tied to a metre of track.</p>
+      </div>
+    </div>
+
+    <div class="stage">
+      <div class="phone" style="padding:9px"><div style="width:280px;height:587px;overflow:hidden;border-radius:20px;background:#0a0a0c"><iframe title="RaceHero corner scrub" src="/walkthrough.html?embed=1&amp;screen=scrub" loading="lazy" style="width:392px;height:820px;border:0;transform:scale(.7143);transform-origin:top left;pointer-events:none"></iframe></div></div>
+      <div>
+        <div class="num">05 — VIEWER + CORNER SCRUB</div>
+        <h3>Scrub any corner with your finger</h3>
+        <p>The session on <b>one screen</b>: the road as a road, your line against your composite, sectors and corners you can tap. Tap a corner and it opens; open the <b>Corner Scrub</b> and drag — the data tracks your finger through the turn, with a verdict stamp the data has to earn: HIT, BRAKED EARLY, TOO WIDE. No measurement, no stamp.</p>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<div class="strip">
+  <div class="wrap">
+    <div class="stat"><b>6</b><span>laps in the session below</span></div>
+    <div class="stat"><b>2:08.1</b><span>best lap</span></div>
+    <div class="stat"><b>2:07.5</b><span>perfect lap — his own sectors</span></div>
+    <div class="stat"><b>3,139</b><span>recorded data points</span></div>
+    <div class="stat"><b>8,400+</b><span>tracks in the database</span></div>
+  </div>
+</div>
+
+<section class="section">
+  <div class="wrap">
+    <h2>The proof: <span>one real session</span></h2>
+    <p class="lead">Founder testing in ACC at the Nürburgring GP. The road is drawn from his driven lines; the solid line is his best lap, the dashed line his composite — his best pieces, stitched. This is the same data the coach coached from.</p>
+    <div class="proof">
+      <div class="panel">
+        <h3>Nürburgring GP — the road, as driven</h3>
+        <svg viewBox="0 0 1190 1532" role="img" aria-label="Nürburgring GP circuit drawn from the session's driven lines">
+          <path d="M1014.0,248.7 L1008.3,254.2 L999.7,262.6 L991.2,271.0 L982.6,279.4 L974.0,287.8 L965.5,296.2 L956.9,304.6 L948.3,313.0 L939.7,321.4 L931.1,329.7 L922.5,338.1 L913.9,346.4 L905.2,354.8 L896.6,363.1 L888.0,371.5 L879.4,379.8 L870.8,388.2 L862.1,396.5 L853.5,404.9 L844.9,413.2 L836.3,421.6 L827.7,429.9 L819.1,438.3 L810.5,446.7 L801.9,455.0 L793.2,463.4 L784.6,471.7 L776.0,480.1 L767.4,488.4 L758.8,496.8 L750.1,505.1 L741.5,513.4 L732.8,521.7 L724.0,529.9 L715.2,538.0 L706.3,546.1 L697.4,554.1 L688.4,562.1 L679.4,570.0 L670.4,577.9 L661.2,585.6 L652.0,593.4 L642.8,601.0 L633.5,608.6 L624.1,616.0 L614.6,623.4 L605.1,630.6 L595.4,637.7 L585.6,644.5 L575.6,651.1 L565.2,656.9 L554.2,661.2 L542.5,663.3 L530.0,661.8 L517.4,655.3 L510.1,643.4 L513.7,629.3 L519.4,618.2 L525.3,607.8 L531.6,597.6 L538.1,587.5 L545.0,577.7 L552.2,568.1 L559.3,558.4 L565.7,548.3 L570.7,537.4 L573.9,525.9 L574.9,513.8 L573.7,501.5 L570.0,489.5 L563.8,478.5 L555.3,468.9 L545.0,461.5 L533.5,456.3 L521.3,453.4 L509.0,452.7 L496.9,453.5 L484.9,454.9 L473.0,456.1 L461.2,457.4 L449.4,458.9 L437.6,460.8 L425.8,463.0 L414.2,465.9 L402.8,469.8 L392.1,475.1 L382.2,481.6 L373.5,489.5 L366.4,499.0 L361.5,509.9 L359.2,521.8 L360.2,533.9 L365.1,544.9 L374.0,553.2 L384.4,557.6 L395.4,559.9 L406.6,561.1 L418.0,561.8 L430.3,563.7 L441.0,568.5 L448.9,575.2 L454.5,583.7 L457.0,593.8 L456.9,605.2 L455.6,617.2 L453.6,629.1 L451.5,640.9 L449.5,652.7 L447.5,664.5 L445.5,676.4 L443.3,688.1 L440.9,699.9 L438.4,711.6 L435.5,723.2 L432.5,734.8 L429.4,746.4 L426.2,758.0 L423.0,769.5 L419.8,781.1 L416.6,792.7 L413.4,804.2 L410.1,815.8 L406.6,827.2 L403.0,838.7 L399.3,850.1 L395.4,861.5 L391.5,872.8 L387.4,884.1 L383.3,895.4 L379.2,906.6 L375.2,917.9 L371.2,929.3 L367.4,940.6 L363.6,952.0 L360.0,963.5 L356.8,975.0 L354.3,986.7 L353.1,998.6 L353.3,1010.6 L354.9,1022.4 L358.2,1034.0 L362.9,1045.0 L369.2,1055.2 L377.1,1064.2 L386.3,1071.9 L396.2,1078.5 L406.6,1084.3 L417.4,1089.4 L428.4,1094.2 L439.4,1098.9 L450.2,1104.2 L460.1,1110.7 L468.2,1119.2 L473.6,1129.3 L476.0,1140.5 L475.1,1152.0 L471.2,1162.9 L464.6,1172.4 L456.0,1180.2 L446.3,1186.5 L435.7,1191.7 L424.8,1196.6 L413.9,1201.7 L403.1,1207.0 L392.3,1212.2 L381.6,1217.6 L370.9,1223.1 L360.3,1228.7 L349.8,1234.5 L339.4,1240.4 L329.1,1246.6 L319.0,1252.9 L308.9,1259.4 L298.9,1266.0 L289.1,1272.9 L279.4,1279.9 L269.8,1287.2 L260.4,1294.6 L251.1,1302.2 L242.0,1310.0 L233.0,1318.0 L224.2,1326.2 L215.6,1334.6 L207.2,1343.2 L199.0,1352.0 L191.0,1360.9 L183.1,1370.0 L175.5,1379.3 L168.0,1388.7 L160.7,1398.3 L153.6,1407.9 L146.6,1417.7 L139.8,1427.6 L133.2,1437.6 L126.8,1447.8 L120.4,1458.0 L114.0,1468.1 L107.4,1478.1 L100.2,1487.6 L92.4,1496.5 L83.7,1504.6 L73.8,1511.3 L62.5,1515.6 L50.3,1516.8 L38.0,1514.5 L26.7,1508.5 L18.4,1498.1 L15.2,1485.8 L16.0,1473.4 L19.7,1462.1 L26.0,1452.1 L33.3,1443.1 L41.6,1434.6 L50.6,1426.6 L59.7,1418.9 L69.0,1411.3 L78.3,1403.6 L87.4,1395.8 L96.2,1387.7 L105.1,1379.7 L113.9,1371.6 L122.7,1363.4 L131.5,1355.2 L140.4,1347.2 L149.3,1339.1 L158.1,1331.0 L167.0,1322.9 L175.7,1314.6 L184.4,1306.4 L193.2,1298.2 L202.0,1290.1 L210.5,1281.6 L218.7,1272.9 L226.3,1263.6 L233.0,1253.8 L238.9,1243.5 L243.9,1232.7 L247.8,1221.4 L250.4,1209.7 L251.9,1197.9 L252.3,1185.9 L251.6,1173.9 L249.8,1162.0 L247.2,1150.2 L244.3,1138.6 L242.0,1126.8 L240.7,1114.9 L240.5,1102.9 L240.5,1090.9 L240.5,1078.9 L246.3,1067.5 L244.5,1055.1 L247.7,1043.5 L251.4,1032.1 L255.2,1020.7 L259.2,1009.4 L263.4,998.2 L267.7,987.0 L272.0,975.8 L276.4,964.6 L280.7,953.4 L285.0,942.2 L289.3,931.0 L293.7,919.9 L298.0,908.7 L302.3,897.5 L306.6,886.3 L310.9,875.1 L315.2,863.9 L319.5,852.6 L323.6,841.4 L327.7,830.1 L331.6,818.7 L335.5,807.4 L339.5,796.0 L343.4,784.7 L347.2,773.3 L350.9,761.9 L354.5,750.4 L357.9,738.9 L360.6,727.3 L362.2,715.4 L362.3,703.4 L360.7,691.4 L357.1,679.5 L351.6,667.9 L344.4,657.3 L335.1,647.2 L324.2,639.7 L311.2,636.4 L299.4,634.1 L287.5,632.4 L275.4,630.7 L263.6,628.2 L252.3,624.3 L241.5,619.2 L231.1,613.5 L221.5,606.7 L213.1,598.7 L206.2,589.2 L201.4,578.5 L198.6,567.1 L197.9,555.3 L199.5,543.3 L203.1,531.8 L208.4,520.9 L214.5,510.5 L221.4,500.6 L229.0,491.2 L236.9,482.2 L244.8,473.1 L252.6,464.0 L260.5,455.0 L268.3,445.9 L276.1,436.8 L283.9,427.6 L291.7,418.5 L299.4,409.3 L307.1,400.1 L314.8,390.9 L322.5,381.7 L330.2,372.5 L338.0,363.4 L345.7,354.2 L353.4,345.0 L361.2,335.8 L368.9,326.7 L376.7,317.5 L384.6,308.5 L392.6,299.5 L400.7,290.7 L409.1,282.0 L417.7,273.6 L426.6,265.6 L435.8,257.9 L445.3,250.6 L455.2,243.7 L465.2,237.1 L475.5,230.9 L486.1,225.1 L496.8,219.7 L507.9,214.9 L519.1,210.6 L530.5,206.8 L542.1,203.5 L553.8,200.7 L565.5,198.1 L577.2,195.7 L589.0,193.3 L600.8,191.1 L612.6,188.9 L624.4,186.7 L636.2,184.4 L648.0,182.1 L659.7,179.8 L671.5,177.4 L683.3,175.0 L695.0,172.5 L706.7,170.0 L718.5,167.5 L730.2,165.0 L741.9,162.4 L753.6,159.8 L765.4,157.2 L777.1,154.6 L788.8,152.0 L800.5,149.3 L812.2,146.6 L823.9,143.9 L835.5,141.0 L847.2,138.1 L858.8,135.0 L870.3,131.6 L881.6,127.6 L892.7,123.0 L903.6,118.0 L914.2,112.2 L923.9,104.9 L932.2,96.0 L939.1,86.2 L945.4,76.0 L952.3,66.0 L960.8,57.3 L970.5,50.1 L981.2,44.3 L992.5,40.2 L1003.9,36.8 L1015.4,33.8 L1027.1,31.2 L1038.8,28.6 L1050.6,26.2 L1062.3,23.7 L1074.1,21.3 L1085.8,19.0 L1097.7,17.0 L1109.5,15.6 L1121.5,15.0 L1133.3,15.8 L1144.9,18.5 L1155.4,24.0 L1164.0,32.2 L1170.7,42.2 L1174.6,53.6 L1175.3,65.8 L1173.1,77.9 L1168.8,89.3 L1162.9,99.9 L1155.9,109.8 L1148.2,119.1 L1140.0,127.9 L1131.3,136.2 L1122.6,144.3 L1113.8,152.5 L1105.0,160.7 L1096.2,168.9 L1087.5,177.1 L1078.8,185.4 L1070.2,193.7 L1061.5,202.1 L1052.9,210.4 L1044.3,218.8 L1035.7,227.1 L1027.3,235.3" fill="none" stroke="#26262c" stroke-width="26" stroke-linejoin="round" stroke-linecap="round"/>
+          <path d="M1017.0,245.9 L1008.5,254.4 L999.9,262.8 L991.4,271.3 L982.9,279.7 L974.3,288.1 L965.7,296.5 L957.1,304.8 L948.5,313.2 L939.9,321.5 L931.2,329.9 L922.6,338.2 L914.0,346.6 L905.4,354.9 L896.7,363.2 L888.1,371.6 L879.5,379.9 L870.8,388.2 L862.2,396.6 L853.6,404.9 L845.0,413.3 L836.3,421.6 L827.7,430.0 L819.1,438.3 L810.5,446.7 L801.9,455.1 L793.3,463.4 L784.7,471.8 L776.1,480.1 L767.5,488.5 L758.8,496.8 L750.2,505.2 L741.5,513.5 L732.8,521.7 L724.0,529.8 L715.2,538.0 L706.3,546.1 L697.4,554.1 L688.4,562.1 L679.4,570.0 L670.3,577.8 L661.2,585.7 L652.1,593.5 L643.0,601.3 L633.8,609.0 L624.6,616.7 L615.4,624.3 L605.9,631.7 L596.1,638.6 L586.1,645.2 L575.9,651.6 L565.5,657.6 L554.4,662.1 L542.6,663.3 L531.2,659.8 L522.1,652.1 L516.8,641.4 L515.8,629.6 L519.3,618.2 L525.8,608.1 L532.5,598.1 L538.9,588.0 L545.5,578.0 L552.5,568.2 L559.5,558.5 L566.0,548.4 L570.9,537.5 L573.7,525.9 L574.0,513.9 L571.6,502.2 L567.1,491.1 L560.5,481.0 L552.4,472.2 L542.8,465.0 L532.2,459.5 L520.7,456.0 L508.9,454.2 L496.9,453.8 L484.9,453.8 L472.9,454.3 L461.0,455.6 L449.1,457.4 L437.4,459.8 L425.7,462.5 L414.1,465.7 L402.8,469.7 L391.8,474.6 L381.6,480.7 L372.8,488.9 L366.1,498.8 L361.7,509.9 L360.1,521.8 L361.3,533.6 L365.6,544.8 L373.0,554.1 L383.1,560.6 L394.5,564.2 L406.4,565.5 L418.4,564.8 L430.3,563.6 L442.0,565.8 L452.1,572.1 L458.6,582.0 L460.6,593.8 L458.8,605.6 L456.3,617.3 L454.1,629.1 L452.1,641.0 L450.2,652.8 L448.3,664.7 L446.3,676.5 L444.2,688.3 L442.0,700.1 L439.4,711.8 L436.4,723.4 L433.1,735.0 L429.8,746.5 L426.4,758.0 L423.2,769.6 L419.9,781.1 L416.7,792.7 L413.5,804.3 L410.1,815.8 L406.7,827.3 L403.1,838.7 L399.3,850.1 L395.4,861.5 L391.4,872.8 L387.3,884.0 L383.2,895.3 L379.1,906.6 L375.1,917.9 L371.1,929.2 L367.2,940.6 L363.5,952.0 L359.9,963.4 L356.6,975.0 L354.0,986.7 L352.9,998.6 L353.1,1010.6 L354.9,1022.5 L358.2,1034.0 L363.0,1045.0 L369.3,1055.1 L377.0,1064.3 L385.9,1072.4 L395.7,1079.2 L406.2,1085.0 L417.2,1089.8 L428.4,1094.2 L439.5,1098.8 L450.3,1103.9 L460.5,1110.2 L469.2,1118.4 L475.1,1128.7 L477.6,1140.4 L476.6,1152.3 L472.6,1163.6 L465.9,1173.5 L457.3,1181.8 L447.3,1188.4 L436.3,1193.1 L424.9,1197.0 L413.7,1201.4 L402.8,1206.4 L392.0,1211.6 L381.3,1217.0 L370.6,1222.4 L359.9,1228.0 L349.4,1233.8 L339.1,1239.8 L328.8,1246.0 L318.6,1252.4 L308.6,1258.9 L298.7,1265.7 L288.9,1272.6 L279.2,1279.8 L269.8,1287.1 L260.5,1294.7 L251.3,1302.5 L242.3,1310.4 L233.5,1318.5 L224.8,1326.8 L216.2,1335.2 L207.8,1343.8 L199.7,1352.6 L191.7,1361.6 L183.8,1370.6 L176.2,1379.8 L168.7,1389.2 L161.4,1398.8 L154.3,1408.4 L147.3,1418.2 L140.5,1428.1 L133.8,1438.0 L127.3,1448.1 L120.9,1458.3 L114.6,1468.5 L108.2,1478.6 L101.2,1488.4 L93.3,1497.4 L84.1,1505.1 L73.7,1511.0 L62.4,1514.7 L50.4,1515.4 L38.8,1512.5 L28.8,1506.0 L21.4,1496.6 L17.3,1485.4 L16.6,1473.5 L19.1,1461.8 L24.4,1451.1 L32.0,1441.9 L41.2,1434.2 L50.8,1426.9 L60.0,1419.2 L68.8,1411.0 L77.4,1402.6 L86.0,1394.4 L94.9,1386.2 L103.7,1378.1 L112.6,1370.1 L121.6,1362.1 L130.6,1354.2 L139.8,1346.4 L149.0,1338.8 L158.1,1331.0 L167.2,1323.2 L176.2,1315.1 L184.9,1307.0 L193.6,1298.7 L202.2,1290.3 L210.7,1281.8 L218.9,1273.1 L226.7,1264.0 L233.8,1254.3 L239.8,1243.9 L244.6,1232.9 L248.2,1221.5 L250.7,1209.8 L252.0,1197.9 L252.1,1185.9 L251.0,1173.9 L249.1,1162.1 L246.5,1150.4 L243.8,1138.7 L241.8,1126.9 L240.7,1114.9 L240.5,1102.9 L240.9,1090.9 L241.7,1079.0 L243.1,1067.0 L245.1,1055.2 L247.9,1043.5 L251.1,1032.0 L254.5,1020.5 L258.3,1009.1 L262.4,997.8 L266.8,986.7 L271.2,975.5 L275.5,964.3 L279.7,953.1 L283.9,941.8 L288.2,930.6 L292.5,919.4 L296.9,908.2 L301.3,897.1 L305.6,885.9 L309.9,874.7 L314.2,863.5 L318.5,852.3 L322.8,841.1 L327.1,829.9 L331.2,818.6 L335.2,807.3 L339.1,795.9 L343.0,784.6 L347.0,773.2 L350.9,761.9 L354.6,750.5 L358.0,739.0 L360.8,727.3 L362.4,715.4 L362.1,703.5 L359.6,691.8 L354.9,680.8 L348.2,670.9 L339.9,662.2 L330.2,655.1 L319.7,649.4 L308.4,645.4 L296.9,641.8 L285.5,638.0 L274.2,634.1 L263.0,629.9 L251.8,625.4 L240.9,620.4 L230.3,614.8 L220.5,608.0 L211.8,599.7 L205.0,589.9 L200.1,579.0 L197.7,567.2 L197.7,555.3 L199.9,543.5 L204.1,532.2 L209.5,521.6 L215.7,511.3 L222.4,501.3 L229.7,491.8 L237.2,482.4 L244.8,473.1 L252.4,463.9 L260.1,454.7 L267.8,445.5 L275.6,436.3 L283.4,427.2 L291.2,418.1 L299.0,409.0 L306.9,399.9 L314.7,390.8 L322.5,381.8 L330.4,372.7 L338.2,363.6 L346.0,354.5 L353.8,345.3 L361.7,336.2 L369.5,327.2 L377.4,318.2 L385.3,309.1 L393.3,300.2 L401.3,291.3 L409.6,282.5 L418.0,274.0 L426.8,265.9 L435.9,258.1 L445.4,250.7 L455.4,244.0 L465.6,237.7 L475.9,231.6 L486.5,225.9 L497.3,220.6 L508.2,215.8 L519.4,211.4 L530.7,207.5 L542.3,204.1 L553.9,201.2 L565.6,198.4 L577.3,195.7 L589.0,193.2 L600.8,190.8 L612.5,188.5 L624.3,186.3 L636.1,183.9 L647.9,181.6 L659.6,179.2 L671.4,176.8 L683.1,174.4 L694.9,172.0 L706.6,169.5 L718.4,166.9 L730.1,164.4 L741.8,161.9 L753.5,159.4 L765.3,156.9 L777.0,154.3 L788.7,151.8 L800.5,149.2 L812.2,146.6 L823.8,143.8 L835.5,140.9 L847.1,138.0 L858.7,135.0 L870.2,131.3 L881.3,126.9 L892.3,122.0 L903.3,117.3 L913.9,111.7 L923.3,104.3 L931.2,95.3 L938.0,85.4 L945.2,75.8 L953.2,66.9 L962.1,58.8 L971.5,51.3 L981.4,44.7 L992.2,39.4 L1003.5,35.5 L1015.3,33.1 L1027.2,31.4 L1039.0,29.3 L1050.7,26.8 L1062.4,24.1 L1074.1,21.4 L1085.8,18.8 L1097.6,16.6 L1109.5,15.0 L1121.5,14.4 L1133.4,15.3 L1145.1,18.1 L1155.6,23.8 L1164.2,32.0 L1170.4,42.3 L1173.8,53.7 L1174.2,65.7 L1171.6,77.4 L1167.1,88.5 L1161.5,99.1 L1155.1,109.2 L1147.8,118.8 L1140.0,127.9 L1131.7,136.5 L1123.0,144.8 L1114.2,153.0 L1105.4,161.2 L1096.6,169.3 L1087.9,177.5 L1079.2,185.8 L1070.6,194.2 L1062.0,202.6 L1053.4,211.0 L1044.9,219.4 L1036.3,227.8 L1027.6,236.3" fill="none" stroke="#f5f5f5" stroke-width="4"/>
+          <path d="M1011.9,251.8 L1008.3,255.2 L1000.2,263.1 L991.6,271.5 L983.0,279.8 L974.4,288.2 L965.8,296.5 L957.1,304.8 L948.5,313.2 L939.8,321.4 L931.1,329.8 L922.5,338.1 L913.9,346.4 L905.2,354.7 L896.6,363.1 L888.0,371.4 L879.3,379.7 L870.6,388.0 L862.0,396.4 L853.4,404.7 L844.7,413.0 L836.1,421.4 L827.5,429.7 L818.8,438.1 L810.2,446.4 L801.6,454.8 L793.0,463.1 L784.4,471.5 L775.8,479.9 L767.2,488.3 L758.6,496.6 L750.0,504.9 L741.3,513.2 L732.5,521.4 L723.7,529.5 L714.8,537.6 L705.9,545.6 L697.0,553.6 L688.0,561.6 L679.0,569.5 L669.9,577.3 L660.7,585.0 L651.4,592.6 L642.0,600.1 L632.6,607.6 L623.2,614.9 L613.7,622.2 L604.3,629.5 L594.7,636.7 L585.1,643.8 L575.3,650.6 L565.1,656.9 L554.3,662.2 L541.6,666.4 L525.2,668.4 L509.6,661.9 L513.4,644.0 L520.0,630.4 L523.4,620.0 L527.2,609.0 L532.2,598.0 L538.2,587.6 L545.0,577.6 L552.2,568.0 L559.3,558.4 L565.5,548.2 L570.4,537.3 L573.7,525.8 L574.8,513.8 L573.3,501.6 L568.6,490.4 L560.4,481.2 L552.2,472.4 L542.7,465.2 L532.1,459.8 L520.7,456.2 L508.9,454.4 L496.9,453.9 L484.9,453.9 L472.9,454.4 L461.0,455.6 L449.1,457.3 L437.3,459.6 L425.7,462.6 L414.2,466.1 L402.8,469.7 L391.8,474.5 L381.5,480.7 L372.0,488.3 L363.3,497.5 L356.0,508.7 L357.3,521.4 L361.6,533.6 L365.9,544.7 L373.3,553.9 L383.7,558.7 L395.9,556.7 L406.7,556.5 L417.8,558.3 L429.9,562.4 L440.2,569.0 L447.5,576.4 L452.8,584.4 L456.5,594.0 L455.5,605.0 L453.7,616.8 L452.8,628.9 L451.3,640.8 L449.5,652.7 L447.4,664.5 L445.2,676.3 L442.9,688.1 L440.5,699.8 L437.8,711.4 L434.8,723.0 L431.8,734.6 L428.8,746.2 L425.7,757.8 L422.7,769.4 L419.6,781.1 L416.6,792.7 L413.6,804.3 L410.5,815.9 L407.2,827.4 L403.7,838.9 L400.1,850.4 L396.2,861.7 L392.2,873.1 L388.1,884.4 L383.8,895.6 L379.3,906.7 L375.1,917.9 L371.1,929.2 L367.3,940.6 L363.6,952.0 L360.0,963.5 L356.7,975.0 L353.9,986.7 L352.5,998.6 L353.1,1010.6 L355.0,1022.4 L358.4,1033.9 L363.2,1044.9 L369.5,1055.0 L377.3,1064.0 L386.3,1071.9 L396.1,1078.6 L406.5,1084.4 L417.4,1089.5 L428.3,1094.3 L439.3,1099.2 L450.1,1104.3 L460.3,1110.5 L469.2,1118.5 L473.4,1129.2 L474.7,1140.7 L474.3,1151.9 L471.3,1163.1 L465.6,1173.3 L457.1,1181.6 L446.3,1186.2 L434.7,1189.1 L424.1,1194.8 L413.2,1200.2 L402.5,1205.8 L392.1,1211.8 L381.6,1217.6 L371.0,1223.1 L360.5,1228.9 L350.0,1234.8 L339.6,1240.7 L329.4,1246.9 L319.2,1253.2 L309.2,1259.9 L299.3,1266.6 L289.4,1273.3 L279.6,1280.2 L269.9,1287.3 L260.4,1294.6 L251.0,1302.2 L241.9,1310.0 L233.0,1318.1 L224.2,1326.3 L215.6,1334.6 L207.3,1343.3 L198.8,1351.8 L190.7,1360.7 L182.9,1369.8 L175.2,1379.1 L167.8,1388.5 L160.6,1398.2 L153.5,1407.9 L146.6,1417.7 L139.8,1427.6 L133.2,1437.6 L126.6,1447.7 L120.1,1457.8 L113.7,1467.9 L107.1,1477.9 L100.1,1487.5 L92.5,1496.6 L84.0,1505.0 L74.1,1512.1 L62.6,1517.7 L49.5,1521.3 L38.2,1515.2 L28.7,1505.9 L21.2,1496.8 L17.7,1485.3 L16.9,1473.5 L20.2,1462.4 L27.4,1453.2 L34.3,1444.0 L41.7,1434.7 L50.2,1426.2 L59.2,1418.3 L68.2,1410.5 L77.3,1402.6 L86.5,1394.8 L95.6,1387.0 L104.6,1379.1 L113.6,1371.2 L122.5,1363.2 L131.4,1355.2 L140.4,1347.2 L149.4,1339.2 L158.4,1331.3 L167.4,1323.3 L176.3,1315.3 L185.1,1307.2 L193.9,1299.0 L202.5,1290.6 L210.9,1282.0 L219.0,1273.1 L226.5,1263.8 L233.3,1254.0 L239.1,1243.6 L244.1,1232.7 L248.0,1221.5 L251.0,1209.8 L252.9,1197.9 L253.9,1185.8 L253.8,1173.6 L252.7,1161.4 L248.1,1150.0 L243.9,1138.7 L241.9,1126.8 L240.8,1114.9 L240.6,1102.9 L240.9,1090.9 L241.7,1079.0 L243.1,1067.0 L245.2,1055.2 L247.9,1043.6 L251.1,1032.0 L254.5,1020.5 L258.3,1009.1 L262.4,997.8 L266.8,986.7 L271.2,975.5 L275.5,964.3 L279.7,953.1 L283.9,941.8 L288.2,930.6 L292.5,919.4 L296.9,908.2 L301.2,897.1 L306.0,886.0 L311.5,875.3 L315.8,864.1 L319.5,852.6 L324.1,841.6 L328.4,830.3 L332.1,818.9 L335.7,807.5 L339.5,796.0 L343.2,784.6 L347.1,773.3 L351.1,762.0 L354.7,750.5 L358.3,739.0 L361.5,727.4 L364.1,715.4 L365.7,702.8 L366.1,689.2 L365.1,674.5 L362.8,658.2 L346.6,655.8 L330.1,655.3 L319.4,650.2 L307.7,647.4 L296.3,643.7 L285.0,639.7 L273.7,635.5 L262.6,630.9 L251.6,625.9 L241.2,619.9 L231.1,613.6 L221.8,606.5 L213.8,598.1 L207.3,588.6 L202.6,578.1 L199.6,567.0 L198.6,555.3 L199.7,543.3 L202.6,531.6 L207.3,520.3 L213.4,509.9 L220.8,500.2 L228.9,491.2 L237.1,482.3 L245.2,473.5 L253.2,464.6 L261.2,455.6 L269.1,446.5 L277.0,437.5 L284.9,428.5 L292.8,419.5 L300.7,410.4 L308.4,401.2 L316.0,392.0 L323.6,382.7 L331.3,373.4 L339.0,364.2 L346.7,355.0 L354.2,345.7 L361.8,336.3 L369.5,327.2 L377.4,318.2 L385.2,309.0 L393.1,300.0 L401.3,291.2 L409.6,282.5 L418.0,274.0 L426.9,265.9 L436.1,258.3 L445.6,250.9 L455.3,243.8 L465.3,237.1 L475.6,231.0 L486.4,225.8 L497.3,220.7 L508.3,215.8 L519.4,211.4 L530.8,207.6 L542.3,204.2 L553.9,201.2 L565.6,198.4 L577.3,195.8 L589.0,193.2 L600.8,190.8 L612.5,188.5 L624.3,186.2 L636.1,183.9 L647.9,181.6 L659.6,179.2 L671.4,176.8 L683.1,174.4 L694.9,172.0 L706.6,169.5 L718.4,166.9 L730.1,164.4 L741.9,162.2 L753.7,160.1 L765.4,157.3 L777.1,154.6 L788.8,152.0 L800.5,149.4 L812.2,146.7 L823.9,144.0 L835.6,141.2 L847.2,138.3 L858.8,135.3 L870.4,132.0 L881.9,128.3 L893.1,123.9 L904.0,118.7 L914.5,112.6 L924.2,105.3 L932.6,96.4 L938.9,86.0 L945.1,75.7 L952.7,66.4 L961.9,58.7 L971.5,51.4 L981.5,44.9 L992.3,39.5 L1003.7,36.1 L1015.5,34.3 L1027.3,32.4 L1039.1,29.8 L1050.8,27.1 L1062.3,23.8 L1074.0,21.2 L1085.8,18.9 L1097.6,16.8 L1109.5,15.2 L1121.5,14.6 L1133.4,15.5 L1144.9,18.5 L1155.5,24.0 L1164.8,31.7 L1171.6,41.7 L1173.8,53.7 L1173.8,65.7 L1171.8,77.4 L1167.1,88.5 L1161.4,99.0 L1155.0,109.2 L1147.8,118.8 L1139.9,127.8 L1131.6,136.5 L1123.0,144.8 L1114.2,153.0 L1105.4,161.2 L1096.6,169.3 L1087.9,177.5 L1079.2,185.8 L1070.6,194.2 L1062.0,202.6 L1053.4,211.0 L1044.9,219.4 L1036.3,227.8 L1029.1,234.8" fill="none" stroke="#ff8a00" stroke-width="3.5" stroke-dasharray="10 8"/>
+        </svg>
+        <div class="legend"><span><span class="sw"></span>You — best lap</span><span><span class="sw dash"></span>Yours — composite</span></div>
+        <p class="src">Road width: drawn from the driven corridor plus a margin — a picture of the road, not a survey.</p>
+      </div>
+      <div class="panel">
+        <h3>Turn 4 — where the time was</h3>
+        <svg viewBox="0 1275 285 265" role="img" aria-label="Turn 4 zoom: your brake point versus the target brake point">
+          <path d="M266.6,1289.6 L263.5,1292.1 L260.4,1294.6 L257.3,1297.1 L254.2,1299.7 L251.1,1302.2 L248.0,1304.8 L245.0,1307.4 L242.0,1310.0 L239.0,1312.7 L236.0,1315.3 L233.0,1318.0 L230.1,1320.8 L227.1,1323.5 L224.2,1326.2 L221.3,1329.0 L218.5,1331.8 L215.6,1334.6 L212.8,1337.5 L210.0,1340.3 L207.2,1343.2 L204.5,1346.1 L201.7,1349.1 L199.0,1352.0 L196.3,1354.9 L193.6,1357.9 L191.0,1360.9 L188.4,1364.0 L185.7,1367.0 L183.1,1370.0 L180.6,1373.1 L178.0,1376.2 L175.5,1379.3 L173.0,1382.4 L170.5,1385.6 L168.0,1388.7 L165.6,1391.9 L163.1,1395.1 L160.7,1398.3 L158.3,1401.5 L155.9,1404.7 L153.6,1407.9 L151.2,1411.2 L148.9,1414.4 L146.6,1417.7 L144.3,1421.0 L142.0,1424.3 L139.8,1427.6 L137.6,1430.9 L135.4,1434.3 L133.2,1437.6 L131.0,1441.0 L128.9,1444.4 L126.8,1447.8 L124.6,1451.2 L122.5,1454.6 L120.4,1458.0 L118.3,1461.4 L116.1,1464.7 L114.0,1468.1 L111.8,1471.5 L109.6,1474.8 L107.4,1478.1 L105.0,1481.3 L102.7,1484.5 L100.2,1487.6 L97.7,1490.6 L95.1,1493.6 L92.4,1496.5 L89.7,1499.3 L86.8,1502.0 L83.7,1504.6 L80.6,1507.0 L77.3,1509.2 L73.8,1511.3 L70.2,1513.0 L66.4,1514.5 L62.5,1515.6 L58.5,1516.4 L54.4,1516.7 L50.3,1516.8 L46.1,1516.4 L42.0,1515.7 L38.0,1514.5 L33.9,1512.9 L30.2,1510.9 L26.7,1508.5 L23.2,1505.3 L20.7,1502.1 L18.4,1498.1 L16.8,1494.2 L15.7,1490.0 L15.2,1485.8 L15.0,1481.7 L15.2,1477.5 L16.0,1473.4 L16.9,1469.4 L18.2,1465.7 L19.7,1462.1 L21.6,1458.6 L23.7,1455.3 L26.0,1452.1 L28.3,1449.0 L30.7,1446.0 L33.3,1443.1 L35.9,1440.2 L38.7,1437.4 L41.6,1434.6 L44.5,1431.9 L47.5,1429.2 L50.6,1426.6 L53.6,1424.0 L56.7,1421.5 L59.7,1418.9 L62.8,1416.4 L65.9,1413.8 L69.0,1411.3 L72.1,1408.7 L75.2,1406.2 L78.3,1403.6 L81.4,1401.1 L84.4,1398.5 L87.4,1395.8 L90.3,1393.1 L93.3,1390.4 L96.2,1387.7 L99.2,1385.0 L102.2,1382.4 L105.1,1379.7 L108.1,1377.0 L111.0,1374.3 L113.9,1371.6 L116.9,1368.8 L119.8,1366.1 L122.7,1363.4 L125.6,1360.7 L128.6,1357.9 L131.5,1355.2 L134.4,1352.5 L137.4,1349.8 L140.4,1347.2 L143.3,1344.5 L146.3,1341.8 L149.3,1339.1 L152.2,1336.4 L155.2,1333.7 L158.1,1331.0 L161.1,1328.3 L164.0,1325.6 L167.0,1322.9 L169.9,1320.1" fill="none" stroke="#26262c" stroke-width="13" stroke-linejoin="round" stroke-linecap="round"/>
+          <path d="M266.7,1289.7 L265.1,1290.9 L263.6,1292.2 L262.0,1293.5 L260.5,1294.7 L258.9,1296.0 L257.4,1297.3 L255.9,1298.6 L254.4,1299.9 L252.9,1301.2 L251.3,1302.5 L249.8,1303.8 L248.3,1305.1 L246.8,1306.4 L245.3,1307.8 L243.8,1309.1 L242.3,1310.4 L240.8,1311.8 L239.4,1313.1 L237.9,1314.5 L236.4,1315.8 L234.9,1317.2 L233.5,1318.5 L232.0,1319.9 L230.6,1321.3 L229.1,1322.6 L227.6,1324.0 L226.2,1325.4 L224.8,1326.8 L223.3,1328.2 L221.9,1329.6 L220.5,1331.0 L219.0,1332.4 L217.6,1333.8 L216.2,1335.2 L214.8,1336.6 L213.4,1338.0 L212.0,1339.5 L210.6,1340.9 L209.2,1342.4 L207.8,1343.8 L206.5,1345.2 L205.1,1346.7 L203.7,1348.2 L202.4,1349.7 L201.0,1351.1 L199.7,1352.6 L198.3,1354.1 L197.0,1355.6 L195.6,1357.0 L194.3,1358.5 L193.0,1360.0 L191.7,1361.6 L190.4,1363.1 L189.1,1364.6 L187.7,1366.1 L186.4,1367.6 L185.1,1369.1 L183.8,1370.6 L182.6,1372.2 L181.3,1373.7 L180.0,1375.2 L178.7,1376.8 L177.4,1378.3 L176.2,1379.8 L174.9,1381.4 L173.7,1383.0 L172.4,1384.5 L171.2,1386.1 L169.9,1387.7 L168.7,1389.2 L167.4,1390.8 L166.2,1392.4 L165.0,1394.0 L163.8,1395.6 L162.6,1397.2 L161.4,1398.8 L160.2,1400.4 L159.0,1402.0 L157.8,1403.6 L156.6,1405.2 L155.4,1406.8 L154.3,1408.4 L153.1,1410.1 L151.9,1411.7 L150.8,1413.3 L149.6,1414.9 L148.4,1416.6 L147.3,1418.2 L146.2,1419.8 L145.0,1421.5 L143.9,1423.1 L142.7,1424.8 L141.6,1426.4 L140.5,1428.1 L139.3,1429.7 L138.2,1431.4 L137.1,1433.0 L136.0,1434.7 L134.9,1436.4 L133.8,1438.0 L132.7,1439.7 L131.6,1441.3 L130.5,1443.0 L129.4,1444.7 L128.3,1446.4 L127.3,1448.1 L126.2,1449.8 L125.1,1451.5 L124.0,1453.2 L123.0,1454.9 L121.9,1456.6 L120.9,1458.3 L119.8,1460.0 L118.8,1461.7 L117.7,1463.4 L116.7,1465.1 L115.6,1466.8 L114.6,1468.5 L113.5,1470.2 L112.5,1471.9 L111.5,1473.6 L110.4,1475.3 L109.3,1476.9 L108.2,1478.6 L107.1,1480.3 L106.0,1482.0 L104.9,1483.6 L103.7,1485.2 L102.4,1486.8 L101.2,1488.4 L100.0,1490.0 L98.7,1491.5 L97.4,1493.0 L96.0,1494.4 L94.7,1495.9 L93.3,1497.4 L91.8,1498.7 L90.3,1500.1 L88.8,1501.4 L87.3,1502.7 L85.8,1504.0 L84.1,1505.1 L82.5,1506.2 L80.8,1507.3 L79.1,1508.4 L77.4,1509.3 L75.6,1510.2 L73.7,1511.0 L71.9,1511.9 L70.1,1512.6 L68.2,1513.2 L66.2,1513.8 L64.3,1514.3 L62.4,1514.7 L60.4,1515.0 L58.4,1515.3 L56.4,1515.4 L54.4,1515.4 L52.4,1515.4 L50.4,1515.4 L48.4,1515.1 L46.5,1514.8 L44.5,1514.5 L42.6,1513.8 L40.7,1513.2 L38.8,1512.5 L37.1,1511.5 L35.3,1510.6 L33.6,1509.6 L32.0,1508.4 L30.4,1507.2 L28.8,1506.0 L27.4,1504.5 L26.1,1503.1 L24.7,1501.6 L23.6,1499.9 L22.5,1498.3 L21.4,1496.6 L20.5,1494.8 L19.7,1493.0 L18.9,1491.1 L18.3,1489.2 L17.8,1487.3 L17.3,1485.4 L16.9,1483.4 L16.7,1481.4 L16.5,1479.4 L16.3,1477.4 L16.5,1475.4 L16.6,1473.5 L16.7,1471.5 L17.0,1469.5 L17.4,1467.5 L17.9,1465.6 L18.4,1463.6 L19.1,1461.8 L19.7,1459.9 L20.4,1458.0 L21.4,1456.3 L22.4,1454.5 L23.3,1452.7 L24.4,1451.1 L25.6,1449.4 L26.7,1447.8 L27.9,1446.2 L29.3,1444.8 L30.7,1443.3 L32.0,1441.9 L33.5,1440.4 L35.0,1439.2 L36.5,1437.9 L38.1,1436.6 L39.6,1435.4 L41.2,1434.2 L42.8,1433.0 L44.4,1431.8 L46.0,1430.6 L47.6,1429.3 L49.2,1428.1 L50.8,1426.9 L52.3,1425.6 L53.9,1424.4 L55.4,1423.1 L57.0,1421.8 L58.5,1420.5 L60.0,1419.2 L61.5,1417.9 L63.0,1416.5 L64.5,1415.2 L65.9,1413.8 L67.3,1412.4 L68.8,1411.0 L70.2,1409.7 L71.7,1408.3 L73.1,1406.9 L74.5,1405.5 L75.9,1404.1 L77.4,1402.6 L78.8,1401.3 L80.2,1399.9 L81.7,1398.5 L83.1,1397.1 L84.6,1395.7 L86.0,1394.4 L87.5,1393.0 L89.0,1391.6 L90.4,1390.3 L91.9,1388.9 L93.4,1387.6 L94.9,1386.2 L96.3,1384.9 L97.8,1383.5 L99.3,1382.2 L100.7,1380.8 L102.2,1379.4 L103.7,1378.1 L105.2,1376.8 L106.6,1375.4 L108.1,1374.1 L109.6,1372.7 L111.1,1371.4 L112.6,1370.1 L114.1,1368.7 L115.6,1367.4 L117.1,1366.1 L118.6,1364.8 L120.1,1363.4 L121.6,1362.1 L123.1,1360.8 L124.6,1359.5 L126.1,1358.1 L127.6,1356.8 L129.1,1355.5 L130.6,1354.2 L132.1,1352.9 L133.6,1351.6 L135.2,1350.3 L136.7,1349.0 L138.2,1347.7 L139.8,1346.4 L141.3,1345.2 L142.8,1343.9 L144.4,1342.6 L145.9,1341.3 L147.4,1340.0 L149.0,1338.8 L150.5,1337.5 L152.1,1336.2 L153.6,1334.9 L155.1,1333.6 L156.6,1332.3 L158.1,1331.0 L159.7,1329.7 L161.2,1328.4 L162.7,1327.1 L164.2,1325.8 L165.7,1324.5 L167.2,1323.2 L168.7,1321.8" fill="none" stroke="#f5f5f5" stroke-width="2.5"/>
+          <path d="M265.1,1290.9 L264.3,1291.5 L263.5,1292.2 L262.0,1293.4 L260.4,1294.6 L258.8,1295.9 L257.3,1297.1 L255.7,1298.4 L254.1,1299.6 L252.6,1300.9 L251.0,1302.2 L249.5,1303.4 L247.9,1304.7 L246.4,1306.0 L244.9,1307.3 L243.4,1308.6 L241.9,1310.0 L240.4,1311.3 L238.9,1312.7 L237.5,1314.0 L236.0,1315.3 L234.5,1316.7 L233.0,1318.0 L231.5,1319.4 L230.1,1320.7 L228.6,1322.1 L227.1,1323.5 L225.7,1324.9 L224.2,1326.2 L222.8,1327.6 L221.3,1329.0 L219.9,1330.4 L218.4,1331.7 L216.9,1333.0 L215.5,1334.5 L214.1,1335.9 L212.7,1337.4 L211.3,1338.8 L210.0,1340.4 L208.7,1341.9 L207.2,1343.2 L205.9,1344.7 L204.5,1346.2 L203.1,1347.6 L201.6,1349.0 L200.3,1350.4 L198.9,1351.8 L197.4,1353.3 L196.0,1354.7 L194.7,1356.2 L193.4,1357.7 L192.0,1359.2 L190.7,1360.7 L189.4,1362.2 L188.1,1363.7 L186.8,1365.2 L185.5,1366.8 L184.2,1368.3 L182.9,1369.8 L181.6,1371.4 L180.3,1372.9 L179.0,1374.4 L177.8,1376.0 L176.5,1377.5 L175.2,1379.1 L174.0,1380.7 L172.7,1382.2 L171.5,1383.8 L170.2,1385.4 L169.0,1386.9 L167.8,1388.5 L166.5,1390.1 L165.3,1391.7 L164.1,1393.3 L162.9,1394.9 L161.8,1396.6 L160.6,1398.2 L159.4,1399.8 L158.2,1401.4 L157.0,1403.0 L155.8,1404.6 L154.7,1406.2 L153.5,1407.9 L152.3,1409.5 L151.1,1411.1 L150.0,1412.7 L148.8,1414.4 L147.7,1416.0 L146.5,1417.7 L145.4,1419.3 L144.3,1420.9 L143.1,1422.6 L142.0,1424.3 L140.9,1425.9 L139.8,1427.6 L138.7,1429.3 L137.6,1430.9 L136.5,1432.6 L135.4,1434.3 L134.3,1435.9 L133.2,1437.6 L132.1,1439.3 L131.0,1441.0 L129.9,1442.7 L128.8,1444.3 L127.7,1446.0 L126.6,1447.7 L125.6,1449.4 L124.5,1451.1 L123.4,1452.7 L122.3,1454.4 L121.2,1456.1 L120.1,1457.8 L119.1,1459.5 L118.0,1461.2 L116.9,1462.9 L115.8,1464.5 L114.7,1466.2 L113.7,1467.9 L112.6,1469.6 L111.5,1471.2 L110.4,1472.9 L109.3,1474.6 L108.2,1476.2 L107.1,1477.9 L106.0,1479.5 L104.8,1481.1 L103.7,1482.8 L102.5,1484.4 L101.4,1485.9 L100.2,1487.5 L99.0,1489.1 L97.8,1490.7 L96.5,1492.2 L95.2,1493.7 L93.9,1495.2 L92.6,1496.7 L91.3,1498.2 L89.9,1499.6 L88.5,1501.0 L87.0,1502.4 L85.6,1503.7 L84.1,1505.1 L82.5,1506.4 L80.9,1507.6 L79.3,1508.8 L77.7,1510.0 L76.0,1511.2 L74.2,1512.3 L72.4,1513.3 L70.6,1514.4 L68.7,1515.3 L66.8,1516.2 L64.8,1517.1 L62.8,1517.9 L60.7,1518.7 L58.6,1519.4 L56.4,1520.0 L54.2,1520.6 L52.0,1521.0 L49.7,1521.4 L47.4,1521.8 L45.0,1522.1 L42.5,1522.3 L40.8,1520.4 L39.2,1518.2 L37.8,1515.8 L36.5,1513.2 L35.4,1510.4 L33.6,1509.5 L31.9,1508.5 L30.2,1507.3 L28.6,1506.2 L27.0,1504.9 L25.5,1503.5 L24.0,1502.1 L22.6,1500.6 L22.1,1498.6 L21.2,1496.8 L20.5,1494.9 L19.9,1492.9 L19.5,1490.9 L18.4,1489.2 L17.8,1487.3 L17.4,1485.4 L17.0,1483.4 L16.8,1481.4 L16.6,1479.4 L16.5,1477.4 L16.5,1475.4 L16.6,1473.5 L16.8,1471.5 L17.1,1469.5 L17.5,1467.5 L17.9,1465.6 L18.5,1463.7 L19.1,1461.8 L20.6,1460.4 L22.3,1459.0 L23.9,1457.7 L25.6,1456.5 L27.4,1455.3 L28.2,1453.7 L29.2,1452.0 L30.1,1450.4 L31.0,1448.8 L32.1,1447.2 L33.1,1445.6 L34.2,1444.0 L35.3,1442.4 L36.5,1440.8 L37.7,1439.2 L39.0,1437.7 L40.3,1436.1 L41.6,1434.6 L43.0,1433.2 L44.4,1431.7 L45.8,1430.3 L47.3,1428.9 L48.7,1427.5 L50.2,1426.1 L51.7,1424.8 L53.2,1423.5 L54.6,1422.2 L56.1,1420.8 L57.6,1419.5 L59.2,1418.2 L60.7,1417.0 L62.2,1415.7 L63.7,1414.4 L65.2,1413.1 L66.7,1411.8 L68.2,1410.5 L69.8,1409.2 L71.3,1407.9 L72.8,1406.6 L74.3,1405.2 L75.8,1403.9 L77.3,1402.6 L78.9,1401.3 L80.4,1400.0 L81.9,1398.7 L83.4,1397.4 L84.9,1396.1 L86.5,1394.8 L88.0,1393.5 L89.5,1392.2 L91.0,1390.9 L92.5,1389.6 L94.0,1388.3 L95.6,1387.0 L97.1,1385.7 L98.6,1384.4 L100.1,1383.1 L101.6,1381.8 L103.1,1380.4 L104.6,1379.1 L106.1,1377.8 L107.6,1376.5 L109.1,1375.2 L110.6,1373.8 L112.1,1372.5 L113.6,1371.2 L115.1,1369.9 L116.6,1368.5 L118.1,1367.2 L119.6,1365.9 L121.0,1364.5 L122.5,1363.2 L124.0,1361.8 L125.5,1360.5 L127.0,1359.2 L128.4,1357.8 L129.9,1356.5 L131.4,1355.1 L132.9,1353.8 L134.4,1352.5 L135.9,1351.1 L137.4,1349.8 L138.9,1348.5 L140.4,1347.2 L141.9,1345.8 L143.4,1344.5 L144.9,1343.2 L146.4,1341.9 L147.9,1340.5 L149.4,1339.2 L150.9,1337.9 L152.4,1336.6 L153.9,1335.3 L155.4,1333.9 L156.9,1332.6 L158.4,1331.3 L159.9,1330.0 L161.4,1328.6 L162.9,1327.3 L164.4,1326.0 L165.9,1324.7 L166.6,1324.0 L167.4,1323.3" fill="none" stroke="#ff8a00" stroke-width="2" stroke-dasharray="6 5"/>
+          <circle cx="151.9" cy="1411.7" r="6" fill="#ff5a5a"/>
+          <circle cx="134.9" cy="1436.4" r="6" fill="#35d07f"/>
+          <circle cx="44.5" cy="1514.5" r="6" fill="#ff8a00"/>
+          <text x="163" y="1402" fill="#ff5a5a" font-size="13" font-weight="700">YOU BRAKED</text>
+          <text x="163" y="1419" fill="#ff5a5a" font-size="13" font-weight="700">2,296 m</text>
+          <text x="126" y="1462" fill="#35d07f" font-size="13" font-weight="700">TARGET · 2,326 m</text>
+          <text x="56" y="1528" fill="#ff8a00" font-size="13" font-weight="700">APEX · 83.0 km/h</text>
+        </svg>
+        <p>He braked <b style="color:var(--txt)">30 m early</b> and apexed at <b style="color:var(--txt)">83.0 km/h</b>. The target — physics solved from <b style="color:var(--txt)">his own demonstrated grip</b>, checked against the terrain — says brake at 2,326 m, apex 89 km/h. Verdict: <span class="stamp red">BRAKED EARLY</span></p>
+        <p class="src">Target source: reference-lap study (physics target), labelled in-product as <i>target — coach's fix</i>.</p>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:1rem">
+      <h3>The perfect lap nobody drove — 2:07.5</h3>
+      <p style="margin-bottom:.8rem">His three best sectors were set on two different laps. Stitched, they make a lap 0.7 s faster than any lap he actually completed. RaceHero shows it as what it is — <i>yours: your best pieces</i> — never as a lap that happened.</p>
+      <div class="secbar"><div class="lab"><span>Sector 1 — best, lap 5</span><b>45.7 s</b></div><div class="bar"><i style="width:96%"></i></div></div>
+      <div class="secbar"><div class="lab"><span>Sector 2 — best, lap 6</span><b>41.2 s</b></div><div class="bar"><i style="width:87%"></i></div></div>
+      <div class="secbar"><div class="lab"><span>Sector 3 — best, lap 6</span><b>40.6 s</b></div><div class="bar"><i style="width:85%"></i></div></div>
+      <div class="secbar"><div class="lab"><span>Best complete lap — lap 6</span><b>2:08.1</b></div><div class="bar"><i style="width:100%;background:var(--acc)"></i></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="section" style="padding-top:0">
+  <div class="wrap">
+    <h2>Checked against <span>the ground</span></h2>
+    <p class="lead">A coach that can't be checked is just an opinion. RaceHero's targets come from a physics solver fed with real terrain profiles — elevation sampled from named survey data — and we grade the solver against the ground before its numbers reach a driver.</p>
+    <div class="grid">
+      <div class="card"><div class="ico">⛰️</div><h3>Terrain is the ground truth</h3><p>Every circuit profile carries its source. On a downhill braking zone the ground itself changes how late you can brake — a flat-earth model can't know that, so ours isn't one. Where no profile exists yet, the app says "flat model" on the label. Never silently.</p></div>
+      <div class="card"><div class="ico">🧪</div><h3>We test it, on the record</h3><p>In a verification run on this session, feeding the solver a labelled 8% descent into Turn 4 moved its brake point from 2,241.5 m to 2,215.4 m — 26 m earlier, the physically correct direction (a descent costs ~0.78 m/s² of braking). A control corner didn't move at all. That's the standard every coaching number has to meet.</p></div>
+      <div class="card"><div class="ico">🧩</div><h3>Your best pieces, stitched</h3><p>RaceHero builds a composite reference from your own best sectors — the perfect lap your driving already contains, labelled <b>yours — best pieces</b> wherever it appears. The coach measures you against your best self first; physics targets sit alongside, never disguised as something you drove.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="section" style="padding-top:0">
+  <div class="wrap">
+    <h2>Every reference says <span>where it came from</span></h2>
+    <p class="lead">No mystery lines. Each reference in RaceHero carries its provenance, in the open:</p>
+    <div class="labels">
+      <div class="lab-card"><span class="tag">REAL — SHARED DATA</span><p>A line driven by a real car, shared with the pool. The fastest honest benchmark there is.</p></div>
+      <div class="lab-card"><span class="tag">YOURS — BEST PIECES</span><p>Your own best segments, stitched across your laps and sessions. Achievable — because you already did every piece of it.</p></div>
+      <div class="lab-card"><span class="tag">TARGET — COACH'S FIX</span><p>The one change the coach is asking for at this corner, bounded by what physics says your grip allows.</p></div>
+      <div class="lab-card"><span class="tag">THEORETICAL — PHYSICS</span><p>A solved lap: physics, calibrated to your demonstrated grip, fed with real terrain. A bound, not a promise.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="section" style="padding-top:0">
+  <div class="wrap">
+    <h2>Free to start. <span>Pro when you're hooked.</span></h2>
+    <div class="grid">
+      <div class="card"><div class="ico">🆓</div><h3>RaceHero — Free</h3><p>Live lap timing, delta and racing line. All 8,400+ tracks. <b>4 AI debriefs a month</b> — one a week, a regular karter's rhythm. Full session history.</p></div>
+      <div class="card"><div class="ico">🏆</div><h3>RaceHero Pro</h3><p>Unlimited AI debriefs and unlimited AI voice coaching, 1080p video exports with no watermark.<br><b>$12.99/month or $99/year</b> · 14-day free trial · on Google Play.</p></div>
+      <div class="card"><div class="ico">🔌</div><h3>Works with what you have</h3><p>Your Android phone, your GPS puck (BYOP — Bring Your Own Puck), your existing video via universal overlay, or your sim via RaceHero Link. And yes — RaceHero sells hardware too: the gear store is up, including the 25 Hz Puck Kit.</p></div>
+    </div>
+    <p class="src" style="margin-top:1rem">RaceHero is in Google Play internal testing. This page describes the current build as tested by the founder; features graduate to the public listing as they're verified.</p>
+  </div>
+</section>
+
+<section class="final">
+  <div class="wrap">
+    <h2>STOP GUESSING.<br><span>START DRIVING FASTER.</span></h2>
+    <p>Follow the build — every post is a real session, labelled.</p>
+    <a class="btn ghost" href="https://www.instagram.com/racehero.ai">Follow @racehero.ai</a>
+  </div>
+</section>
+
+<div class="checkers"></div>
+<footer>
+  <div class="wrap">
+    <div>© 2026 RaceHero™</div>
+    <div><a href="/how-it-works.html">How it works</a><a href="/gear.html">Gear</a><a href="/privacy.html">Privacy</a><a href="/terms.html">Terms</a><a href="/acc">ACC Setup</a><a href="/link">RaceHero Link</a></div>
+  </div>
+</footer>
+
+</body>
+</html>

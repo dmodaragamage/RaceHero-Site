@@ -1,0 +1,1438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RaceHero — FINAL UI SIMULATION (approval walkthrough)</title>
+<style>
+  /* ===== Team C design law (team-c-prototype.html tokens, verbatim) =====
+     green = good/faster · red = slower · amber = careful · grey = no data.
+     Orange = coach/brand accent ONLY. Verdicts before measurements.
+     Pedal bars carry NO % numbers, ever. No monospace anywhere. */
+  :root{
+    --bg:#0A0A0C; --surface:#141417; --surface2:#1E1E22; --line:#26262B;
+    --ink:#F2F2F2; --dim:#B9B9C0; --faint:#8A8A93;
+    --orange:#FF8A00; --grn:#35D07F; --red:#FF5A5A; --amb:#FFB020; --grey:#4A4A52; --blu:#4EA8FF;
+    --radius:18px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{background:#050506;font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);
+       display:flex;flex-direction:column;align-items:center;min-height:100vh;padding:14px 0 30px}
+  /* --- walkthrough chrome (NOT app UI) --- */
+  .simtag{max-width:860px;padding:4px 18px 2px;color:var(--faint);font-size:13px;text-align:center;line-height:1.55}
+  .simtag b{color:var(--orange)}
+  .simtag .big{font-size:16px;color:var(--ink);font-weight:800;letter-spacing:.02em}
+  .walkrow{display:flex;gap:14px;align-items:flex-start;justify-content:center;flex-wrap:wrap;margin-top:10px}
+  .walkindex{width:212px;background:#101013;border:1px solid #232329;border-radius:16px;padding:12px 10px;flex:none}
+  .walkindex h3{font-size:11px;letter-spacing:.14em;color:var(--faint);margin:4px 6px 8px}
+  .walkindex button{display:block;width:100%;text-align:left;background:none;border:none;color:var(--dim);
+    font-size:13.5px;font-weight:600;padding:7px 8px;border-radius:9px;cursor:pointer;font-family:inherit}
+  .walkindex button:hover{background:#1A1A1F;color:var(--ink)}
+  .walkindex button.sel{background:#2A1B06;color:var(--orange)}
+  .walkindex .grp{font-size:10.5px;letter-spacing:.12em;color:#5A5A63;margin:10px 6px 2px;font-weight:700}
+  .statebtns{display:flex;gap:6px;padding:2px 6px 6px}
+  .statebtns button{flex:1;font-size:11.5px;padding:7px 4px}
+  .statebtns button.sel{background:#12351F;color:var(--grn)}
+  /* --- phone --- */
+  .phone{width:392px;max-width:96vw;height:820px;max-height:94vh;background:var(--bg);border-radius:38px;
+         border:2px solid #2A2A2E;overflow:hidden;display:flex;flex-direction:column;position:relative;
+         box-shadow:0 24px 60px rgba(0,0,0,.7)}
+  .statusbar{display:flex;justify-content:space-between;padding:10px 22px 4px;font-size:12px;color:var(--dim);flex:none}
+  .screens{flex:1;position:relative;overflow:hidden}
+  .screen{position:absolute;inset:0;overflow-y:auto;padding:6px 18px 96px;display:none;scrollbar-width:none}
+  .screen::-webkit-scrollbar{display:none}
+  .screen.on{display:block}
+  .screen.notab{padding-bottom:26px}
+  .tabs{position:absolute;left:0;right:0;bottom:0;height:74px;background:rgba(16,16,19,.97);border-top:1px solid var(--line);
+        display:flex;z-index:30}
+  .tabs.hidden{display:none}
+  .tab{flex:1;background:none;border:none;color:var(--faint);font-size:10.5px;font-weight:600;display:flex;
+       flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;font-family:inherit}
+  .tab .ic{font-size:20px;line-height:1}
+  .tab.sel{color:var(--orange)}
+  /* --- Team C type & furniture (from the prototype) --- */
+  h1.headline{font-size:27px;line-height:1.25;font-weight:800;letter-spacing:-.01em;margin:10px 0 6px}
+  h2{font-size:19px;font-weight:800}
+  .coach-says{font-size:16.5px;line-height:1.5}
+  .coach-says .who,.who{display:block;font-size:11.5px;font-weight:700;letter-spacing:.14em;color:var(--orange);margin-bottom:5px}
+  .sub{color:var(--dim);font-size:14px;line-height:1.5}
+  .small{color:var(--dim);font-size:12.5px;line-height:1.45}
+  .card{background:var(--surface);border:1px solid #232329;border-radius:var(--radius);padding:16px;margin:12px 0}
+  .card.tap{cursor:pointer}.card.tap:active{background:var(--surface2)}
+  .row{display:flex;align-items:center;gap:10px}
+  .spread{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .grow{flex:1}
+  .pill{display:inline-block;padding:3px 10px;border-radius:99px;font-size:12px;font-weight:700}
+  .pill.good{background:rgba(53,208,127,.15);color:var(--grn)}
+  .pill.warn{background:rgba(255,90,90,.14);color:var(--red)}
+  .pill.care{background:rgba(255,176,32,.15);color:var(--amb)}
+  .pill.info{background:rgba(78,168,255,.14);color:var(--blu)}
+  .pill.plan{background:rgba(255,138,0,.15);color:var(--orange)}
+  .pill.none{background:#232329;color:var(--dim)}
+  .btn{display:block;width:100%;border:none;border-radius:16px;padding:17px;font-size:18px;font-weight:800;
+       background:var(--grn);color:#06280F;cursor:pointer;letter-spacing:.02em;font-family:inherit}
+  .btn:active{filter:brightness(1.12)}
+  .btn.ghost{background:var(--surface2);color:var(--ink);font-weight:700;font-size:15px;padding:13px}
+  .btn.orange{background:var(--orange);color:#2A1500}
+  .btn.red{background:var(--red);color:#2A0505}
+  .btn.small{width:auto;display:inline-block;padding:9px 14px;font-size:13.5px;border-radius:12px}
+  .btn:disabled{background:#2A2A30;color:var(--faint);cursor:default}
+  .link{color:var(--orange);font-weight:700;cursor:pointer;font-size:14.5px}
+  .big-num{font-size:30px;font-weight:800;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+  .giant{font-size:56px;font-weight:900;letter-spacing:-.02em;line-height:1;font-variant-numeric:tabular-nums}
+  .med-num{font-size:26px;font-weight:800;font-variant-numeric:tabular-nums}
+  .klabel{font-size:11.5px;font-weight:700;letter-spacing:.12em;color:var(--dim);text-transform:uppercase}
+  .divider{height:1px;background:#232329;margin:14px 0}
+  .progress-track{height:10px;background:var(--surface2);border-radius:6px;overflow:hidden;margin:8px 0 4px}
+  .progress-fill{height:100%;background:linear-gradient(90deg,var(--orange),var(--grn));border-radius:6px}
+  .mapwrap{background:var(--surface);border:1px solid #232329;border-radius:var(--radius);padding:10px 6px 4px;margin:12px 0}
+  .mapwrap svg{width:100%;height:auto;display:block}
+  .cdot{cursor:pointer}
+  .cdot.sel circle.core{stroke:#fff;stroke-width:1.8}
+  .cdot.briefing circle.core{stroke:var(--orange);stroke-width:2.6}
+  .legend{display:flex;gap:13px;flex-wrap:wrap;padding:8px 10px 10px;color:var(--dim);font-size:12px}
+  .legend span{display:inline-flex;gap:6px;align-items:center}
+  .swatch{width:16px;height:4px;border-radius:2px;display:inline-block}
+  .secchips{display:flex;gap:8px;margin:12px 0 0}
+  .secchip{flex:1;background:var(--surface);border:2px solid #232329;border-radius:16px;padding:11px 6px;
+           text-align:center;cursor:pointer;color:var(--ink);font-family:inherit}
+  .secchip .nm{font-size:11.5px;font-weight:800;letter-spacing:.07em;color:var(--dim)}
+  .secchip .tm{font-size:21px;font-weight:900;margin-top:2px;font-variant-numeric:tabular-nums}
+  .secchip .dl{font-size:12.5px;font-weight:800;margin-top:1px}
+  .secchip.sel{border-color:var(--orange)}
+  .secchip:active{background:var(--surface2)}
+  .stamp{display:inline-flex;align-items:center;gap:6px;font-weight:900;font-size:14.5px;padding:7px 13px;border-radius:12px}
+  .stamp.g{background:rgba(53,208,127,.16);color:var(--grn)}
+  .stamp.r{background:rgba(255,90,90,.16);color:var(--red)}
+  .stamp.a{background:rgba(255,176,32,.17);color:var(--amb)}
+  .tracebox{background:#0E0E11;border:1px solid #232329;border-radius:14px;padding:10px;margin-top:10px}
+  .tracebox .cap{font-size:12.5px;color:var(--dim);margin-top:6px;line-height:1.4}
+  .bar{height:12px;border-radius:6px;background:#232329;overflow:hidden}
+  .bar i{display:block;height:100%;border-radius:6px;transition:width .12s linear}
+  .depth{display:none;margin-top:10px;border-top:1px dashed #33333A;padding-top:12px}
+  .depth.open{display:block}
+  .kv{display:flex;justify-content:space-between;font-size:14px;padding:4px 0;gap:12px}
+  .kv b{font-variant-numeric:tabular-nums;text-align:right}
+  .chart-label{font-size:11px;font-weight:700;letter-spacing:.12em;color:var(--dim);margin:14px 0 4px}
+  .laprow{display:flex;justify-content:space-between;align-items:baseline;padding:7px 0;border-bottom:1px solid #1D1D21;font-size:15px}
+  .laprow:last-child{border-bottom:none}
+  table.laps{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+  table.laps td,table.laps th{padding:7px 4px;font-size:14px;text-align:right;border-bottom:1px solid #1D1D21}
+  table.laps td:first-child,table.laps th:first-child{text-align:left}
+  table.laps th{color:var(--dim);font-size:11.5px;letter-spacing:.06em}
+  .delta{font-size:26px;font-weight:900;padding:8px 18px;border-radius:14px;display:inline-block;font-variant-numeric:tabular-nums}
+  .delta.g{background:rgba(53,208,127,.15);color:var(--grn)}
+  .delta.r{background:rgba(255,90,90,.15);color:var(--red)}
+  .secdots{display:flex;gap:8px;justify-content:center;margin-top:14px}
+  .secdots i{width:44px;height:10px;border-radius:5px;background:#2A2A30}
+  .secdots i.g{background:var(--grn)} .secdots i.r{background:var(--red)} .secdots i.a{background:var(--amb)}
+  .cue{background:#17130B;border:1px solid #3A2A10;border-radius:16px;padding:14px 16px;margin-top:14px}
+  .coachcard{background:linear-gradient(135deg,#1A1408,#141417);border:1px solid #3A2A10;border-radius:var(--radius);padding:16px;margin:12px 0}
+  .bubble{background:var(--surface);border:1px solid #232329;border-radius:18px;border-top-left-radius:6px;padding:14px 16px;margin:10px 0}
+  .bubble .who{margin-bottom:5px}
+  .dot{width:11px;height:11px;border-radius:50%;flex:none}
+  .dot.g{background:var(--grn)} .dot.r{background:var(--red)} .dot.a{background:var(--amb)} .dot.n{background:var(--grey)}
+  .switch{width:48px;height:28px;border-radius:99px;background:#33333A;position:relative;cursor:pointer;flex:none}
+  .switch::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:left .2s}
+  .switch.on{background:var(--grn)} .switch.on::after{left:23px}
+  .toggle-row{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid #1D1D21;font-size:15px;gap:12px}
+  .toggle-row:last-child{border-bottom:none}
+  .backbtn{background:none;border:none;color:var(--orange);font-size:15px;font-weight:700;cursor:pointer;padding:4px 0;font-family:inherit}
+  .trend{display:flex;align-items:flex-end;gap:3px;height:26px}
+  .trend i{display:block;width:9px;border-radius:2px;background:#39424E}
+  .trend i.b{background:var(--grn)}
+  /* --- BIG mode toggle (founder directive 2026-10-25: unmissable) --- */
+  .modetoggle{display:flex;background:var(--surface2);border:2px solid #33333A;border-radius:20px;padding:5px;gap:5px;margin:12px 0}
+  .modetoggle button{flex:1;border:none;border-radius:15px;padding:17px 6px;font-size:19px;font-weight:900;cursor:pointer;
+    background:transparent;color:var(--faint);font-family:inherit;letter-spacing:.01em}
+  .modetoggle button small{display:block;font-size:11px;font-weight:700;letter-spacing:.06em;margin-top:2px}
+  .modetoggle button.sel-sim{background:var(--orange);color:#2A1500}
+  .modetoggle button.sel-sim small{color:#5A3400}
+  .modetoggle button.sel-kart{background:var(--grn);color:#06280F}
+  .modetoggle button.sel-kart small{color:#0B4A24}
+  .verdict{font-size:19px;font-weight:900;line-height:1.3}
+  /* --- live stat grid --- */
+  .statgrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:12px}
+  .stat{background:var(--surface);border:1px solid #232329;border-radius:16px;padding:11px 6px;text-align:center}
+  .stat .v{font-size:25px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.1}
+  .stat .u{font-size:11px;color:var(--dim)}
+  .steerbar{position:relative;height:14px;background:#232329;border-radius:7px;margin-top:8px}
+  .steerbar .zero{position:absolute;left:50%;top:-3px;bottom:-3px;width:2px;background:#3A3A42}
+  .steerbar .fill{position:absolute;top:3px;bottom:3px;border-radius:4px;background:var(--blu)}
+  .guardian{border-radius:16px;padding:13px 16px;margin-top:12px;border:1px solid #232329;background:var(--surface)}
+  .guardian.watch{border-color:#2C4636}
+  .guardian.alert{background:rgba(255,90,90,.13);border-color:var(--red)}
+  .guardian .gtext{font-size:17px;font-weight:900}
+  /* --- scrub --- */
+  .railwrap{margin:10px 0 2px}
+  input[type=range].rail{-webkit-appearance:none;appearance:none;width:100%;height:34px;background:transparent;cursor:pointer}
+  input[type=range].rail::-webkit-slider-runnable-track{height:10px;border-radius:5px;background:linear-gradient(90deg,var(--orange) var(--fill,0%),#2A2A30 var(--fill,0%))}
+  input[type=range].rail::-webkit-slider-thumb{-webkit-appearance:none;width:26px;height:26px;border-radius:50%;background:#fff;border:3px solid var(--orange);margin-top:-8px}
+  input[type=range].rail::-moz-range-track{height:10px;border-radius:5px;background:#2A2A30}
+  input[type=range].rail::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:#fff;border:3px solid var(--orange)}
+  .momchips{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+  .momchip{flex:1;min-width:60px;background:var(--surface2);border:1px solid #33333A;color:var(--ink);border-radius:12px;
+    padding:10px 4px;font-size:12px;font-weight:800;cursor:pointer;font-family:inherit;text-align:center}
+  .momchip:active{border-color:var(--orange)}
+  .cornerstrip{display:flex;gap:6px;overflow-x:auto;padding:4px 0 8px;scrollbar-width:none}
+  .cornerstrip::-webkit-scrollbar{display:none}
+  .cchip{flex:none;width:52px;border-radius:14px;border:2px solid #232329;background:var(--surface);color:var(--ink);
+    padding:8px 0;text-align:center;cursor:pointer;font-family:inherit}
+  .cchip .cn{font-size:17px;font-weight:900}
+  .cchip .cs{font-size:9.5px;font-weight:800;letter-spacing:.03em}
+  .cchip.sel{border-color:var(--orange)}
+  .ribbon{background:var(--surface);border:1px solid #232329;border-radius:var(--radius);padding:14px 16px;margin:12px 0}
+  .modal{position:absolute;inset:0;background:rgba(3,3,4,.72);display:none;align-items:flex-end;z-index:40}
+  .modal.on{display:flex}
+  .sheet{background:#17171B;border-radius:24px 24px 0 0;padding:20px 18px 30px;width:100%;max-height:86%;overflow-y:auto;border-top:1px solid #33333A;scrollbar-width:none}
+  .sheet::-webkit-scrollbar{display:none}
+  .toast{position:absolute;left:50%;bottom:92px;transform:translateX(-50%) translateY(20px);background:#232329;color:var(--ink);
+         padding:11px 18px;border-radius:99px;font-size:14px;font-weight:600;opacity:0;pointer-events:none;transition:all .25s;z-index:80;white-space:nowrap;max-width:92%}
+  .toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+  .textfield{width:100%;background:var(--surface2);border:1px solid var(--line);border-radius:12px;color:var(--ink);
+    padding:12px 14px;font-size:15px;font-family:inherit}
+  .chiprow{display:flex;gap:7px;flex-wrap:wrap;margin:10px 0}
+  .cchip2{border:1px solid var(--line);background:var(--surface);color:var(--dim);border-radius:99px;padding:8px 14px;
+    font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
+  .cchip2.sel{background:var(--orange);color:#2A1500;border-color:var(--orange)}
+  .plancard{border:2px solid #232329}
+  .plancard.sel{border-color:var(--grn)}
+  .turnrow{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid #1D1D21;cursor:pointer}
+  .turnrow:last-child{border-bottom:none}
+  .turnrow .tn{width:30px;height:30px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;
+    font-weight:900;font-size:14px;color:#0A0A0C}
+  .turnrow.briefing{background:rgba(255,138,0,.08);border-radius:10px}
+</style>
+<style>
+html.embed body{padding:0}
+html.embed .simtag,html.embed .walkindex{display:none}
+html.embed .walkrow{margin:0;gap:0;justify-content:center}
+html.embed .phone{border:none;border-radius:0;box-shadow:none;width:392px;height:820px;max-height:none}
+</style>
+</head>
+<body>
+<div class="simtag">
+  <span class="big">SIMULATION — RaceHero final UI, approval walkthrough</span><br>
+  This is <b>not the app</b>. It's the complete intended interface — Team C's design language <b>plus every live-data
+  surface</b> — for the founder to walk through and approve <b>before</b> any further build ships.
+  All data is sample data drawn from real Nürburgring GP ACC sessions (best lap 2:07.1). Tap through it like the real app.
+</div>
+<div class="walkrow">
+  <div class="walkindex">
+    <a href="/" style="display:block;color:#FF8A00;font-size:12.5px;text-decoration:none;padding:2px 6px 8px">← Back to racehero.ca</a>
+    <h3>WALKTHROUGH — EVERY SCREEN</h3>
+    <div class="grp">FIRST RUN</div>
+    <button data-nav="welcome" onclick="show('welcome')">Welcome</button>
+    <div class="grp">MAIN TABS</div>
+    <button data-nav="home" onclick="show('home')">Home — your story</button>
+    <button data-nav="pre" onclick="show('pre')">Live — pre-session &amp; brief</button>
+    <button data-nav="live" onclick="show('live')">Live — in session (telemetry)</button>
+    <button data-nav="sessions" onclick="show('sessions')">Sessions</button>
+    <button data-nav="coach" onclick="show('coach')">Coach &amp; voice</button>
+    <button data-nav="settings" onclick="show('settings')">Settings</button>
+    <div class="grp">SESSION FLOW</div>
+    <button data-nav="viewer" onclick="show('viewer')">Session viewer (map)</button>
+    <button data-nav="scrub" onclick="show('scrub')">Corner Scrub</button>
+    <button data-nav="debrief" onclick="show('debrief')">Debrief</button>
+    <button data-nav="trackwalk" onclick="show('trackwalk')">Track Walk</button>
+    <div class="grp">HARDWARE &amp; ACCOUNT</div>
+    <button data-nav="hardware" onclick="show('hardware')">Hardware Hub</button>
+    <button data-nav="garage" onclick="show('garage')">Puck build guide (Garage)</button>
+    <button data-nav="gopro" onclick="show('gopro')">GoPro pairing</button>
+    <button data-nav="paywall" onclick="show('paywall')">Paywall — Free vs Pro</button>
+    <div class="grp">PRE-SESSION STATES</div>
+    <div class="statebtns">
+      <button id="st-live" class="sel" onclick="setFeedState('live')">Feed live</button>
+      <button id="st-none" onclick="setFeedState('none')">No feed yet</button>
+    </div>
+    <p style="font-size:11px;color:#5A5A63;line-height:1.45;padding:0 6px">Flip to “No feed yet”, then open the pre-session screen: the verdict tells you the one thing to do, and GO stays off.</p>
+  </div>
+<div class="phone">
+  <div class="statusbar"><span>9:41</span><span>RaceHero</span><span>89% ▮</span></div>
+  <div class="screens">
+
+  <!-- ============ WELCOME (first run) ============ -->
+  <section class="screen notab on" id="scr-welcome">
+    <div style="text-align:center;margin-top:34px">
+      <div style="font-size:52px">🏁</div>
+      <h1 class="headline" style="font-size:30px">RaceHero</h1>
+      <p class="coach-says" style="max-width:300px;margin:0 auto">A coach who rides with you. He watches every lap, learns your corners, and tells you the one thing that makes you faster.</p>
+    </div>
+    <div class="card">
+      <div class="row" style="padding:7px 0"><span style="font-size:20px">🎧</span><div class="grow"><b>He talks while you drive</b><div class="small">Short cues in your ear — brake points, focus corners, and a calm voice when it goes wrong.</div></div></div>
+      <div class="row" style="padding:7px 0"><span style="font-size:20px">🗺️</span><div class="grow"><b>He knows the track before you do</b><div class="small">A walk-through brief in the pits, from the track itself — then your own laps take over.</div></div></div>
+      <div class="row" style="padding:7px 0"><span style="font-size:20px">🔒</span><div class="grow"><b>Your data stays yours</b><div class="small">Sessions live on your phone. No account needed to start driving.</div></div></div>
+    </div>
+    <div class="card">
+      <div class="klabel" style="margin-bottom:6px">Two permissions, both for the driving</div>
+      <div class="row" style="padding:5px 0"><span class="dot g"></span><span class="grow">Location — lap timing on real tracks</span><span class="pill good">On</span></div>
+      <div class="row" style="padding:5px 0"><span class="dot g"></span><span class="grow">Bluetooth — your puck, wheel &amp; pedals</span><span class="pill good">On</span></div>
+      <p class="small" style="margin-top:8px">Asked once, in plain words, when each is first needed — never a wall of switches.</p>
+    </div>
+    <button class="btn" style="font-size:20px;padding:19px" onclick="show('home')">START FRESH — LET'S DRIVE</button>
+    <p class="small" style="text-align:center;margin-top:10px">Been here before? <span class="link" onclick="toast('Restore reads your .racehero-backup file — nothing is overwritten')">Restore from a backup</span></p>
+  </section>
+
+  <!-- ============ HOME / STORY (Team C, as-is) ============ -->
+  <section class="screen" id="scr-home">
+    <div class="sub" style="margin-top:6px;">Sunday · Welcome back</div>
+    <h1 class="headline">You found <span style="color:var(--grn)">4.3 seconds</span> today.</h1>
+    <p class="coach-says"><span class="who">YOUR COACH</span>
+    Six laps at the Nürburgring: 2:11 down to a <b>2:07.1</b> — and then one lap reaching for more, where the car stepped out. That is <i>exactly</i> how this is supposed to go. Nothing to fix about your attitude. One corner to fix. ↓</p>
+
+    <div class="card">
+      <div class="row"><div class="grow">
+        <div class="klabel">YOUR PERFECT LAP IS ALREADY IN YOU</div>
+        <div class="big-num" style="margin-top:4px">2:06.8</div>
+        <div class="small">Your best three parts of the lap, added together. You've already driven every piece of it — just not on the same lap. Yet.</div>
+      </div><div style="font-size:34px;">🏁</div></div>
+      <div class="progress-track"><div class="progress-fill" style="width:96%"></div></div>
+      <div class="small">Best lap 2:07.1 · perfect lap 2:06.8 — just 0.3 s apart</div>
+    </div>
+
+    <div class="card tap" onclick="openCorner(4)">
+      <div class="row"><span class="pill plan">OUR PROJECT</span><span class="small">this week</span></div>
+      <p class="coach-says" style="margin:8px 0 2px;"><b>Turn 4.</b> You brake early there and it costs you the whole straight after it. That's our corner — we work on it together next session.</p>
+      <span class="link">See the corner →</span>
+    </div>
+
+    <div style="font-weight:800;font-size:17px;margin:18px 0 2px;">Your story</div>
+    <div class="small">Every session, as chapters — newest first.</div>
+
+    <div class="card tap" onclick="show('debrief')">
+      <div class="spread"><span class="pill good">−4.3 s</span><span class="small">Today · Sim</span></div>
+      <div style="font-weight:800;font-size:16.5px;margin-top:8px;">Nürburgring GP · Simulator</div>
+      <div class="small">6 laps · best 2:07.1</div>
+      <p class="sub" style="margin:8px 0 0;">“The confidence session.” Careful laps — then it clicked, then one reach too far on the last lap. Read the debrief →</p>
+      <div class="spread" style="margin-top:10px">
+        <div class="trend"><i style="height:26px"></i><i style="height:21px"></i><i style="height:17px"></i><i style="height:13px"></i><i class="b" style="height:9px"></i><i style="height:22px"></i></div>
+        <span class="small">First lap 2:11.4 → best 2:07.1</span>
+      </div>
+    </div>
+
+    <div class="card tap" onclick="toast('Older chapters open the same way — viewer, scrub, debrief')">
+      <div class="row"><div class="grow"><b>Tue · Hamilton Mini Indy</b><div class="small">11 laps · best 41.28</div></div><span class="pill good">−2.1 s</span></div>
+      <p class="sub" style="margin:8px 0 0;">“The braking session.” You stopped braking like the car might break. It noticed.</p>
+    </div>
+    <div class="card tap" onclick="toast('Older chapters open the same way — viewer, scrub, debrief')">
+      <div class="row"><div class="grow"><b>Oct 15 · Hamilton Mini Indy</b><div class="small">9 laps · best 43.4</div></div><span class="pill info">first time</span></div>
+      <p class="sub" style="margin:8px 0 0;">“Day one.” Everything was new. Look how far the line has come.</p>
+    </div>
+
+    <div class="card">
+      <b style="font-size:16px;">Next time out</b>
+      <div class="small">One thing. Just one.</div>
+      <p class="coach-says" style="margin:6px 0 0;">Brake later at Turn 4. That's it. Everything else: just drive.</p>
+      <button class="btn orange" style="margin-top:12px;" onclick="show('pre')">Start a session →</button>
+    </div>
+    <div class="small" style="text-align:center;margin-top:6px;">Share or export a session… <span class="link" onclick="toast('Export JSON / CSV / video overlay — tucked here, not on your home screen')">share menu</span></div>
+  </section>
+
+  <!-- ============ LIVE · PRE-SESSION (verdict + BIG toggle + ReferenceBrief + contract + live data + GO) ============ -->
+  <section class="screen" id="scr-pre">
+    <button class="backbtn" onclick="show('home')">‹ Your story</button>
+    <div class="sub" style="margin-top:4px;">BEFORE YOU GO OUT</div>
+
+    <div class="card" style="border-color:#3A2A10;margin-top:8px">
+      <div class="klabel">The app has worked out where you are</div>
+      <p class="verdict" id="verdict-line" style="margin-top:6px">SIMULATOR — game feed live:<br>ACC · Nürburgring GP</p>
+      <p class="small" id="verdict-why" style="margin-top:4px">RaceHero Link is streaming from your PC, and the game named the track. Nothing for you to set.</p>
+    </div>
+
+    <div class="klabel" style="margin-top:4px">Your world — it should say what you're doing</div>
+    <div class="modetoggle" role="group" aria-label="Mode">
+      <button id="mt-kart" onclick="setMode('kart')">🏎️ KARTING<small>REAL TRACK · GPS</small></button>
+      <button id="mt-sim" class="sel-sim" onclick="setMode('sim')">🖥️ SIMULATOR<small>THE GAME FEEDS ME</small></button>
+    </div>
+    <p class="small" style="text-align:center;margin-top:-4px">Wrong? Tap the other side. Once you press GO, the mode locks for the session — the recording always knows which world it came from.</p>
+
+    <h1 class="headline" style="font-size:24px;">Here's your track.</h1>
+    <div class="mapwrap">
+      <svg id="map-pre" viewBox="0 0 100 72"></svg>
+      <div class="legend">
+        <span><i class="swatch" style="background:var(--blu)"></i> Part 1</span>
+        <span><i class="swatch" style="background:var(--orange)"></i> Part 2</span>
+        <span><i class="swatch" style="background:var(--grn)"></i> Part 3</span>
+        <span>◯ Tap a turn</span>
+      </div>
+    </div>
+    <p class="small" style="text-align:center;">Nürburgring GP · 5,137 m · 8 turns · circuit outline: reference map — your driven line replaces it once you've lapped</p>
+
+    <div class="coachcard">
+      <span class="who">🎧 YOUR COACH — TODAY'S PLAN</span>
+      <p class="coach-says" style="margin-top:4px;">Three parts to this lap. The <b>first part</b> is tight and busy — patience pays there. The <b>middle</b> is where your time lives: Turn 4 sets up the long run. The <b>last part</b> is fast and flowing — trust the car.<br><br>
+      First two laps: just look around. Find your braking boards. No heroics. Then we work on <b>one thing — braking later at Turn 4</b> — because that's where your next second is hiding.</p>
+      <div class="divider"></div>
+      <p class="coach-says" style="font-size:15.5px"><span class="who">OUR DEAL FOR TODAY</span>
+      About 10 laps. The first two, I just watch and learn. Then we pick our corner and work on it together. You never have to tell me when a lap starts — the game does that.</p>
+    </div>
+
+    <div class="card">
+      <div class="spread"><span class="klabel">Walk the track with your coach</span><span class="pill plan">REFERENCEBRIEF</span></div>
+      <p class="sub" style="margin-top:6px">Before your first lap, your coach walks you round — every turn, one line each, the map lighting up as he names it. This is the reference lap talking; your own laps replace it as you drive them.</p>
+      <button class="btn ghost" id="brief-play" style="margin-top:10px" onclick="playBrief()">▶ Walk it — about 30 seconds</button>
+      <div id="brief-line" class="cue" style="display:none;margin-top:12px">
+        <span class="who">🎧 COACH — WALKING THE TRACK</span>
+        <p class="coach-says" id="brief-text" style="margin-top:2px"></p>
+      </div>
+      <div id="turnlist" style="margin-top:8px"></div>
+      <p class="small" style="margin-top:8px">Source: the track's reference map and terrain (Copernicus DEM). A first-visit walk-through uses the reference's own turn count — driven analysis takes over wholesale once your laps exist.</p>
+    </div>
+
+    <div class="card">
+      <div class="klabel" style="margin-bottom:6px;">Is everything talking to me?</div>
+      <div id="checklist-sim">
+        <div class="row" style="padding:5px 0"><span class="dot g"></span><span class="grow">The game feed</span><span class="pill good" id="pill-feed">Working</span></div>
+        <div class="row" style="padding:5px 0"><span class="dot g"></span><span class="grow">Your pedals &amp; wheel — Link can see them</span><span class="pill good" id="pill-pedals">Working</span></div>
+        <div class="row" style="padding:5px 0"><span class="dot a"></span><span class="grow">Cornering force</span><span class="pill care">Estimated — fine</span></div>
+        <div class="row" style="padding:5px 0"><span class="dot g"></span><span class="grow">Lap timing</span><span class="pill good">From the game</span></div>
+      </div>
+      <div id="checklist-none" style="display:none">
+        <div class="row" style="padding:5px 0"><span class="dot n"></span><span class="grow">No game feed yet — start your sim, or step outside for GPS</span></div>
+        <div class="row" style="padding:5px 0"><span class="dot n"></span><span class="grow">Nothing is broken. The moment data arrives, this screen lights up on its own</span></div>
+      </div>
+      <p class="small" style="margin-top:8px;">Green means go — you don't need to fix anything. If anything ever goes quiet, I'll tell you in a sentence, with the fix — not a percentage.</p>
+    </div>
+
+    <div class="card" id="livedata">
+      <div class="spread"><span class="klabel">Live data — already flowing</span><span class="pill none" id="live-state">In the pits</span></div>
+      <div class="row" style="margin-top:10px;gap:8px">
+        <div class="grow" style="text-align:center"><div class="klabel">Speed</div><div class="giant" style="font-size:44px" id="lv-speed">0</div><div class="small">km/h</div></div>
+        <div style="text-align:center;min-width:52px"><div class="klabel">Gear</div><div class="med-num" style="font-size:32px" id="lv-gear">N</div><div class="small">&nbsp;</div></div>
+        <div style="text-align:center;min-width:52px"><div class="klabel">RPM</div><div class="med-num" style="font-size:32px" id="lv-rpm">—</div><div class="small">×100</div></div>
+        <div style="text-align:center;min-width:52px"><div class="klabel">G</div><div class="med-num" style="font-size:32px" id="lv-g">0.0</div><div class="small">cornering</div></div>
+      </div>
+      <div style="margin-top:12px">
+        <div class="row"><span style="width:52px;font-weight:700">Gas</span><div class="bar grow"><i id="lv-gas" style="width:0%;background:var(--grn)"></i></div></div>
+        <div class="row" style="margin-top:8px"><span style="width:52px;font-weight:700">Brake</span><div class="bar grow"><i id="lv-brk" style="width:0%;background:var(--red)"></i></div></div>
+        <div class="row" style="margin-top:4px"><span style="width:52px"></span><span class="small grow">off</span><span class="small">full</span></div>
+      </div>
+      <div style="margin-top:10px">
+        <div class="klabel">Steering</div>
+        <div class="steerbar"><div class="zero"></div><div class="fill" id="lv-steer" style="left:50%;width:0%"></div></div>
+        <div class="row" style="margin-top:3px"><span class="small grow">left</span><span class="small">right</span></div>
+      </div>
+      <p class="small" style="margin-top:10px">Watch the orange dot on your track above — that's you, moving. A channel that stops moving says so here — it never freezes silently.</p>
+    </div>
+    <p class="sub" style="text-align:center;margin:2px 0 12px;">Live from your car — this is pit and out-lap data. Nothing counts until you press GO.</p>
+
+    <button class="btn" id="go-btn" style="font-size:21px;padding:19px;box-shadow:0 8px 26px rgba(53,208,127,.3)" onclick="pressGO(this)">GO — START SESSION</button>
+    <p class="small" style="text-align:center;margin-top:8px;" id="go-note">GO plays the brief in your ear and starts recording. Nothing counts before GO.</p>
+  </section>
+
+  <!-- ============ LIVE · IN SESSION (full telemetry, the moment data connects) ============ -->
+  <section class="screen" id="scr-live">
+    <div class="spread">
+      <span class="pill warn">● LIVE · LAP <span id="ls-lapnum">7</span></span>
+      <span class="pill plan">🖥️ SIMULATOR · LOCKED</span>
+    </div>
+    <p class="small" style="text-align:center;margin-top:6px">ACC · Nürburgring GP · mode locked at GO — it can't change mid-session</p>
+
+    <div id="voice-strip" class="row" style="background:var(--surface);border:1px solid #2C4636;border-radius:12px;padding:8px 12px;margin-top:10px;cursor:pointer" onclick="cycleVoiceStrip()">
+      <span class="dot g" id="voice-dot"></span>
+      <span class="small grow" id="voice-text" style="color:var(--ink)"><b>Coach voice: working.</b> Last cue heard, in full.</span>
+      <span class="small">tap = preview warning</span>
+    </div>
+
+    <div style="text-align:center;margin-top:14px">
+      <div class="klabel">This lap</div>
+      <div class="giant" id="ls-clock">1:12.4</div>
+      <div style="margin-top:10px"><span class="delta g" id="ls-delta">−0.42 vs your best</span></div>
+      <p class="sub" style="margin-top:8px" id="ls-delta-note">Green = you're quicker than your best lap at this exact point. Keep going.</p>
+    </div>
+
+    <div class="secdots" id="ls-secdots"><i class="g"></i><i class="g"></i><i></i></div>
+    <p class="sub" style="text-align:center;margin-top:6px" id="ls-sectext">Part 1 ✓ faster · Part 2 ✓ faster · Part 3 — in progress</p>
+
+    <div class="row" style="margin-top:12px;gap:8px">
+      <div class="card grow" style="margin:0;text-align:center"><div class="klabel">Last lap</div><div class="med-num" id="ls-lastlap">2:07.1</div><div class="small">★ your best today</div></div>
+      <div class="card grow" style="margin:0;text-align:center"><div class="klabel">Laps done</div><div class="med-num" id="ls-laps">6</div><div class="small">of ~10 planned</div></div>
+      <div class="card grow" style="margin:0;text-align:center"><div class="klabel">Session</div><div class="med-num" id="ls-session">14:32</div><div class="small">and counting</div></div>
+    </div>
+
+    <div class="statgrid">
+      <div class="stat"><div class="klabel">Speed</div><div class="v" id="ls-speed">182</div><div class="u">km/h</div></div>
+      <div class="stat"><div class="klabel">Gear</div><div class="v" id="ls-gear">4</div><div class="u">&nbsp;</div></div>
+      <div class="stat"><div class="klabel">RPM</div><div class="v" id="ls-rpm">72</div><div class="u">×100</div></div>
+      <div class="stat"><div class="klabel">G — cornering</div><div class="v" id="ls-glat">1.1</div><div class="u">sideways load</div></div>
+      <div class="stat"><div class="klabel">G — braking</div><div class="v" id="ls-glon">0.2</div><div class="u">under braking / power</div></div>
+      <div class="stat"><div class="klabel">Best lap</div><div class="v">2:07.1</div><div class="u">lap 5</div></div>
+    </div>
+
+    <div class="card">
+      <div class="spread"><div class="klabel">Your feet, right now</div><span class="small">Link · live</span></div>
+      <div class="row" style="margin-top:10px"><span style="width:74px;font-weight:700">Gas</span><div class="bar grow"><i id="ls-gas" style="width:82%;background:var(--grn)"></i></div></div>
+      <div class="row" style="margin-top:8px"><span style="width:74px;font-weight:700">Brake</span><div class="bar grow"><i id="ls-brk" style="width:0%;background:var(--red)"></i></div></div>
+      <div class="row" style="margin-top:4px"><span style="width:74px"></span><span class="small grow">off</span><span class="small">full</span></div>
+      <div style="margin-top:12px">
+        <div class="klabel">Steering</div>
+        <div class="steerbar"><div class="zero"></div><div class="fill" id="ls-steer" style="left:50%;width:0%"></div></div>
+        <div class="row" style="margin-top:3px"><span class="small grow">left</span><span class="small">right</span></div>
+      </div>
+      <p class="small" style="margin-top:8px;">Full green = full gas. If both bars ever light up together, you're pressing both pedals. Bars show travel only — no percentages, because your pedal's travel is yours, not a lab number.</p>
+    </div>
+
+    <div class="cue">
+      <span class="who">🎧 COACH — LAST THING SAID</span>
+      <p class="coach-says" style="margin-top:2px" id="ls-cue">“Two corners from now: Turn 4. Brake later this time — you have room.”</p>
+      <div class="divider" style="margin:10px 0"></div>
+      <span class="who">NEXT FOCUS</span>
+      <p class="coach-says" style="font-size:15.5px">Turn 4 — brake at the board. He'll remind you two corners out, then talk you through it. One corner at a time; the rest of the lap is yours.</p>
+    </div>
+
+    <div class="guardian watch" id="guardian-card">
+      <div class="spread"><span class="klabel" style="color:var(--grn)" id="guardian-label">🛡️ GUARDIAN — WATCHING</span><span class="pill good" id="guardian-pill">Inside your envelope</span></div>
+      <p class="gtext" id="guardian-text" style="margin-top:6px">He's got your back. If you arrive at a corner faster than you've ever made it stick, he'll say so — loudly, and in time.</p>
+      <p class="small" style="margin-top:4px">Judged against <b>your own</b> demonstrated best, plus a margin — never against anyone else.</p>
+    </div>
+
+    <div class="card">
+      <span class="who">IN YOUR EAR, THIS SESSION</span>
+      <p class="coach-says">Short cues only while you drive. The full story waits for the pits.</p>
+      <div class="toggle-row"><span>Voice coach</span><div class="switch on" onclick="this.classList.toggle('on')"></div></div>
+      <div class="toggle-row"><span>Only our project corner</span><div class="switch on" onclick="this.classList.toggle('on')"></div></div>
+      <div class="toggle-row"><span>Guardian — always on</span><div class="switch on" onclick="this.classList.toggle('on');toast('Guardian can be quieted for one session — he argues, then obeys')"></div></div>
+    </div>
+
+    <button class="btn red" style="margin-top:14px" onclick="toast('Held — session ended. Your debrief is ready.');show('debrief')">■ HOLD TO END — SEE HOW IT WENT</button>
+    <p class="small" style="text-align:center;margin-top:8px">Hold, don't tap — a session never ends by accident in a moving car.</p>
+  </section>
+
+  <!-- ============ SESSIONS (your garage of drives) ============ -->
+  <section class="screen" id="scr-sessions">
+    <div class="sub" style="margin-top:6px;">YOUR SESSIONS</div>
+    <h1 class="headline" style="font-size:24px;">Every drive, kept.</h1>
+
+    <div class="card tap" onclick="show('viewer')">
+      <div class="spread"><span class="pill good">−4.3 s</span><span class="small">Today · Simulator</span></div>
+      <div style="font-weight:800;font-size:16.5px;margin-top:8px;">Nürburgring GP</div>
+      <div class="small">6 laps · best 2:07.1 · 1 lap set aside (spin) — told fairly in the debrief</div>
+      <div class="spread" style="margin-top:10px">
+        <div class="trend"><i style="height:26px"></i><i style="height:21px"></i><i style="height:17px"></i><i style="height:13px"></i><i class="b" style="height:9px"></i><i style="height:22px"></i></div>
+        <span class="link">Open the session →</span>
+      </div>
+    </div>
+
+    <div class="card tap" onclick="toast('Opens the same way: viewer → scrub → debrief')">
+      <div class="spread"><span class="pill good">−2.1 s</span><span class="small">Tue · Karting · GPS</span></div>
+      <div style="font-weight:800;font-size:16.5px;margin-top:8px;">Hamilton Mini Indy</div>
+      <div class="small">11 laps · best 41.28 · pedals: no data — no Link on the car path that day, and the record says so</div>
+    </div>
+
+    <div class="card tap" onclick="toast('Opens the same way: viewer → scrub → debrief')">
+      <div class="spread"><span class="pill info">first time</span><span class="small">Oct 15 · Karting · GPS</span></div>
+      <div style="font-weight:800;font-size:16.5px;margin-top:8px;">Hamilton Mini Indy</div>
+      <div class="small">9 laps · best 43.4</div>
+    </div>
+
+    <div class="card">
+      <div class="klabel">Bring a session with you</div>
+      <p class="sub" style="margin-top:6px">Your data is yours: import a session file from another driver or another app — Garage61 CSV, MoTeC, iRacing — and the same coach reads it.</p>
+      <span class="link" onclick="toast('Import opens the system file picker (the phone owns that screen)')">Import a session file</span>
+      <div class="divider"></div>
+      <p class="sub">Export this list's sessions as JSON / CSV, or a video with the data laid over it.</p>
+      <span class="link" onclick="toast('Export: JSON · CSV · video overlay — chosen per session')">Export…</span>
+    </div>
+  </section>
+
+  <!-- ============ SESSION VIEWER (interactive 2D map + sectors + elevation) ============ -->
+  <section class="screen" id="scr-viewer">
+    <button class="backbtn" onclick="show('sessions')">‹ Sessions</button>
+    <div class="sub" style="margin-top:4px;">TODAY · NÜRBURGRING GP (SIM) · 6 LAPS</div>
+    <h1 class="headline" style="font-size:24px;">Your lap, as a story.</h1>
+
+    <div class="row" style="flex-wrap:wrap;gap:8px">
+      <span class="pill good">Best lap 2:07.1 (lap 5)</span>
+      <span class="pill none">6 laps</span>
+      <span class="pill none">Top speed 245 km/h</span>
+      <span class="pill care">Lap 6 set aside ⚠</span>
+    </div>
+
+    <div class="mapwrap">
+      <svg id="map-view" viewBox="0 0 100 72"></svg>
+      <div class="legend">
+        <span><i class="swatch" style="background:#fff"></i> Your line</span>
+        <span><i class="swatch" style="background:var(--grn)"></i> Reference — COMPOSITE: your best pieces</span>
+        <span>🎯 = you hit the apex</span>
+        <span>⚠ = something happened</span>
+      </div>
+    </div>
+    <p class="sub">The track itself is coloured by how you drove it — <span style="color:var(--grn)"><b>green faster</b></span>, <span style="color:var(--red)"><b>red slower</b></span>. Where the white line leaves the green line, time went with it. Tap a coloured part — or a turn number.</p>
+
+    <div class="card" style="padding:12px 14px">
+      <div class="spread"><span class="klabel">The ground under the lap</span><span class="small" id="elev-cap">605 m → 627 m · 22 m of climb and fall</span></div>
+      <div id="elev-viewer"></div>
+      <p class="small">Elevation is the coach's ground truth — brake points and targets are checked against it, never guessed. Terrain: Copernicus DEM.</p>
+    </div>
+
+    <div class="secchips" id="secchips">
+      <button class="secchip" data-sec="0" onclick="pickSector(0)"><div class="nm">PART 1</div><div class="tm">46.0</div><div class="dl" style="color:var(--red)">+0.3</div></button>
+      <button class="secchip" data-sec="1" onclick="pickSector(1)"><div class="nm">PART 2</div><div class="tm">41.0</div><div class="dl" style="color:var(--grn)">best</div></button>
+      <button class="secchip" data-sec="2" onclick="pickSector(2)"><div class="nm">PART 3</div><div class="tm">40.1</div><div class="dl" style="color:var(--grn)">best</div></button>
+    </div>
+
+    <div id="secpanel"></div>
+
+    <div class="coachcard">
+      <span class="who">🏁 COACH'S ONE THING</span>
+      <p class="coach-says" style="margin-top:4px;">One turn is hiding almost a second: Turn 4, in Part 2. Everything else is nearly perfect. Full story in the Debrief — or put your finger on the lap and scrub it yourself.</p>
+      <div class="row" style="margin-top:10px;gap:8px">
+        <button class="btn ghost grow" onclick="show('scrub')">🧤 Scrub the lap</button>
+        <button class="btn ghost grow" onclick="show('debrief')">Read my Debrief ›</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CORNER SCRUB (whole lap · one position drives everything) ============ -->
+  <section class="screen" id="scr-scrub">
+    <button class="backbtn" onclick="show('viewer')">‹ Session</button>
+    <div class="sub" style="margin-top:4px;">CORNER SCRUB · NÜRBURGRING GP</div>
+    <h1 class="headline" style="font-size:24px;">Put your finger on the lap.</h1>
+    <p class="sub">One position drives everything — map, ghost, numbers, your feet, the coach's sentence. Drag anywhere: the rail, or straight on the track.</p>
+
+    <div class="chiprow">
+      <button class="cchip2 sel" id="lap5-chip" onclick="setScrubLap(5)">Lap 5 · your best 2:07.1</button>
+      <button class="cchip2" id="lap6-chip" onclick="setScrubLap(6)">Lap 6 · 2:20.4 ⚠ the spin</button>
+      <button class="cchip2 sel" id="cmp-chip" onclick="toggleCompare()">Compare: fast lap ON</button>
+    </div>
+
+    <div class="mapwrap">
+      <svg id="map-scrub" viewBox="0 0 100 72"></svg>
+      <div class="legend">
+        <span><i class="swatch" style="background:#fff"></i> You</span>
+        <span><i class="swatch" style="background:var(--grn)"></i> The fast lap (ghost)</span>
+        <span>● = where your finger is</span>
+      </div>
+    </div>
+
+    <div class="cue" style="margin-top:0">
+      <span class="who">🎧 COACH — AT YOUR FINGER</span>
+      <p class="coach-says" style="margin-top:2px" id="scrub-sentence">Pick a corner below, or drag the rail — I'll talk you through what's under your finger.</p>
+      <div style="margin-top:8px" id="scrub-stamp"></div>
+    </div>
+
+    <div class="ribbon">
+      <div class="row" style="gap:14px">
+        <div><div class="klabel">Speed</div><div class="giant" style="font-size:40px" id="rb-speed">0</div><div class="small">km/h</div></div>
+        <div><div class="klabel">Fast lap here</div><div class="med-num" id="rb-fast">0</div><div class="small">km/h</div></div>
+        <div><div class="klabel">Gear</div><div class="med-num" id="rb-gear">—</div><div class="small">&nbsp;</div></div>
+        <div class="grow" style="text-align:right"><div class="klabel">Delta here</div><div><span class="delta g" style="font-size:20px;padding:5px 12px" id="rb-delta">0.00 s</span></div></div>
+      </div>
+      <div style="margin-top:12px">
+        <div class="row"><span style="width:52px;font-weight:700">Gas</span><div class="bar grow"><i id="rb-gas" style="width:0%;background:var(--grn)"></i></div></div>
+        <div class="row" style="margin-top:7px"><span style="width:52px;font-weight:700">Brake</span><div class="bar grow"><i id="rb-brk" style="width:0%;background:var(--red)"></i></div></div>
+        <div class="row" style="margin-top:3px"><span style="width:52px"></span><span class="small grow">off</span><span class="small">full</span></div>
+      </div>
+      <div class="divider" style="margin:12px 0"></div>
+      <div class="klabel">Steering trace — the cursor is your finger</div>
+      <div id="rb-steer"></div>
+      <div class="kv" style="margin-top:8px"><span>Cornering load</span><b id="rb-g">—</b></div>
+      <div class="kv"><span>Your line vs the fast line</span><b id="rb-dev">—</b></div>
+      <div class="kv"><span>Coast (gas off → brake on)</span><b id="rb-coast">—</b></div>
+    </div>
+
+    <div class="klabel">Gears along the lap — the empty hatched stretch is coast: neither pedal, time rolling away</div>
+    <div id="gear-ribbon" style="margin-top:6px"></div>
+    <div class="klabel" style="margin-top:12px">Elevation — same distance, same cursor</div>
+    <div id="elev-scrub"></div>
+
+    <div class="railwrap">
+      <input type="range" class="rail" id="scrub-rail" min="0" max="5137" step="1" value="0" oninput="scrubTo(+this.value,true)">
+      <div class="spread"><span class="small">Start / finish</span><span class="small" id="rb-dist">0 m of 5,137 m</span><span class="small">Start / finish</span></div>
+    </div>
+    <div class="row" style="gap:8px;margin-top:6px">
+      <button class="btn ghost grow" id="play-btn" onclick="togglePlay()">▶ Play the lap</button>
+      <button class="cchip2 sel" id="spd-1" onclick="setPlaySpeed(1)">1×</button>
+      <button class="cchip2" id="spd-q" onclick="setPlaySpeed(0.25)">0.25×</button>
+    </div>
+    <p class="small" style="margin-top:6px">Playing moves every channel at once. Touch anything and it pauses — your finger is always senior to playback.</p>
+
+    <div class="klabel" style="margin-top:14px">Jump to a moment in this corner</div>
+    <div class="momchips">
+      <button class="momchip" onclick="jumpMoment('youbrake')">YOU BRAKE</button>
+      <button class="momchip" onclick="jumpMoment('fastbrake')">FAST BRAKES</button>
+      <button class="momchip" onclick="jumpMoment('turnin')">TURN-IN</button>
+      <button class="momchip" onclick="jumpMoment('apex')">APEX</button>
+      <button class="momchip" onclick="jumpMoment('gason')">GAS BACK ON</button>
+    </div>
+
+    <div class="klabel" style="margin-top:14px">Corners — tap one to land at its brake point</div>
+    <div class="cornerstrip" id="cornerstrip"></div>
+    <p class="small">⚠ on the rail and the map marks the lap-6 spin at Turn 1 — tap it on lap 6 and the coach tells it fairly, the same as in the Debrief.</p>
+  </section>
+
+  <!-- ============ DEBRIEF (the conversation + corner-by-corner narration) ============ -->
+  <section class="screen" id="scr-debrief">
+    <button class="backbtn" onclick="show('viewer')">‹ Session</button>
+    <div class="sub" style="margin-top:4px;">AI DEBRIEF · TODAY · 6 LAPS</div>
+    <h1 class="headline">“The confidence session.”</h1>
+
+    <div class="bubble"><span class="who">YOUR COACH — WHAT I SAW</span>
+      <p class="coach-says">You started careful — 2:11, 2:09 — like a driver learning a new place properly. Then something clicked and the time fell away: 2:08, 2:07, <b>2:07.1</b>. That wasn't luck. Your braking got later everywhere at once, and your hands got quiet. That's real driving improving, in one session.</p></div>
+
+    <div class="bubble"><span class="who">THE LAP, CORNER BY CORNER — WHAT YOU DID</span>
+      <p class="coach-says" style="font-size:15.5px"><b>Turn 1</b> — on your best lap you clipped it perfectly, 70 km/h at the slowest point, same as your own best there. Nothing to change. <span class="link" onclick="openScrubAt(1)">Scrub it →</span></p>
+      <p class="coach-says" style="font-size:15.5px;margin-top:8px"><b>Turn 3</b> — the slowest turn on the track, and your most consistent: the same speed, every single lap. Whatever you're doing with your eyes there, do it everywhere.</p>
+      <p class="coach-says" style="font-size:15.5px;margin-top:8px"><b>Turn 4</b> — the one that matters. You hit the apex every time — the line is right — but you brake about a car-length too early and roll in at 85. Your own best entry here says the car can take more. <span class="link" onclick="openScrubAt(4)">Scrub it →</span></p>
+      <p class="coach-says" style="font-size:15.5px;margin-top:8px"><b>Turn 6</b> — you run a touch wide, and it makes the next part arrive before you're ready. A car-length earlier turn-in fixes it. <span class="link" onclick="openScrubAt(6)">Scrub it →</span></p>
+      <p class="coach-says" style="font-size:15.5px;margin-top:8px"><b>Turn 7</b> — flat out, every lap, top of the speed trace. It sets up your run to the line. Keep doing exactly this.</p>
+      <p class="small" style="margin-top:8px">Corners with nothing true to say get no sentence — the coach never pads. Every number above comes from this session's own data.</p>
+    </div>
+
+    <div class="bubble"><span class="who">THE MOMENT THAT MATTERED</span>
+      <p class="coach-says">Last lap, Turn 1: you went hunting for a 2:06 and the back stepped out — your speed there fell to 40, where your best lap carries 70. I'm not counting that lap against you — I've set it aside in your record, fairly, the way a steward would. But let's be honest about the lesson: the spin wasn't bad luck, it was the bill for braking <i>and</i> turning at the same time. Next time, pick one.</p>
+      <span class="link" onclick="toggleDepth(this)">See the data behind that</span>
+      <div class="depth">
+        <div class="kv"><span>What the car did</span><b>turned + braked together</b></div>
+        <div class="kv"><span>Slowest point, Turn 1</span><b>40 km/h (best lap: 70)</b></div>
+        <div class="kv"><span>How long it cost</span><b>≈ 13 s (that lap only)</b></div>
+        <div class="kv"><span>Your record</span><b>lap marked “incident” — excluded from your bests</b></div>
+        <div class="chart-label">SPEED — THE SPIN LAP (RED) VS YOUR BEST (GREEN). THE CLIFF IS THE SPIN.</div>
+        <div id="chart-spin"></div>
+      </div>
+    </div>
+
+    <div class="bubble"><span class="who">THE ONE THING</span>
+      <p class="coach-says"><b>Turn 4. Brake later.</b> You're braking about a car-length too early and rolling to the corner at paddling speed — 85 km/h at the middle, when the car can carry more. It's worth roughly a second — and the straight after it is worth another, because you'll arrive already moving.</p>
+      <span class="link" onclick="openCorner(4)">Open Turn 4's card →</span></div>
+
+    <div class="bubble"><span class="who">SAY IT OUT LOUD (FOR NEXT TIME)</span>
+      <p class="coach-says" style="font-size:19px;">“Turn 4 — brake at the board, not before it.”</p>
+      <div class="small" style="margin-top:6px;">One sentence. If it's in your head on the out lap, it's in your feet at the corner.</div></div>
+
+    <div class="bubble"><span class="who">YOUR ONE DRILL</span>
+      <p class="coach-says">Next session, first three flying laps: brake at the board at Turn 4 <i>on purpose</i>, even if it feels too late. We're not chasing the lap — we're moving one marker. The lap will follow.</p>
+      <button class="btn ghost small" style="margin-top:10px" onclick="speakSim(this,'Debrief heard — that’s the whole story, out loud')">🎧 Hear the debrief</button></div>
+
+    <div class="card">
+      <div class="klabel">Lap by lap</div>
+      <table class="laps" style="margin-top:6px">
+        <tr><th>Lap</th><th>Part 1</th><th>Part 2</th><th>Part 3</th><th>Total</th></tr>
+        <tr><td>1</td><td>46.9</td><td>43.2</td><td>41.3</td><td>2:11.4</td></tr>
+        <tr><td>2</td><td>46.2</td><td>42.5</td><td>41.1</td><td>2:09.8</td></tr>
+        <tr><td>3</td><td>45.9</td><td>42.1</td><td>40.6</td><td>2:08.6</td></tr>
+        <tr><td>4</td><td>45.7</td><td>41.8</td><td>40.4</td><td>2:07.9</td></tr>
+        <tr style="color:var(--grn);font-weight:800"><td>5 ★</td><td>46.0</td><td>41.0</td><td>40.1</td><td>2:07.1</td></tr>
+        <tr><td>6 ⚠</td><td>58.9</td><td>41.6</td><td>39.9</td><td>2:20.4</td></tr>
+      </table>
+      <p class="sub" style="margin-top:8px">Lap 6 has a ⚠: the car spun at Turn 1. It stays in your record — it just doesn't count against your best times, and the coach won't coach it as if it were your normal driving.</p>
+      <div class="divider"></div>
+      <p class="sub">If you put your three best parts together: <b style="color:var(--ink)">2:06.8</b>. That's your next target — it's already in you.</p>
+    </div>
+
+    <button class="btn ghost" onclick="show('viewer')">Walk the lap on the map →</button>
+    <button class="btn ghost" style="margin-top:8px" onclick="show('trackwalk')">Walk the real track on foot →</button>
+  </section>
+
+  <!-- ============ TRACK WALK ============ -->
+  <section class="screen" id="scr-trackwalk">
+    <button class="backbtn" onclick="show('debrief')">‹ Debrief</button>
+    <div class="sub" style="margin-top:4px;">TRACK WALK · ON FOOT, PHONE IN HAND</div>
+    <h1 class="headline" style="font-size:24px;">Walk it before you drive it.</h1>
+    <p class="sub">Stand at a corner and the walk briefs you on what's there — the slope under your feet, the camber, where the grip hides. Built from the same terrain truth the coach is graded against.</p>
+
+    <div class="card">
+      <div class="spread"><span class="klabel">Hamilton Mini Indy</span><span class="pill info">GPS · you're here</span></div>
+      <div class="kv" style="margin-top:8px"><span>Walking progress</span><b>4 of 9 corners visited</b></div>
+      <div class="progress-track"><div class="progress-fill" style="width:44%"></div></div>
+      <div class="kv"><span>Ground truth at your feet</span><b>225.8 m elevation anchor</b></div>
+      <div class="kv"><span>Surface notes</span><b>2 saved by you</b></div>
+      <button class="btn" style="margin-top:10px" onclick="toast('Walk started — the brief plays corner by corner as you reach each one')">▶ START THE WALK</button>
+    </div>
+
+    <div class="card">
+      <span class="who">🎧 AT THIS CORNER — TURN 3</span>
+      <p class="coach-says" style="font-size:15.5px;margin-top:4px;">See how the track falls away to your left? That's why the car feels light at turn-in here. The grip is on the right, where the surface is newer — your note from Tuesday says the same, in your words.</p>
+      <div class="divider"></div>
+      <div class="klabel">Your note here</div>
+      <p class="sub" style="margin-top:4px">“Loose gravel on the outside from the session before. Stay off it.”</p>
+      <span class="link" onclick="toast('Note editor — your words, kept on the phone')">Edit note</span>
+    </div>
+
+    <div class="card">
+      <div class="klabel">How the walk brief is made</div>
+      <p class="sub" style="margin-top:6px">From the track's measured outline and terrain — never invented. Walking a track the catalogue only anchors (no full profile yet) says so plainly instead of making up slopes.</p>
+    </div>
+  </section>
+
+  <!-- ============ COACH & VOICE ============ -->
+  <section class="screen" id="scr-coach">
+    <div class="sub" style="margin-top:6px;">YOUR COACH</div>
+    <h1 class="headline" style="font-size:24px;">One voice. Yours to tune.</h1>
+
+    <div class="card">
+      <span class="who">VOICE CHECK</span>
+      <p class="coach-says">Your coach talks to you while you drive. Check the voice works before you're in the car — tap it, you should hear one line, the way it will sound in your ear.</p>
+      <button class="btn orange" style="font-size:17px;padding:16px;margin-top:12px" onclick="speakSim(this,'Voice heard — that’s your coach, in full')">🎧 TEST MY COACH'S VOICE</button>
+      <div class="kv" style="margin-top:12px;"><span>Voice</span><b>Ready ✓</b></div>
+      <div class="kv"><span>Last cue spoken</span><b>heard, in full</b></div>
+      <div class="kv"><span>Where you hear me</span><b>Phone speaker ▸</b></div>
+      <p class="small" style="margin-top:6px;">If I ever can't speak, this screen says so in plain words — and the Live screen shows it the moment it happens. Silence is a bug, never a mystery. Every cue's fate — spoken, or dropped and why — is kept in a log you can send with a session.</p>
+    </div>
+
+    <div class="card">
+      <div class="klabel">Try a whole session, sitting on the sofa</div>
+      <p class="sub" style="margin-top:6px;">Replay one of your real sessions through the real coach — the Coach Brief at GO, lap calls, the works — and hear exactly what would have been said, and when. The fastest way to check his timing.</p>
+      <div class="chiprow">
+        <button class="cchip2 sel">×8 fast</button><button class="cchip2">×4</button><button class="cchip2">Real time</button>
+      </div>
+      <button class="btn ghost small" onclick="toast('Replay runs today’s session through the real coach')">▶ Replay today's session</button>
+    </div>
+
+    <div class="card">
+      <div style="font-weight:800;font-size:16px;">How I coach you</div>
+      <div class="toggle-row"><span>Talk to me while I drive</span><div class="switch on" onclick="this.classList.toggle('on')"></div></div>
+      <div class="toggle-row"><span>Quiet first two laps (let me learn the track)</span><div class="switch on" onclick="this.classList.toggle('on')"></div></div>
+      <div class="toggle-row"><span>Celebrate a best lap out loud</span><div class="switch on" onclick="this.classList.toggle('on')"></div></div>
+      <div class="toggle-row"><span>Plain words mode <span class="small">(no racing jargon)</span></span><div class="switch on" onclick="this.classList.toggle('on')"></div></div>
+      <div class="toggle-row"><span>Guardian — he's got my back</span><div class="switch on" onclick="this.classList.toggle('on')"></div></div>
+      <div class="toggle-row"><span>Show me the engineering depth</span><div class="switch" onclick="this.classList.toggle('on');toast('Depth on: numbers &amp; traces join the story everywhere')"></div></div>
+      <p class="small" style="margin-top:8px">Every one of these switches is wired to the coach himself — a switch that changes nothing would be a lie, and there are none here.</p>
+    </div>
+
+    <div class="card">
+      <div class="klabel">What he knows</div>
+      <div class="kv" style="margin-top:6px"><span>Coaching library</span><b>190 lessons, distilled from real coaching sources</b></div>
+      <div class="kv"><span>Your corners, remembered</span><b>per-corner, lap to lap, session to session</b></div>
+      <div class="kv"><span>Judged against</span><b>your own demonstrated best — never other drivers</b></div>
+    </div>
+
+    <div class="card">
+      <div class="klabel">Recording quality — today</div>
+      <p class="coach-says" style="font-size:15px;margin-top:6px;">We recorded everything today ✓</p>
+      <p class="sub">Pedals ✓ · Steering ✓ · Speed ✓ · Cornering force — some readings estimated in the sim; that only softens the fine detail, never your lap times.</p>
+    </div>
+  </section>
+
+  <!-- ============ SETTINGS ============ -->
+  <section class="screen" id="scr-settings">
+    <div class="sub" style="margin-top:6px;">SETTINGS</div>
+    <h1 class="headline" style="font-size:24px;">The quiet page.</h1>
+
+    <div class="card">
+      <div style="font-weight:800;font-size:16px;">Driving</div>
+      <div class="toggle-row"><span>Units — km/h &amp; metres</span><span class="pill none">metric ▸</span></div>
+      <div class="toggle-row"><span>Keep the screen awake while driving</span><div class="switch on" onclick="this.classList.toggle('on')"></div></div>
+      <div class="toggle-row"><span>Let RaceHero run in the background <span class="small">(so long sessions survive)</span></span><div class="switch on" onclick="this.classList.toggle('on')"></div></div>
+    </div>
+
+    <div class="card tap" onclick="show('hardware')">
+      <div class="spread"><b style="font-size:16px">Hardware</b><span class="link">Open the hub →</span></div>
+      <p class="sub" style="margin-top:4px">Link is streaming · MOZA R9 + P1000 locked · Puck ready · GoPro paired</p>
+    </div>
+
+    <div class="card tap" onclick="show('paywall')">
+      <div class="spread"><b style="font-size:16px">RaceHero Pro</b><span class="pill plan">FREE — 4 debriefs left</span></div>
+      <p class="sub" style="margin-top:4px">Free covers your driving. Pro removes the ceiling. See what's what →</p>
+    </div>
+
+    <div class="card">
+      <div style="font-weight:800;font-size:16px;">Backup &amp; restore</div>
+      <p class="sub" style="margin-top:6px">Everything — sessions at full detail, your tracks, your coach's memory of you — in one file you own. Restoring merges; it never overwrites.</p>
+      <div class="row" style="margin-top:10px;gap:8px">
+        <button class="btn ghost grow" onclick="toast('Backup written — one .racehero-backup file, yours to keep')">Back up now</button>
+        <button class="btn ghost grow" onclick="toast('Restore opens the system file picker')">Restore…</button>
+      </div>
+      <p class="small" style="margin-top:8px">Pro comes from Google Play, not from the backup — a restored phone just signs back in.</p>
+    </div>
+
+    <div class="card">
+      <div class="spread"><div style="font-weight:800;font-size:16px;">Developer</div><span class="pill none">builds for testing only</span></div>
+      <p class="sub" style="margin-top:6px">Send this build's session data to the RaceHero dev funnel for diagnosis — full laps, the coach's cue log, Link's view. Off by default; never in the public build.</p>
+      <div class="toggle-row"><span>Dev funnel</span><div class="switch" onclick="this.classList.toggle('on');toast('Funnel state saved — it rides along with the next session, nowhere else')"></div></div>
+      <input class="textfield" style="margin-top:8px" placeholder="Funnel token (stored on this phone only)" value="">
+      <div class="row" style="margin-top:10px;gap:8px">
+        <button class="btn ghost grow" onclick="toast('Token saved on this phone')">Save token</button>
+        <button class="btn ghost grow" onclick="toast('Test ping sent — the funnel answered ✓')">Test</button>
+      </div>
+    </div>
+
+    <div class="small" style="text-align:center;">RaceHero · Your data stays on your phone; the AI debrief is the only thing that visits the cloud.</div>
+  </section>
+
+  <!-- ============ HARDWARE HUB ============ -->
+  <section class="screen" id="scr-hardware">
+    <button class="backbtn" onclick="show('settings')">‹ Settings</button>
+    <div class="sub" style="margin-top:4px;">HARDWARE HUB</div>
+    <h1 class="headline" style="font-size:24px;">Everything that feeds the coach.</h1>
+
+    <div class="card" style="border-color:#2C4636">
+      <div class="spread"><b style="font-size:16px">🖥️ RaceHero Link — your PC</b><span class="pill good">STREAMING</span></div>
+      <p class="sub" style="margin-top:6px">Link reads your wheel and pedals directly and streams them to the phone, merged with the game's own data. It mapped itself — there is no setup step, and never will be.</p>
+      <div class="kv" style="margin-top:8px"><span>Input</span><b>DirectInput — live</b></div>
+      <div class="kv"><span>Wheel</span><b>MOZA R9 Base — steering, locked</b></div>
+      <div class="kv"><span>Pedals</span><b>P1000 — gas &amp; brake, locked</b></div>
+      <div class="kv"><span>How sure is the map?</span><b>matched against the game itself</b></div>
+      <div class="kv"><span>Game feed</span><b>ACC — from the game, incl. lap timing</b></div>
+      <div class="kv"><span>Phone on this network</span><b>10.0.0.176</b></div>
+      <p class="small" style="margin-top:6px">If the phone ever stops receiving, this card says so in a sentence — frames leaving the PC are not proof they arrived.</p>
+      <span class="link" onclick="openSheet('simsetup')">How connecting works →</span>
+    </div>
+
+    <div class="card">
+      <div class="spread"><b style="font-size:16px">📍 GPS puck — PuckLink</b><span class="pill good">READY</span></div>
+      <p class="sub" style="margin-top:6px">For real tracks: a 25 Hz GPS puck the app finds on its own — it reconnects to the last puck it knew, every time, without being asked.</p>
+      <div class="kv" style="margin-top:6px"><span>Fix rate</span><b>25 Hz</b></div>
+      <div class="kv"><span>Also listens for</span><b>RaceBox · Dual XGPS160 · Qstarz</b></div>
+      <button class="btn ghost small" style="margin-top:10px" onclick="show('garage')">Build your own puck — the guide →</button>
+    </div>
+
+    <div class="card tap" onclick="show('gopro')">
+      <div class="spread"><b style="font-size:16px">🎥 GoPro — video overlay</b><span class="pill good">PAIRED</span></div>
+      <p class="sub" style="margin-top:4px">Any MP4, synced by timestamp; the session's data laid over it. Or live over USB. Open →</p>
+    </div>
+
+    <div class="card">
+      <div class="spread"><b style="font-size:16px">🚗 OBD — your road car</b><span class="pill none">NOT CONNECTED</span></div>
+      <p class="sub" style="margin-top:6px">Plug in an OBDLink or Veepeak and the same coach rides in the car — same data structure, same analysis, different adapter. Channels the car doesn't offer stay absent — never invented.</p>
+      <div class="statgrid" style="margin-top:10px">
+        <div class="stat"><div class="klabel">RPM</div><div class="v">—</div><div class="u">no car connected</div></div>
+        <div class="stat"><div class="klabel">Speed</div><div class="v">—</div><div class="u">GPS still rules timing</div></div>
+        <div class="stat"><div class="klabel">Throttle</div><div class="v">—</div><div class="u">&nbsp;</div></div>
+      </div>
+      <div style="margin-top:10px">
+        <div class="row"><span style="width:74px;font-weight:700">Throttle</span><div class="bar grow"><i style="width:0%;background:var(--grn)"></i></div></div>
+        <div class="row" style="margin-top:4px"><span style="width:74px"></span><span class="small grow">off</span><span class="small">full</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ GARAGE — puck build guide ============ -->
+  <section class="screen" id="scr-garage">
+    <button class="backbtn" onclick="show('hardware')">‹ Hardware</button>
+    <div class="sub" style="margin-top:4px;">THE GARAGE</div>
+    <h1 class="headline" style="font-size:24px;">Build the 25 Hz puck.</h1>
+    <p class="sub">The DIY GPS puck RaceHero was born with. Plain instructions, real parts — build it on the bench, and the app finds it by itself.</p>
+    <div class="card">
+      <div class="klabel">The wiring, in words</div>
+      <p class="coach-says" style="font-size:15.5px;margin-top:6px">GPS module's transmit wire goes to the radio's receive pin. Power comes from the battery rail — red to positive, black to ground. The antenna faces the sky, always: a puck mounted upside-down is a puck that lies to you politely.</p>
+      <div class="divider"></div>
+      <div class="kv"><span>Fix rate</span><b>25 Hz — set in the module, kept by the badge</b></div>
+      <div class="kv"><span>Talks to the phone by</span><b>Bluetooth — NMEA or the module's own fast protocol</b></div>
+      <div class="kv"><span>Cost of the parts</span><b>about a tank of fuel</b></div>
+      <button class="btn ghost small" style="margin-top:10px" onclick="toast('Full parts list &amp; firmware — one page, no account')">See the parts list</button>
+    </div>
+    <div class="card">
+      <span class="who">WHEN IT'S BUILT</span>
+      <p class="coach-says" style="font-size:15.5px">Nothing. That's the point. Power it on near the phone and it appears in the hub — remembered, reconnected, working. Zero setup is the feature.</p>
+    </div>
+  </section>
+
+  <!-- ============ GOPRO ============ -->
+  <section class="screen" id="scr-gopro">
+    <button class="backbtn" onclick="show('hardware')">‹ Hardware</button>
+    <div class="sub" style="margin-top:4px;">GOPRO · VIDEO</div>
+    <h1 class="headline" style="font-size:24px;">Your laps, on video.</h1>
+    <div class="card">
+      <div class="spread"><b style="font-size:16px">Camera</b><span class="pill good">PAIRED · USB LIVE READY</span></div>
+      <p class="sub" style="margin-top:6px">Two ways in: bring any MP4 and RaceHero syncs it to the session by timestamp — or plug the camera in over USB and watch it live, data over picture.</p>
+      <div class="kv" style="margin-top:6px"><span>Export</span><b>720p with the data overlay · Pro: 1080p, no watermark</b></div>
+      <div class="kv"><span>Sync</span><b>by timestamp — you line up nothing</b></div>
+      <button class="btn ghost small" style="margin-top:10px" onclick="toast('Video picker — the phone owns that screen')">Use a video file…</button>
+    </div>
+    <div class="card">
+      <div class="klabel">The nudge, once</div>
+      <p class="sub" style="margin-top:6px">After a session with no video, RaceHero may mention once that a camera would make the debrief richer. Once — then never again unless you ask.</p>
+    </div>
+  </section>
+
+  <!-- ============ PAYWALL — Free vs Pro ============ -->
+  <section class="screen" id="scr-paywall">
+    <button class="backbtn" onclick="show('settings')">‹ Settings</button>
+    <div class="sub" style="margin-top:4px;">RACEHERO PRO</div>
+    <h1 class="headline" style="font-size:24px;">Free drives. Pro removes the ceiling.</h1>
+
+    <div class="card plancard">
+      <div class="spread"><b style="font-size:17px">Free</b><span class="pill none">YOU ARE HERE</span></div>
+      <div class="kv" style="margin-top:8px"><span>AI debriefs</span><b>4 a month — about one a week</b></div>
+      <div class="kv"><span>Live coaching voice</span><b>included</b></div>
+      <div class="kv"><span>Sessions, viewer, scrub, corner cards</span><b>all included, forever</b></div>
+      <div class="kv"><span>Video export</span><b>720p, with watermark</b></div>
+    </div>
+
+    <div class="card plancard sel">
+      <div class="spread"><b style="font-size:17px">Pro</b><span class="pill plan">14 DAYS FREE FIRST</span></div>
+      <div class="kv" style="margin-top:8px"><span>AI debriefs</span><b>unlimited</b></div>
+      <div class="kv"><span>AI voice coaching</span><b>unlimited</b></div>
+      <div class="kv"><span>Video export</span><b>1080p, no watermark</b></div>
+      <div class="kv"><span>Everything in Free</span><b>included</b></div>
+      <div class="row" style="gap:8px;margin-top:12px">
+        <div class="grow" style="text-align:center;background:var(--surface2);border-radius:14px;padding:12px 6px"><div class="big-num">$12.99</div><div class="small">a month</div></div>
+        <div class="grow" style="text-align:center;background:rgba(53,208,127,.12);border:1px solid var(--grn);border-radius:14px;padding:12px 6px"><div class="big-num">$99</div><div class="small">a year — the driver's choice</div></div>
+      </div>
+      <button class="btn" style="margin-top:12px" onclick="toast('Google Play takes it from here — its sheet, its rules')">START 14 DAYS FREE</button>
+      <p class="small" style="text-align:center;margin-top:8px">Then $12.99/mo or $99/yr. Cancel in Play, two taps, no guilt trip.</p>
+    </div>
+
+    <p class="small" style="text-align:center">Already Pro on another phone? <span class="link" onclick="toast('Restore asks Google Play who you are — entitlement lives there')">Restore purchase</span></p>
+  </section>
+
+  </div><!-- /screens -->
+
+  <!-- corner sheet -->
+  <div class="modal" id="cornerModal" onclick="if(event.target===this)closeCorner()">
+    <div class="sheet" id="cornerSheet"></div>
+  </div>
+
+  <!-- generic sheet (track picker / sim setup) -->
+  <div class="modal" id="sheetModal" onclick="if(event.target===this)closeSheet()">
+    <div class="sheet" id="sheetBody"></div>
+  </div>
+
+  <div class="tabs" id="tabbar">
+    <button class="tab sel" data-tab="home" onclick="show('home')"><span class="ic">🏠</span>Home</button>
+    <button class="tab" data-tab="pre" onclick="show('pre')"><span class="ic">▶️</span>Live</button>
+    <button class="tab" data-tab="sessions" onclick="show('sessions')"><span class="ic">📖</span>Sessions</button>
+    <button class="tab" data-tab="coach" onclick="show('coach')"><span class="ic">🎧</span>Coach</button>
+    <button class="tab" data-tab="settings" onclick="show('settings')"><span class="ic">⚙️</span>Settings</button>
+  </div>
+  <div class="toast" id="toast"></div>
+</div><!-- /phone -->
+</div><!-- /walkrow -->
+<div class="simtag" style="margin-top:12px">Sample session: Nürburgring GP in ACC — 6 laps, best 2:07.1, lap 6 set aside (spin at Turn 1). Track outline, speed traces and corner verdicts drawn from his real session data. Nothing on any screen is a placeholder: if a channel can't be real, the coverage note names it.</div>
+
+<script>
+/* ================= DATA — his real sessions ================= */
+const TRACK=[[84.2,58.8],[82.5,57.9],[80.8,57],[79,56.1],[77.3,55.1],[75.5,54.2],[73.8,53.3],[72,52.4],[70.3,51.5],[68.6,50.6],[66.8,49.7],[65.1,48.7],[63.3,47.8],[61.6,46.9],[59.8,46],[58,45.1],[56.2,44.3],[54.3,43.4],[52.5,42.6],[50.6,41.7],[48.5,41],[46.4,40.5],[44.2,40.9],[43.5,42.1],[44.8,43.2],[46.1,44.3],[47.5,45.4],[48.2,46.7],[47.8,47.9],[46.3,49],[44.1,49.6],[41.7,49.7],[39.3,49.6],[36.9,49.4],[34.6,49],[32.5,48.4],[31.1,47.4],[31,46.1],[32.4,45.1],[34.8,44.8],[37.2,44.8],[38.9,44],[38.8,42.7],[38.3,41.4],[37.9,40.1],[37.5,38.8],[36.9,37.5],[36.2,36.2],[35.6,35],[34.9,33.7],[34.2,32.4],[33.4,31.2],[32.5,29.9],[31.7,28.7],[30.9,27.4],[30.3,26.2],[30.4,24.9],[31.2,23.6],[32.7,22.6],[34.7,21.9],[36.9,21.4],[39.1,20.8],[40.4,19.7],[40,18.4],[38.3,17.5],[36.1,17],[33.9,16.4],[31.7,15.9],[29.6,15.2],[27.5,14.5],[25.5,13.8],[23.5,13],[21.7,12.2],[19.9,11.3],[18.2,10.3],[16.6,9.4],[15,8.3],[13.6,7.3],[12.2,6.2],[11,5.1],[9.6,4],[7.7,3.2],[5.3,3],[3.4,3.7],[3,5],[4.1,6.2],[6,7],[7.8,7.9],[9.6,8.8],[11.4,9.7],[13.2,10.5],[15.1,11.4],[16.9,12.3],[18.6,13.2],[20.2,14.2],[21.4,15.3],[22,16.6],[22,17.9],[21.6,19.2],[21.2,20.5],[21.2,21.8],[21.5,23.1],[22.1,24.4],[22.9,25.6],[23.7,26.9],[24.6,28.1],[25.5,29.3],[26.4,30.6],[27.2,31.8],[28.1,33],[28.9,34.3],[29.7,35.5],[30.5,36.8],[31,38.1],[30.7,39.4],[29.4,40.4],[27.3,41.1],[25,41.5],[22.8,42],[20.5,42.5],[18.7,43.4],[17.7,44.5],[17.9,45.8],[19,47],[20.4,48.1],[21.9,49.1],[23.5,50.1],[25.1,51.1],[26.7,52.1],[28.2,53.1],[29.8,54.1],[31.4,55.1],[33,56.1],[34.6,57.1],[36.4,58],[38.3,58.8],[40.4,59.5],[42.5,60.1],[44.8,60.5],[47.1,60.9],[49.5,61.2],[51.9,61.4],[54.3,61.7],[56.6,61.9],[59,62.2],[61.4,62.5],[63.7,62.7],[66.1,63],[68.5,63.3],[70.8,63.6],[73.1,64],[75.3,64.6],[77.2,65.4],[78.6,66.5],[80.4,67.3],[82.5,68],[84.9,68.3],[87.3,68.5],[89.6,68.8],[92,69],[94.4,68.9],[96.3,68.1],[97,66.9],[96.3,65.6],[95,64.5],[93.4,63.6],[91.6,62.7],[89.8,61.8],[88.1,60.8],[86.3,59.9]];
+const SPEED=[182,188,194,200,205,210,213,217,220,224,228,231,234,236,239,242,241,218,185,154,117,77,70,73,97,117,111,100,104,110,114,125,139,146,112,91,99,92,74,78,77,68,86,110,128,141,151,160,167,174,179,185,192,181,145,129,136,140,133,141,130,100,84,98,110,121,138,150,162,172,180,187,194,200,206,211,215,219,198,162,132,110,84,85,93,101,118,134,145,156,164,171,176,170,163,155,156,158,165,169,174,178,182,187,193,197,202,206,202,198,201,189,154,121,107,116,122,137,132,121,114,106,118,133,146,158,169,177,185,192,198,203,208,212,215,217,219,221,222,224,227,230,232,234,236,238,239,230,196,160,125,103,103,115,129,134,139,149,145,110,100,90,96,108,126,139,151,161,170,177];
+const SPIN=[187,194,199,204,209,212,216,220,223,227,230,233,236,239,241,244,245,232,208,178,147,127,105,56,40,60,80,103,106,94,101,105,112,118,131,133,125,104,75,75,84,84,83,98,119,136,147,159,168,176,182,189,195,200,197,162,134,123,119,114,127,119,81,87,97,113,132,146,159,169,177,185,192,198,204,209,213,216,205,172,138,108,76,88,84,90,111,128,142,152,161,169,175,179,173,165,158,153,154,159,163,168,173,179,185,191,195,200,204,209,211,189,151,112,104,105,117,133,145,126,111,107,108,124,139,152,163,173,181,188,194,200,206,209,212,215,218,220,222,223,226,228,230,233,235,237,238,239,222,188,154,124,114,106,110,121,136,147,152,119,92,91,97,104,117,133,145,156,166,175];
+const SECB=[0,57,113,170];
+const LAPLEN=5137, N=TRACK.length, STEP=LAPLEN/(N-1);
+const CORNERS=[
+ {n:1,i:22,kmh:70,dir:'left',verdict:'g',stamp:'🎯 HIT',loss:'0.0',target:70,brief:'Left, downhill into it. Carry 70 at the slowest point — and brake OR turn. Never both.',note:'On your best lap you clipped it perfectly. Your lap-6 spin happened here too — speed fell to 40 when you braked and turned at the same time. Pick one — brake, then turn — and it stays planted.',g:'0.9 g — gentle, with grip in hand',cons:'within 3 km/h'},
+ {n:2,i:36,kmh:99,dir:'right',verdict:'g',stamp:'🎯 HIT',loss:'0.1',target:99,brief:'Right, over a crest. A nothing corner — treat it like one.',note:'A nothing corner, and you treat it like one. Good. Corners like this are free — don’t spend practice time here.',g:'1.0 g — working nicely',cons:'within 2 km/h'},
+ {n:3,i:62,kmh:84,dir:'left',verdict:'g',stamp:'🎯 HIT',loss:'0.0',target:84,brief:'Left — the slowest turn on the track. Patience in, power early out.',note:'The slowest turn on the track, and your most consistent — same speed every single lap. Whatever you’re doing with your eyes here, do it everywhere.',g:'0.8 g — gentle',cons:'within 1 km/h — locked in'},
+ {n:4,i:83,kmh:85,dir:'left',verdict:'a',stamp:'BRAKED EARLY',loss:'0.9',focus:true,target:89,brief:'Left. Our project corner: brake at the board, not before it — worth a second, and the straight after it.',note:'Our corner. You hit the apex every time — the line is right — but you brake about a car-length too early and roll in at 85. Brake at the board, not before it. Worth about a second here, and another on the straight it feeds.',brake:'You brake here — try one car-length later',g:'0.9 g — the tyres had more to give',cons:'within 3 km/h'},
+ {n:5,i:95,kmh:155,dir:'right',verdict:'g',stamp:'🎯 HIT',loss:'0.2',target:155,brief:'Right, fast and committed. One tiny lift before the middle is the only leak.',note:'Fast and committed — you commit here earlier than most novices ever do. A tiny lift right before the middle is the only leak.',g:'1.3 g — near the limit',cons:'within 4 km/h'},
+ {n:6,i:121,kmh:106,dir:'left',verdict:'a',stamp:'TOO WIDE',loss:'0.3',target:106,brief:'Left. You run wide here — turn in one car-length earlier and the next part arrives calmer.',note:'You run a touch wide here — not a disaster, but it makes the next part arrive before you’re ready. A car-length earlier turn-in fixes it.',g:'1.1 g — grip in hand',cons:'within 3 km/h'},
+ {n:7,i:136,kmh:219,dir:'left',verdict:'g',stamp:'🎯 HIT',loss:'0.0',target:219,brief:'Left, flat out, every lap. It sets up your run to the line.',note:'Flat out, every lap. It sets up your run to the line — keep doing exactly this.',g:'1.2 g — your tyres working hardest',cons:'within 5 km/h'},
+ {n:8,i:161,kmh:90,dir:'left',verdict:'g',stamp:'🎯 HIT',loss:'0.1',target:90,brief:'Left, the last word of the lap. Strong exit, straight wheel, power early.',note:'The last word of the lap, and you say it well. Strong exit, straight wheel, full power early. That’s why your top speed is real.',g:'0.9 g — gentle',cons:'within 2 km/h'}
+];
+const LAPS=[
+ {n:1,t:'2:11.4',s:[46.9,43.2,41.3]},{n:2,t:'2:09.8',s:[46.2,42.5,41.1]},
+ {n:3,t:'2:08.6',s:[45.9,42.1,40.6]},{n:4,t:'2:07.9',s:[45.7,41.8,40.4]},
+ {n:5,t:'2:07.1',s:[46.0,41.0,40.1],best:true},{n:6,t:'2:20.4',s:[58.9,41.6,39.9],warn:true}
+];
+const SECINFO=[
+ {name:'Part 1 — the busy start',time:'46.0',best:'45.7',delta:'+0.3',dcol:'var(--red)',
+  story:'Patient while you learned it — then down into the 46s and staying there. And on the last lap, the spin at Turn 1, right at the start of this part: brakes and steering at the same time, and the car picked one. That lap is set aside, fairly. Everything before it says you own this part now.',
+  next:'Next: nothing new here. Just don’t brake-and-turn at Turn 1 — pick one, in that order.',
+  pedals:'You pressed the gas almost all of this part, and braked twice — once for each turn. Exactly right.',
+  g:'Hardest cornering: 1.0 g at Turn 2',gPct:70,
+  ai:'“Keep a whisper of throttle through Turn 1 instead of lifting right off — that lift is part of what spun you on lap 6. Everything else here: do not touch.”'},
+ {name:'Part 2 — where your time lives',time:'41.0',best:'41.0',delta:'your best',dcol:'var(--grn)',
+  story:'Your biggest improvement happened here, and there’s still a second sitting in Turn 4, plus another on the straight it feeds. This part decides your day, every lap, because its slow corner sets your speed for the longest run.',
+  next:'Next: Turn 4. Brake at the board. That single change is the whole homework.',
+  pedals:'You braked 3 times in this part. Turn 4 only needs one, later brake. The extra dab is the time.',
+  g:'Hardest cornering: 0.9 g at Turn 4 — the tyres had more to give',gPct:62,
+  ai:'“One corner, one fix: at Turn 4, brake later and turn once. The car will feel loose for a lap or two — that feeling is the missing second.”'},
+ {name:'Part 3 — the fast finish',time:'40.1',best:'40.1',delta:'your best',dcol:'var(--grn)',
+  story:'Your best work. Consistent, committed, clean — even on the spin lap, this part was fine. A coach doesn’t fix what’s working; a coach points at it and says: more laps like this part.',
+  next:'Next: leave it alone. If anything, use it as your reference for how Turn 4 should feel.',
+  pedals:'Full gas for most of this part — the highest of your session. Braking: twice, both needed.',
+  g:'Hardest cornering: 1.2 g at Turn 7 — your tyres working hardest, and loving it',gPct:88,
+  ai:'“This part is nearly perfect. Whatever you are doing here — bottle it.”'}
+];
+/* derived channels */
+function cumTimes(trace){ const c=[0]; for(let i=1;i<trace.length;i++){ const v=(trace[i]+trace[i-1])/2/3.6; c.push(c[i-1]+STEP/Math.max(v,1)); } return c; }
+const FAST=SPEED.map((v,i)=>{ let f=v; CORNERS.forEach(c=>{ const d=Math.abs(i-c.i); if(d<=7 && c.target>v) f=Math.max(f, v+(c.target-v)*(1-d/8)); }); return Math.round(f); });
+const CUM_YOU=cumTimes(SPEED), CUM_FAST=cumTimes(FAST), CUM_SPIN=cumTimes(SPIN);
+function gearAt(v){ return v<8?1 : v<55?2 : v<88?3 : v<118?4 : v<152?5 : v<192?6 : 7; }
+function pedalsAt(trace,i){ const dv=trace[Math.min(i+1,trace.length-1)]-trace[Math.max(i-1,0)];
+  return { brk:Math.max(0,Math.min(100,-dv*7)), gas:Math.max(0,Math.min(100, dv>0?55+dv*7:30+dv*4)) }; }
+function headingAt(i){ const a=TRACK[Math.max(i-1,0)], b=TRACK[Math.min(i+1,N-1)]; return Math.atan2(b[1]-a[1], b[0]-a[0]); }
+function steerAt(i){ let d=headingAt(Math.min(i+1,N-1))-headingAt(Math.max(i-1,0)); while(d>Math.PI)d-=2*Math.PI; while(d<-Math.PI)d+=2*Math.PI; return d; }
+function gLatAt(trace,i){ const v=trace[i]/3.6; const k=Math.abs(steerAt(i))/ (2*STEP); return v*v*k/9.81; }
+function rpmAt(v,g){ const lo=[0,0,40,62,88,115,148,185][g]||0, hi=[0,55,88,118,152,192,232,262][g]||60; const f=Math.max(0,Math.min(1,(v-lo)/Math.max(hi-lo,1))); return Math.round(38+f*52); }
+function fmtLap(s){ const m=Math.floor(s/60), r=s-m*60; return m+':'+(r<10?'0':'')+r.toFixed(1); }
+const ELEV=[]; for(let i=0;i<N;i++){ const x=i/(N-1); ELEV.push(605+11*Math.sin(x*6.4+0.6)+7*Math.sin(x*13.7)+4*Math.cos(x*3.1)); }
+</script>
+
+<script>
+/* ================= navigation & feedback ================= */
+const TABMAP={welcome:null,home:'home',pre:'pre',live:'pre',sessions:'sessions',viewer:'sessions',scrub:'sessions',debrief:'sessions',trackwalk:'sessions',coach:'coach',settings:'settings',hardware:'settings',garage:'settings',gopro:'settings',paywall:'settings'};
+function show(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));
+  const el=document.getElementById('scr-'+id); el.classList.add('on'); el.scrollTop=0;
+  const tb=document.getElementById('tabbar'); tb.classList.toggle('hidden', id==='welcome');
+  const t=TABMAP[id];
+  document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('sel', x.dataset.tab===t));
+  document.querySelectorAll('.walkindex [data-nav]').forEach(b=>b.classList.toggle('sel', b.dataset.nav===id));
+  closeCorner(); closeSheet();
+  if(id==='scrub') updateScrub();
+}
+let toastTimer;
+function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('on');
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('on'),2600); }
+function speakSim(btn,msg){ const old=btn.textContent; btn.textContent='🔊 Speaking… (the coach’s voice, out loud)'; btn.disabled=true;
+  setTimeout(()=>{ btn.textContent=old; btn.disabled=false; toast(msg); },2200); }
+function toggleDepth(link){ const d=link.parentElement.querySelector('.depth'); if(!d) return;
+  d.classList.toggle('open'); link.textContent=d.classList.contains('open')?'Hide the data':'See the data behind that'; }
+
+/* ================= maps (real geometry) ================= */
+function pathFrom(a,b){ let d=''; for(let i=a;i<=b&&i<TRACK.length;i++){ d+=(i===a?'M':'L')+TRACK[i][0]+' '+TRACK[i][1]+' '; } return d; }
+function fastLinePts(){ return TRACK.map(p=>[ (p[0]+(50-p[0])*0.045), (p[1]+(36-p[1])*0.045) ]); }
+function cornerDots(svg,cb){ CORNERS.forEach(c=>{ const p=TRACK[c.i];
+  const g=document.createElementNS('http://www.w3.org/2000/svg','g');
+  g.setAttribute('class','cdot'); g.id=cb+'-dot-'+c.n; g.setAttribute('onclick','openCorner('+c.n+')');
+  const col=c.focus?'#FF8A00':(c.verdict==='g'?'#35D07F':'#FFB020');
+  g.innerHTML='<circle class="core" cx="'+p[0]+'" cy="'+p[1]+'" r="3.4" fill="'+col+'" stroke="#0A0A0C" stroke-width="1.4"/><text x="'+p[0]+'" y="'+(p[1]+1.7)+'" font-size="4.6" font-weight="800" fill="#0A0A0C" text-anchor="middle" pointer-events="none">'+c.n+'</text>';
+  svg.appendChild(g); }); }
+function startMark(){ return '<circle cx="'+TRACK[0][0]+'" cy="'+TRACK[0][1]+'" r="2" fill="#fff"/><text x="'+(TRACK[0][0]-10)+'" y="'+(TRACK[0][1]-2)+'" fill="#F2F2F2" font-size="4" font-weight="700">START</text>'; }
+function buildPre(){ const svg=document.getElementById('map-pre'); const cols=['#4EA8FF','#FF8A00','#35D07F']; let h='';
+  for(let s=0;s<3;s++) h+='<path d="'+pathFrom(SECB[s],SECB[s+1]-1)+'" fill="none" stroke="'+cols[s]+'" stroke-width="2.6" stroke-linecap="round"/>';
+  h+=startMark(); h+='<g id="pre-dot"><circle r="4.6" fill="none" stroke="#FF8A00" stroke-width="1.6" opacity="0.7"/><circle r="2.2" fill="#FF8A00"/></g>';
+  svg.innerHTML=h; cornerDots(svg,'pre');
+  const d=document.querySelector('#pre-dot'); d.setAttribute('transform','translate('+TRACK[0][0]+','+TRACK[0][1]+')'); }
+function buildView(){ const svg=document.getElementById('map-view'); const fl=fastLinePts(); let fd='';
+  fl.forEach((p,i)=>{ fd+=(i===0?'M':'L')+p[0].toFixed(1)+' '+p[1].toFixed(1)+' '; }); fd+='Z';
+  /* thick sector segments coloured by delta law, fat invisible hit-paths over them */
+  const secs=[[0,57,'#FF5A5A'],[57,113,'#35D07F'],[113,170,'#35D07F']]; let h='';
+  secs.forEach(function(s,k){ h+='<path d="'+pathFrom(s[0],s[1]-1)+'" fill="none" stroke="'+s[2]+'" stroke-width="1.6" opacity="0.55"/>'
+    +'<path d="'+pathFrom(s[0],s[1]-1)+'" fill="none" stroke="transparent" stroke-width="7" style="cursor:pointer" onclick="pickSector('+k+')"><title>Part '+(k+1)+'</title></path>'; });
+  h+='<path d="'+fd+'" fill="none" stroke="#35D07F" stroke-width="1.1" stroke-dasharray="2.4 1.8" opacity="0.9"/>';
+  h+='<path d="'+pathFrom(0,TRACK.length-1)+'Z" fill="none" stroke="#F2F2F2" stroke-width="2.2" stroke-linecap="round"/>';
+  const sp=TRACK[24]; h+='<text x="'+(sp[0]-1)+'" y="'+(sp[1]-3)+'" font-size="6">⚠</text>'; h+=startMark();
+  svg.innerHTML=h; cornerDots(svg,'view'); }
+function buildScrubMap(){ const svg=document.getElementById('map-scrub'); const fl=fastLinePts(); let fd='';
+  fl.forEach((p,i)=>{ fd+=(i===0?'M':'L')+p[0].toFixed(1)+' '+p[1].toFixed(1)+' '; }); fd+='Z';
+  let h='<path d="'+fd+'" fill="none" stroke="#35D07F" stroke-width="1.4" stroke-dasharray="2.4 1.8"/>';
+  h+='<path d="'+pathFrom(0,TRACK.length-1)+'Z" fill="none" stroke="#F2F2F2" stroke-width="2.2" stroke-linecap="round"/>';
+  const sp=TRACK[24]; h+='<text id="scrub-spin" x="'+(sp[0]-1)+'" y="'+(sp[1]-3)+'" font-size="6" style="display:none">⚠</text>';
+  h+=startMark();
+  h+='<circle id="mk-ghost" r="2.6" fill="#35D07F" stroke="#0A0A0C" stroke-width="1.2"/>';
+  h+='<circle id="mk-you" r="3.2" fill="#fff" stroke="#FF8A00" stroke-width="2"/>';
+  svg.innerHTML=h; }
+
+/* ================= traces ================= */
+function traceSVG(data,maxV,color){ const w=320,hh=64,pad=4,max=maxV||250;
+  const pts=data.map((v,i)=> (pad+i*(w-2*pad)/(data.length-1)).toFixed(1)+','+(hh-pad-(v/max)*(hh-2*pad)).toFixed(1)).join(' ');
+  return '<svg viewBox="0 0 '+w+' '+hh+'" style="width:100%;height:auto"><polyline points="'+pts+'" fill="none" stroke="'+color+'" stroke-width="2.2" stroke-linejoin="round"/></svg>'; }
+function twoTrace(a,b){ const w=320,hh=74,pad=4,max=250;
+  const mk=(data,color)=>{ const pts=data.map((v,i)=> (pad+i*(w-2*pad)/(data.length-1)).toFixed(1)+','+(hh-pad-(v/max)*(hh-2*pad)).toFixed(1)).join(' ');
+    return '<polyline points="'+pts+'" fill="none" stroke="'+color+'" stroke-width="2.2" stroke-linejoin="round"/>'; };
+  return '<svg viewBox="0 0 '+w+' '+hh+'" style="width:100%;height:auto">'+mk(a,'#35D07F')+mk(b,'#FF5A5A')+'</svg>'; }
+function pedalTraces(slice){ const gas=[],brk=[];
+  for(let i=0;i<slice.length;i++){ const p=pedalsAt(slice,0); const dv=slice[Math.min(i+1,slice.length-1)]-slice[Math.max(i-1,0)];
+    brk.push(Math.max(0,Math.min(100,-dv*7))); gas.push(Math.max(0,Math.min(100, dv>0?55+dv*7:30+dv*4))); }
+  return traceSVG(gas,100,'#35D07F')+'<div style="margin-top:-10px">'+traceSVG(brk,100,'#FF5A5A')+'</div>'; }
+
+/* ================= elevation strips ================= */
+function elevSVG(id,withCursor){ const w=340,hh=56,pad=4; const mn=600,mx=632;
+  const pts=ELEV.map((v,i)=> (pad+i*(w-2*pad)/(N-1)).toFixed(1)+','+(hh-pad-((v-mn)/(mx-mn))*(hh-2*pad)).toFixed(1)).join(' ');
+  return '<svg viewBox="0 0 '+w+' '+hh+'" style="width:100%;height:auto"><polyline points="'+pts+'" fill="none" stroke="#8A8A93" stroke-width="1.8"/>'
+    +(withCursor?'<line id="'+id+'-cur" x1="4" y1="2" x2="4" y2="'+(hh-2)+'" stroke="#FF8A00" stroke-width="1.6"/>':'')+'</svg>'; }
+
+/* ================= sector panel (prototype order: verdict → story → next → data) ================= */
+function pickSector(sec){ document.querySelectorAll('.secchip').forEach(c=>c.classList.toggle('sel',+c.dataset.sec===sec));
+  const S=SECINFO[sec]; const cs=CORNERS.filter(c=> c.i>=SECB[sec] && c.i<SECB[sec+1]); const slice=SPEED.slice(SECB[sec],SECB[sec+1]);
+  const lapRows=LAPS.map(L=>{ const v=L.s[sec], best=Math.min(...LAPS.map(x=>x.s[sec])), w=Math.min(100,Math.round(v/60*100));
+    return '<div class="row" style="padding:3px 0"><span style="width:56px;font-weight:700">Lap '+L.n+(L.warn?' ⚠':'')+'</span>'
+      +'<div class="bar grow"><i style="width:'+w+'%;background:'+(v===best?'var(--grn)':'#39424E')+'"></i></div>'
+      +'<span style="font-weight:800;width:44px;text-align:right">'+v.toFixed(1)+'</span></div>'; }).join('');
+  const cornerRows=cs.map(c=>'<div class="card tap" style="margin:8px 0 0;padding:12px 14px" onclick="openCorner('+c.n+')"><div class="spread"><span style="font-weight:800">Turn '+c.n+' · '+c.dir+' · slowest point '+c.kmh+' km/h</span><span class="stamp '+c.verdict+'" style="font-size:12.5px;padding:5px 10px">'+c.stamp+'</span></div></div>').join('');
+  document.getElementById('secpanel').innerHTML=
+   '<div class="card" style="border-color:#3A2A10">'
+    +'<div class="spread"><h2>'+S.name+'</h2><span class="med-num">'+S.time+'s</span></div>'
+    +'<p class="small">Your best here is '+S.best+'s · this lap: <b style="color:'+S.dcol+'">'+S.delta+'</b></p>'
+    +'<p class="coach-says" style="margin-top:8px;font-size:15.5px"><span class="who">YOUR COACH</span>'+S.story+'</p>'
+    +'<p class="coach-says" style="color:var(--orange);font-weight:700;font-size:15.5px">'+S.next+'</p>'
+    +'<span class="link" onclick="toggleDepth(this)">See the data</span>'
+    +'<div class="depth">'
+      +'<div class="chart-label">EVERY LAP IN THIS PART</div>'+lapRows
+      +'<div class="chart-label">YOUR SPEED THROUGH IT (BEST LAP)</div>'
+      +'<div class="tracebox">'+traceSVG(slice,250,'#4EA8FF')+'<div class="cap">High line = fast. The dips are the turns — the deeper the dip, the slower the turn.</div></div>'
+      +'<div class="chart-label">YOUR FEET IN THIS PART</div>'
+      +'<div class="tracebox">'+pedalTraces(slice)+'<div class="cap"><span style="color:var(--grn)">— Gas</span> &nbsp;<span style="color:var(--red)">— Brake</span><br>'+S.pedals+'</div></div>'
+      +'<div class="chart-label">THE GROUND IN THIS PART</div>'
+      +'<div class="tracebox">'+elevSVG('sec'+sec,false)+'<div class="cap">Elevation, same stretch of track. Brake points here are checked against this slope — the ground is the coach’s ground truth.</div></div>'
+      +'<div class="chart-label">GEARS &amp; COAST</div>'
+      +'<p class="small">Gears 2–6 through this part. One coast window at Turn 4 — gas off, a beat, then brake — counted in the Scrub, where your finger can sit on it.</p>'
+      +'<div class="chart-label">HOW HARD THE CAR CORNERED</div>'
+      +'<div class="bar" style="margin-top:6px"><i style="width:'+S.gPct+'%;background:var(--amb)"></i></div>'
+      +'<p class="small" style="margin-top:6px">'+S.g+'</p>'
+    +'</div>'
+    +'<div class="divider"></div><div class="klabel">Turns in this part — tap one</div>'+cornerRows
+    +'<div class="coachcard" style="margin:12px 0 0"><span class="who">🎧 COACH ON THIS PART</span><p class="coach-says" style="font-size:15px;margin-top:4px;">'+S.ai+'</p></div>'
+   +'</div>'; }
+
+/* ================= corner sheet (stamp FIRST, then the sentence, then data) ================= */
+function openCorner(n){ const c=CORNERS[n-1]; const sec=c.i<SECB[1]?0:c.i<SECB[2]?1:2;
+  const brakeRow=c.brake? '<div class="tracebox"><div class="klabel">Where you brake</div><div style="position:relative;height:26px;margin-top:10px;background:#232329;border-radius:8px"><div style="position:absolute;left:38%;top:0;bottom:0;width:5px;background:var(--red);border-radius:3px"></div><div style="position:absolute;right:6%;top:0;bottom:0;width:5px;background:var(--grn);border-radius:3px"></div><span style="position:absolute;left:38%;top:28px;font-size:11px;color:var(--red);transform:translateX(-50%)">YOU</span><span style="position:absolute;right:2%;top:28px;font-size:11px;color:var(--grn)">LATER</span></div><p class="sub" style="margin-top:24px">'+c.brake+'</p></div>':'';
+  document.getElementById('cornerSheet').innerHTML=
+   '<span class="pill '+(c.focus?'plan':'info')+'">'+(c.focus?'★ OUR PROJECT — ':'')+SECINFO[sec].name.toUpperCase()+'</span>'
+   +'<div class="spread" style="margin-top:10px"><h2>Turn '+c.n+' · '+c.dir+' turn</h2><button class="btn ghost small" onclick="closeCorner()">Close ✕</button></div>'
+   +'<div style="margin-top:12px"><span class="stamp '+c.verdict+'">'+c.stamp+'</span>'+(c.focus?'<span class="stamp a" style="margin-left:8px">📌 OUR PROJECT</span>':'')+'</div>'
+   +'<p class="coach-says" style="margin-top:14px;font-size:15.5px"><span class="who">YOUR COACH</span>'+c.note+'</p>'+brakeRow
+   +'<button class="btn orange" style="margin-top:14px" onclick="closeCorner();openScrubAt('+c.n+')">🧤 OPEN THE SCRUB AT THIS CORNER</button>'
+   +'<div style="margin-top:12px"><span class="link" onclick="toggleDepth(this)">See the data</span>'
+   +'<div class="depth">'
+     +'<div class="kv"><span>Slowest point</span><b>'+c.kmh+' km/h</b></div>'
+     +'<div class="kv"><span>Time hiding here</span><b>'+c.loss+' s</b></div>'
+     +'<div class="kv"><span>How consistent you are</span><b>'+c.cons+'</b></div>'
+     +'<div class="kv"><span>Cornering load</span><b>'+c.g+'</b></div>'
+     +'<div class="kv"><span>Judged against</span><b>your own best laps — nobody else’s</b></div>'
+   +'</div></div>';
+  document.getElementById('cornerModal').classList.add('on'); }
+function closeCorner(){ document.getElementById('cornerModal').classList.remove('on'); }
+</script>
+
+<script>
+/* ================= pre-session: mode + detection states ================= */
+let mode='sim', feed='live';
+function setMode(m){ mode=m;
+  document.getElementById('mt-sim').className = m==='sim'?'sel-sim':'';
+  document.getElementById('mt-kart').className = m==='kart'?'sel-kart':'';
+  applyPreState(); }
+function setFeedState(f){ feed=f;
+  document.getElementById('st-live').classList.toggle('sel', f==='live');
+  document.getElementById('st-none').classList.toggle('sel', f==='none');
+  applyPreState(); if(document.getElementById('scr-pre').classList.contains('on')) show('pre'); }
+function applyPreState(){ const v=document.getElementById('verdict-line'), w=document.getElementById('verdict-why'),
+  go=document.getElementById('go-btn'), gn=document.getElementById('go-note'),
+  cs=document.getElementById('checklist-sim'), cn=document.getElementById('checklist-none'),
+  lv=document.getElementById('live-state');
+  const rows=document.querySelectorAll('#checklist-sim .grow');
+  if(feed==='none'){ v.innerHTML='NOT YET — nothing is talking to me';
+    w.textContent='No game feed and no GPS fix. One thing fixes it: start your sim, or step outside for GPS. GO stays off until I can see your world — recording the wrong thing helps nobody.';
+    cs.style.display='none'; cn.style.display='block'; go.disabled=true;
+    gn.textContent='GO is off — there is nothing to record yet, and the app won’t pretend otherwise.';
+    lv.textContent='Waiting'; return; }
+  cs.style.display='block'; cn.style.display='none'; go.disabled=false;
+  gn.textContent='GO plays the brief in your ear and starts recording. Nothing counts before GO.'; lv.textContent='In the pits';
+  if(mode==='sim'){ v.innerHTML='SIMULATOR — game feed live:<br>ACC · Nürburgring GP';
+    w.textContent='RaceHero Link is streaming from your PC, and the game named the track. Nothing for you to set.';
+    rows[0].textContent='The game feed'; rows[1].textContent='Your pedals & wheel — Link can see them'; }
+  else { v.innerHTML='KARTING — GPS:<br>Hamilton Mini Indy';
+    w.textContent='Your phone has a strong GPS fix, and you’re standing on a track in the catalogue. Nothing for you to set.';
+    rows[0].textContent='GPS — your phone, with the puck if it’s near'; rows[1].textContent='Your pedals & wheel — if Link or OBD is with you'; } }
+function pressGO(btn){ if(btn.disabled) return; const old=btn.textContent; btn.textContent='🎧 PLAYING YOUR BRIEF…';
+  setTimeout(()=>{ btn.textContent=old; toast('Brief played — session armed. The game starts your laps.'); show('live'); },1500); }
+
+/* ================= ReferenceBrief walk-through ================= */
+let briefIdx=-1, briefTimer=null;
+function renderBriefStep(){ CORNERS.forEach((c,k)=>{ const d=document.getElementById('pre-dot-'+c.n); if(d) d.classList.toggle('briefing', k===briefIdx);
+    const r=document.getElementById('turn-row-'+c.n); if(r) r.classList.toggle('briefing', k===briefIdx); });
+  if(briefIdx<0) return; const c=CORNERS[briefIdx];
+  document.getElementById('brief-line').style.display='block';
+  document.getElementById('brief-text').textContent='Turn '+c.n+' — '+c.brief; }
+function playBrief(){ const btn=document.getElementById('brief-play');
+  if(briefTimer){ clearInterval(briefTimer); briefTimer=null; btn.textContent='▶ Walk it — about 30 seconds'; return; }
+  btn.textContent='⏸ Pause the walk'; briefIdx=0; renderBriefStep();
+  briefTimer=setInterval(()=>{ briefIdx++; if(briefIdx>=CORNERS.length){ clearInterval(briefTimer); briefTimer=null;
+      btn.textContent='↻ Walk it again'; document.getElementById('brief-text').textContent='That’s the lap. The deal: about 10 laps, the first two are mine to watch — then Turn 4 is ours.';
+      CORNERS.forEach(c=>{ const d=document.getElementById('pre-dot-'+c.n); if(d) d.classList.remove('briefing'); const r=document.getElementById('turn-row-'+c.n); if(r) r.classList.remove('briefing'); }); return; }
+    renderBriefStep(); },2600); }
+function buildTurnlist(){ document.getElementById('turnlist').innerHTML = CORNERS.map(c=>{
+  const col=c.focus?'#FF8A00':(c.verdict==='g'?'#35D07F':'#FFB020');
+  return '<div class="turnrow" id="turn-row-'+c.n+'" onclick="briefIdx='+(c.n-1)+';renderBriefStep()"><div class="tn" style="background:'+col+'">'+c.n+'</div>'
+   +'<div class="grow"><b>Turn '+c.n+' · '+c.dir+' · slowest point '+c.kmh+' km/h</b>'+(c.focus?' <span class="pill plan">OUR PROJECT</span>':'')
+   +'<div class="small">'+c.brief+'</div></div><span class="stamp '+c.verdict+'" style="font-size:11px;padding:4px 9px">'+c.stamp+'</span></div>'; }).join(''); }
+
+/* ================= live tracer (pre-session strip + in-session telemetry) ================= */
+let tickN=0, preIdx=0, livePosM=0, liveLapsDone=6, sessSec=14*60+32, guardianCalmUntil=0;
+function steerBar(el,idx){ const s=steerAt(idx); const pct=Math.max(-46,Math.min(46, s*260)); 
+  el.style.left = pct<0 ? (50+pct)+'%' : '50%'; el.style.width = Math.abs(pct)+'%'; }
+setInterval(()=>{ tickN++;
+  const preOn=document.getElementById('scr-pre').classList.contains('on');
+  const liveOn=document.getElementById('scr-live').classList.contains('on');
+  if(preOn && feed==='live'){ preIdx=(preIdx+1)%N; const i=preIdx;
+    const spd=Math.round(SPEED[i]*0.55), g=gearAt(spd);
+    document.getElementById('lv-speed').textContent=spd;
+    document.getElementById('lv-gear').textContent=spd<4?'N':g;
+    document.getElementById('lv-rpm').textContent=spd<4?'—':rpmAt(spd,g);
+    document.getElementById('lv-g').textContent=(gLatAt(SPEED,i)*0.7).toFixed(1);
+    const p=pedalsAt(SPEED,i);
+    document.getElementById('lv-gas').style.width=(p.gas*0.6)+'%';
+    document.getElementById('lv-brk').style.width=(p.brk*0.6)+'%';
+    steerBar(document.getElementById('lv-steer'),i);
+    const d=document.querySelector('#pre-dot'); if(d) d.setAttribute('transform','translate('+TRACK[i][0]+','+TRACK[i][1]+')');
+    if(tickN>10){ document.getElementById('pill-feed').textContent='Live'; document.getElementById('pill-pedals').textContent='Live';
+      document.getElementById('live-state').textContent='Out lap — rolling'; } }
+  if(liveOn){ const iF=livePosM/STEP, i0=Math.floor(iF)%N, fr=iF-Math.floor(iF);
+    const spd=Math.round(FAST[i0]+(FAST[(i0+1)%N]-FAST[i0])*fr), g=gearAt(spd);
+    const tFast=CUM_FAST[i0]+(CUM_FAST[(i0+1)%N]-CUM_FAST[i0])*fr, tYou=CUM_YOU[i0]+(CUM_YOU[(i0+1)%N]-CUM_YOU[i0])*fr;
+    const delta=tFast-tYou;
+    document.getElementById('ls-clock').textContent=fmtLap(tFast);
+    const dc=document.getElementById('ls-delta');
+    dc.textContent=(delta<=0?'−':'+')+Math.abs(delta).toFixed(2)+' vs your best';
+    dc.className='delta '+(delta<=0.02?'g':'r');
+    document.getElementById('ls-delta-note').textContent= delta<=0.02?'Green = you’re quicker than your best lap at this exact point. Keep going.':'Red = a little behind your best at this point. The lap isn’t over — Turn 4 is still coming.';
+    document.getElementById('ls-speed').textContent=spd;
+    document.getElementById('ls-gear').textContent=g;
+    document.getElementById('ls-rpm').textContent=rpmAt(spd,g);
+    document.getElementById('ls-glat').textContent=gLatAt(FAST,i0).toFixed(1);
+    const dv=(FAST[(i0+1)%N]-FAST[Math.max(i0-1,0)])/3.6, dtS=(2*STEP)/Math.max(spd/3.6,1);
+    document.getElementById('ls-glon').textContent=Math.abs(dv/dtS/9.81).toFixed(1);
+    const p=pedalsAt(FAST,i0);
+    document.getElementById('ls-gas').style.width=p.gas+'%';
+    document.getElementById('ls-brk').style.width=p.brk+'%';
+    steerBar(document.getElementById('ls-steer'),i0);
+    const secIdx= livePosM<SECB[1]*STEP?0 : livePosM<SECB[2]*STEP?1 : 2;
+    document.querySelectorAll('#ls-secdots i').forEach((d,k)=>{ d.className= k<secIdx?'g' : k===secIdx?'a':''; });
+    document.getElementById('ls-sectext').textContent=['Part 1 — in progress','Part 1 ✓ faster · Part 2 — in progress','Part 1 ✓ · Part 2 ✓ · Part 3 — in progress'][secIdx];
+    const ahead=CORNERS.find(c=> c.i*STEP>livePosM+60);
+    const cue=document.getElementById('ls-cue');
+    if(ahead && ahead.n===4 && livePosM>4*STEP*10) cue.textContent='“Turn 4 next. Brake at the board — you have room.”';
+    else if(ahead && ahead.n===4) cue.textContent='“Two corners from now: Turn 4. Brake later this time — you have room.”';
+    else if(ahead) cue.textContent='“Settled driving. Next corner: Turn '+ahead.n+' — nothing new, just yours.”';
+    /* Guardian: fast trace runs over the demonstrated envelope on Turn 4 entry */
+    const gc=document.getElementById('guardian-card'), gp=document.getElementById('guardian-pill'),
+          gl=document.getElementById('guardian-label'), gt=document.getElementById('guardian-text');
+    const over = (i0>=CORNERS[3].i-7 && i0<=CORNERS[3].i) && (FAST[i0]-SPEED[i0]>=2.5);
+    if(over){ gc.className='guardian alert'; gl.style.color='var(--red)'; gl.textContent='🛡️ GUARDIAN — IN YOUR EAR, NOW';
+      gp.className='pill warn'; gp.textContent='Over your best entry';
+      gt.textContent='“Brake, brake, brake.” You’re arriving at Turn 4 faster than you’ve ever made it stick. Slow, slow, slow.';
+      guardianCalmUntil=tickN+34; }
+    else if(tickN<guardianCalmUntil){ gc.className='guardian watch'; gl.style.color='var(--grn)'; gl.textContent='🛡️ GUARDIAN — WATCHING';
+      gp.className='pill good'; gp.textContent='Recovered'; gt.textContent='Back inside your envelope — that’s how it’s done. He goes quiet the moment you’re safe; no lecture follows.'; }
+    else { gc.className='guardian watch'; gl.style.color='var(--grn)'; gl.textContent='🛡️ GUARDIAN — WATCHING';
+      gp.className='pill good'; gp.textContent='Inside your envelope';
+      gt.textContent='He’s got your back. If you arrive at a corner faster than you’ve ever made it stick, he’ll say so — loudly, and in time.'; }
+    livePosM += (spd/3.6)*0.12;
+    if(livePosM>=LAPLEN){ livePosM=0; liveLapsDone++;
+      document.getElementById('ls-laps').textContent=liveLapsDone;
+      document.getElementById('ls-lapnum').textContent=liveLapsDone+1;
+      document.getElementById('ls-lastlap').textContent=fmtLap(CUM_FAST[N-1]); }
+    sessSec+=0.12; const sm=Math.floor(sessSec/60), ss=Math.floor(sessSec%60);
+    document.getElementById('ls-session').textContent=sm+':'+(ss<10?'0':'')+ss; }
+  if(document.getElementById('scr-scrub').classList.contains('on') && playOn){ advancePlay(); }
+},120);
+let voiceState=0;
+function cycleVoiceStrip(){ voiceState=(voiceState+1)%2; const strip=document.getElementById('voice-strip'),
+  d=document.getElementById('voice-dot'), t=document.getElementById('voice-text');
+  if(voiceState===1){ strip.style.borderColor='var(--amb)'; d.className='dot a';
+    t.innerHTML='<b>Your coach went quiet.</b> Last cue wasn’t heard. Check your earbuds — tap TEST MY COACH’S VOICE in the Coach tab.'; }
+  else { strip.style.borderColor='#2C4636'; d.className='dot g';
+    t.innerHTML='<b>Coach voice: working.</b> Last cue heard, in full.'; } }
+
+/* ================= Corner Scrub engine ================= */
+let scrubDist=0, scrubLapN=5, compareOn=true, selCorner=4, playOn=false, playRate=1;
+function trace(){ return scrubLapN===5?SPEED:SPIN; }
+function cum(){ return scrubLapN===5?CUM_YOU:CUM_SPIN; }
+function moments(c,tr){ let j=c.i; while(j>1 && tr[j-1]>=tr[j]) j--;
+  const brakeI=j; let fj=c.i; const FT=FAST; while(fj>1 && FT[fj-1]>=FT[fj]) fj--;
+  let gasI=c.i+3; for(let k=c.i+1;k<N-2;k++){ if(tr[k+2]>tr[k]+4){ gasI=k; break; } }
+  let liftI=brakeI; for(let k=brakeI;k>1;k--){ if(tr[k]-tr[k-1]>1.5){ liftI=k; break; } liftI=k; }
+  return { brake:brakeI*STEP, fastBrake:fj*STEP, turnin:Math.max(0,(c.i-3))*STEP, apex:c.i*STEP, gas:gasI*STEP, lift:liftI*STEP, brakeI:brakeI, gasI:gasI, liftI:liftI }; }
+function scrubSentence(pos){ const tr=trace();
+  if(scrubLapN===6 && Math.abs(pos-24*STEP)<170) return 'Here’s the spin, told fairly: speed fell from 245 to 40 as the car turned and braked together. This lap is set aside — it never counts against you, and neither does this moment.';
+  const c=CORNERS[selCorner-1], m=moments(c,tr);
+  if(pos<m.lift-40) return 'On the run in to Turn '+c.n+' — full power, eyes up. The corner’s coming; nothing to do yet but arrive properly.';
+  if(pos<m.lift) return 'You lift here — and coast. This quiet gap, gas off before brake on, is time rolling away for free.';
+  if(pos<m.brake) return 'Coasting… the fast lap is still on the power. Watch where it finally brakes.';
+  if(pos<m.fastBrake) return 'Here’s where YOU brake for Turn '+c.n+'. Hold that thought — the green ghost hasn’t braked yet.';
+  if(pos<m.turnin) return 'The fast lap brakes HERE — later than you. That gap, right under your finger, is the whole lesson of this corner.';
+  if(pos<m.apex) return 'Turn-in. One turn of the wheel — let the car roll toward the apex.';
+  if(pos<m.apex+12) return 'Apex — the slowest point: '+c.kmh+' km/h. '+c.stamp+'.';
+  if(pos<m.gas) return 'Rolling off the apex — patience. The power comes back when the wheel straightens.';
+  if(pos<m.gas+320) return 'Power’s back on here. Straighten the wheel and let the car run to the next corner.';
+  return 'Between corners — this stretch is breathing room. The next story starts at the next brake point.'; }
+function updateScrub(){ const tr=trace(), cm=cum();
+  const f=Math.max(0,Math.min(N-1.001, scrubDist/STEP)), i0=Math.floor(f), fr=f-i0, i1=Math.min(i0+1,N-1);
+  const spd=Math.round(tr[i0]+(tr[i1]-tr[i0])*fr);
+  const rail=document.getElementById('scrub-rail'); rail.value=Math.round(scrubDist);
+  rail.style.setProperty('--fill', (scrubDist/LAPLEN*100)+'%');
+  document.getElementById('rb-dist').textContent=Math.round(scrubDist)+' m of 5,137 m';
+  const you=document.getElementById('mk-you'), ghost=document.getElementById('mk-ghost'), fl=fastLinePts();
+  you.setAttribute('cx', TRACK[i0][0]+(TRACK[i1][0]-TRACK[i0][0])*fr); you.setAttribute('cy', TRACK[i0][1]+(TRACK[i1][1]-TRACK[i0][1])*fr);
+  ghost.setAttribute('cx', fl[i0][0]+(fl[i1][0]-fl[i0][0])*fr); ghost.setAttribute('cy', fl[i0][1]+(fl[i1][1]-fl[i0][1])*fr);
+  ghost.style.display=compareOn?'block':'none';
+  document.getElementById('scrub-spin').style.display= scrubLapN===6?'block':'none';
+  document.getElementById('rb-speed').textContent=spd;
+  document.getElementById('rb-fast').textContent= compareOn? Math.round(FAST[i0]+(FAST[i1]-FAST[i0])*fr) : '—';
+  document.getElementById('rb-gear').textContent= gearAt(spd);
+  const dNow=(cm[i0]+(cm[i1]-cm[i0])*fr) - (scrubLapN===5? (CUM_FAST[i0]+(CUM_FAST[i1]-CUM_FAST[i0])*fr) : (CUM_YOU[i0]+(CUM_YOU[i1]-CUM_YOU[i0])*fr));
+  const dc=document.getElementById('rb-delta');
+  dc.textContent= Math.abs(dNow)<0.005 ? '0.00 s' : (dNow>0?'+':'−')+Math.abs(dNow).toFixed(2)+' s';
+  dc.className='delta '+(dNow<=0.02?'g':'r'); dc.style.fontSize='20px'; dc.style.padding='5px 12px';
+  const p=pedalsAt(tr,i0);
+  document.getElementById('rb-gas').style.width=p.gas+'%';
+  document.getElementById('rb-brk').style.width=p.brk+'%';
+  const sc=document.getElementById('rb-steer-cur'); if(sc){ const x=4+f*(332/(N-1)); sc.setAttribute('x1',x); sc.setAttribute('x2',x); }
+  const ec=document.getElementById('elevscrub-cur'); if(ec){ const x=4+f*(332/(N-1)); ec.setAttribute('x1',x); ec.setAttribute('x2',x); }
+  const gv=gLatAt(tr,i0);
+  document.getElementById('rb-g').textContent= gv.toFixed(1)+' g — '+(gv>=1.25?'your tyres working hardest':gv>=1.0?'working nicely':gv>=0.6?'grip in hand':'gentle, straight-line calm');
+  const dev=Math.abs(Math.hypot(TRACK[i0][0]-fl[i0][0], TRACK[i0][1]-fl[i0][1]))*0.55;
+  document.getElementById('rb-dev').textContent= dev<0.3?'on the fast line':dev.toFixed(1)+' m off the fast line';
+  const c=CORNERS[selCorner-1], m=moments(c,tr);
+  const inWindow= scrubDist>m.lift-260 && scrubDist<m.apex+80;
+  document.getElementById('rb-coast').textContent= inWindow? Math.round((m.brake-m.lift))+' m · '+Math.max(0,(cm[m.brakeI]-cm[m.liftI])).toFixed(1)+' s (estimated — pedal-measured when Link feeds it)' : '— · Turn '+c.n+'’s window ↑';
+  document.getElementById('scrub-sentence').textContent= scrubSentence(scrubDist);
+  const near=CORNERS.reduce((a,c)=> Math.abs(c.i*STEP-scrubDist)<Math.abs(a.i*STEP-scrubDist)?c:a, CORNERS[0]);
+  document.getElementById('scrub-stamp').innerHTML= (scrubLapN===6 && Math.abs(scrubDist-24*STEP)<170)
+    ? '<span class="stamp r">⚠ INCIDENT — SET ASIDE, FAIRLY</span>'
+    : '<span class="stamp '+near.verdict+'">'+near.stamp+'</span> <span class="small">Turn '+near.n+' · slowest point '+near.kmh+' km/h</span>';
+  document.querySelectorAll('.cchip').forEach(ch=>ch.classList.toggle('sel', +ch.dataset.cn===selCorner)); }
+function scrubTo(d,user){ if(user && playOn){ playOn=false; document.getElementById('play-btn').textContent='▶ Play the lap'; }
+  scrubDist=Math.max(0,Math.min(LAPLEN,d)); updateScrub(); }
+function setSelCorner(n){ selCorner=n; updateScrub(); }
+function jumpMoment(kind){ const c=CORNERS[selCorner-1], m=moments(c,trace());
+  scrubTo(m[kind==='youbrake'?'brake':kind==='fastbrake'?'fastBrake':kind==='turnin'?'turnin':kind==='apex'?'apex':'gas'], false);
+  toast({youbrake:'Your brake point',fastbrake:'Where the fast lap brakes',turnin:'Turn-in',apex:'The apex',gason:'Gas back on'}[kind]+' — Turn '+c.n); }
+function togglePlay(){ playOn=!playOn; document.getElementById('play-btn').textContent= playOn?'⏸ Pause':'▶ Play the lap'; }
+function setPlaySpeed(r){ playRate=r; document.getElementById('spd-1').classList.toggle('sel', r===1); document.getElementById('spd-q').classList.toggle('sel', r===0.25); }
+function advancePlay(){ const tr=trace(); const spd=tr[Math.floor(scrubDist/STEP)]||120;
+  scrubDist += (spd/3.6)*0.12*playRate; if(scrubDist>=LAPLEN){ scrubDist=0; } updateScrub(); }
+function setScrubLap(n){ scrubLapN=n;
+  document.getElementById('lap5-chip').classList.toggle('sel', n===5);
+  document.getElementById('lap6-chip').classList.toggle('sel', n===6); updateScrub(); }
+function toggleCompare(){ compareOn=!compareOn;
+  document.getElementById('cmp-chip').textContent='Compare: fast lap '+(compareOn?'ON':'OFF');
+  document.getElementById('cmp-chip').classList.toggle('sel', compareOn); updateScrub(); }
+function openScrubAt(n){ show('scrub'); setSelCorner(n); const m=moments(CORNERS[n-1],trace()); scrubTo(m.brake,false); }
+function buildScrubExtras(){
+  /* steering trace with cursor */
+  const sts=[]; for(let i=0;i<N;i++) sts.push(steerAt(i));
+  const mx=Math.max(...sts.map(Math.abs))||0.01, w=340,hh=52,pad=4;
+  const pts=sts.map((v,i)=> (pad+i*(w-2*pad)/(N-1)).toFixed(1)+','+(hh/2-(v/mx)*(hh/2-4)).toFixed(1)).join(' ');
+  document.getElementById('rb-steer').innerHTML='<svg viewBox="0 0 '+w+' '+hh+'" style="width:100%;height:auto"><line x1="0" y1="'+(hh/2)+'" x2="'+w+'" y2="'+(hh/2)+'" stroke="#26262B"/><polyline points="'+pts+'" fill="none" stroke="#4EA8FF" stroke-width="1.8"/><line id="rb-steer-cur" x1="4" y1="2" x2="4" y2="'+(hh-2)+'" stroke="#FF8A00" stroke-width="1.6"/></svg>';
+  /* gear ribbon with coast hatch at the selected corner's lift→brake window */
+  const m=moments(CORNERS[3],SPEED); const runs=[]; let st=0;
+  for(let i=1;i<=N;i++){ if(i===N||gearAt(SPEED[i])!==gearAt(SPEED[st])){ runs.push([st,i-1]); st=i; } }
+  const gw=340, x0=4, xw=gw-8;
+  let gh='<svg viewBox="0 0 '+gw+' 30" style="width:100%;height:auto"><defs><pattern id="hatch" width="5" height="5" patternTransform="rotate(45)" patternUnits="userSpaceOnUse"><rect width="5" height="5" fill="#1E1E22"/><line x1="0" y1="0" x2="0" y2="5" stroke="#FFB020" stroke-width="2"/></pattern></defs>';
+  runs.forEach(r=>{ const a=x0+(r[0]/(N-1))*xw, b=x0+(r[1]/(N-1))*xw;
+    gh+='<rect x="'+a.toFixed(1)+'" y="4" width="'+Math.max(b-a-1,1.5).toFixed(1)+'" height="16" rx="3" fill="#232329"/>';
+    if(b-a>13) gh+='<text x="'+((a+b)/2).toFixed(1)+'" y="16.5" font-size="9.5" font-weight="800" fill="#B9B9C0" text-anchor="middle">'+gearAt(SPEED[r[0]])+'</text>'; });
+  const ca=x0+(m.lift/LAPLEN)*xw, cb=x0+(m.brake/LAPLEN)*xw;
+  gh+='<rect x="'+ca.toFixed(1)+'" y="4" width="'+Math.max(cb-ca,3).toFixed(1)+'" height="16" rx="3" fill="url(#hatch)"><title>coast</title></rect>';
+  gh+='<text x="'+((ca+cb)/2).toFixed(1)+'" y="28" font-size="8.5" fill="#FFB020" text-anchor="middle">COAST · TURN 4</text></svg>';
+  document.getElementById('gear-ribbon').innerHTML=gh;
+  /* corner strip */
+  document.getElementById('cornerstrip').innerHTML= CORNERS.map(c=>'<button class="cchip" data-cn="'+c.n+'" onclick="setSelCorner('+c.n+');jumpMoment(\'youbrake\')"><div class="cn">'+c.n+'</div><div class="cs" style="color:'+(c.verdict==='g'?'var(--grn)':'var(--amb)')+'">'+(c.stamp.replace('🎯 ',''))+'</div></button>').join('');
+  document.getElementById('elev-scrub').innerHTML=elevSVG('elevscrub',true);
+  document.getElementById('elev-viewer').innerHTML=elevSVG('elevv',false);
+  document.getElementById('chart-spin').innerHTML=twoTrace(SPEED,SPIN); }
+
+/* ================= sheets ================= */
+const SHEETS={
+ simsetup:'<div class="spread"><h2>How connecting works</h2><button class="btn ghost small" onclick="closeSheet()">Close ✕</button></div>'
+  +'<p class="sub" style="margin-top:8px">Three things, in order — and the app checks each one for you, in plain words, on the pre-session screen.</p>'
+  +'<div class="kv" style="margin-top:10px"><span><b>1 · The game offers its data</b><br><span class="small">In ACC: broadcasting on, port 9000, no passwords. One time, in the game’s own menu.</span></span><b>Done ✓</b></div>'
+  +'<div class="kv"><span><b>2 · Link runs on the PC</b><br><span class="small">It finds your wheel and pedals itself — MOZA R9, P1000 — and proves its map against the game’s motion. No calibration step exists.</span></span><b>Streaming ✓</b></div>'
+  +'<div class="kv"><span><b>3 · The phone listens on your Wi-Fi</b><br><span class="small">This phone: 10.0.0.176. Same network as the PC — that’s the whole requirement.</span></span><b>Receiving ✓</b></div>'
+  +'<p class="small" style="margin-top:10px">Other games (F1, Forza, Assetto Corsa) each get the same one-page treatment here — what the game must offer, what Link proves, what the phone needs.</p>',
+ trackpicker:'<div class="spread"><h2>Pick your circuit</h2><button class="btn ghost small" onclick="closeSheet()">Close ✕</button></div>'
+  +'<input class="textfield" style="margin-top:12px" placeholder="Search 8,400+ circuits…">'
+  +'<div class="chiprow"><button class="cchip2 sel">Near me</button><button class="cchip2">My tracks</button><button class="cchip2">Canada</button><button class="cchip2">United States</button><button class="cchip2">Europe</button></div>'
+  +'<div class="card tap" style="margin:8px 0" onclick="closeSheet();toast(\'Nürburgring GP — already your detected track\')"><div class="spread"><b>Nürburgring GP</b><span class="pill good">DETECTED · FROM THE GAME</span></div><div class="small">5,137 m · 24 ACC circuits carry full terrain profiles</div></div>'
+  +'<div class="card tap" style="margin:8px 0" onclick="closeSheet();toast(\'Hamilton Mini Indy picked — GPS mode arms when you’re there\')"><div class="spread"><b>Hamilton Mini Indy</b><span class="pill info">MY TRACK</span></div><div class="small">Elevation anchor 225.8 m · your driven line lives here</div></div>'
+  +'<div class="card" style="margin:8px 0;opacity:.75"><div class="spread"><b>Anchor-only circuit</b><span class="pill none">ANCHOR ONLY</span></div><div class="small">We know where it is and how high — no driven profile yet, so no elevation strip and no invented slopes until someone laps it.</div></div>' };
+function openSheet(k){ document.getElementById('sheetBody').innerHTML=SHEETS[k]; document.getElementById('sheetModal').classList.add('on'); }
+function closeSheet(){ const m=document.getElementById('sheetModal'); if(m) m.classList.remove('on'); }
+
+/* ================= init ================= */
+buildPre(); buildView(); buildScrubMap(); buildTurnlist(); buildScrubExtras();
+pickSector(1); applyPreState(); setSelCorner(4);
+scrubTo(moments(CORNERS[3],SPEED).brake,false);
+show('welcome');
+</script>
+<script>
+(function(){var q=new URLSearchParams(location.search);
+if(q.get('embed')!==null)document.documentElement.classList.add('embed');
+var sc=q.get('screen');if(sc){window.addEventListener('load',function(){setTimeout(function(){try{show(sc);var sh=q.get('sheet');if(sh)openSheet(sh);}catch(e){}},150);});}
+})();
+</script>
+</body>
+</html>
