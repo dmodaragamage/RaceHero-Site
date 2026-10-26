@@ -3,157 +3,224 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Gear — RaceHero™</title>
-<meta name="description" content="Hardware that works with RaceHero™: GPS pucks, OBD-II dongles and camera mounts. Tested with the app.">
+<title>Gear that works with RaceHero™</title>
+<meta name="description" content="GPS pucks, OBD-II adapters, cameras and mounts tested with the RaceHero™ app. Buy here and it just works — no config, no guesswork.">
 <style>
-  :root { --bg: #0a0a0c; --panel: #131316; --line: #26262c; --txt: #f5f5f5; --mut: #a7a7ae; --acc: #ff8a00; --grn: #35d07f; }
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { background: var(--bg); color: var(--txt); font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; }
-  .wrap { max-width: 1140px; margin: 0 auto; padding: 0 1.5rem; }
-  nav { position: fixed; top: 0; left: 0; right: 0; z-index: 50; backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); background: rgba(10,10,12,.55); border-bottom: 1px solid rgba(255,255,255,.07); }
-  nav .wrap { display: flex; justify-content: space-between; align-items: center; padding-top: 1rem; padding-bottom: 1rem; }
-  .brand { font-weight: 800; letter-spacing: .3em; text-indent: .3em; font-size: 1.05rem; color: var(--txt); text-decoration: none; }
-  .brand span { color: var(--acc); }
-  .tm{font-size:.5em;vertical-align:super;letter-spacing:0;margin-left:.15em;}
-  nav .links a { color: var(--mut); text-decoration: none; margin-left: 1.4rem; font-size: .92rem; }
-  nav .links a:hover { color: var(--txt); }
-  header.page { padding: 8rem 0 2.5rem; }
-  .kicker { display: inline-block; font-size: .78rem; letter-spacing: .28em; text-indent: .28em; color: var(--acc); font-weight: 700; margin-bottom: 1rem; border: 1px solid rgba(255,138,0,.4); padding: .45rem .9rem; border-radius: 999px; background: rgba(10,10,12,.45); }
-  h1 { font-size: clamp(2.2rem, 6vw, 3.6rem); font-weight: 800; letter-spacing: .02em; line-height: 1.05; }
-  p.lead { color: var(--mut); font-size: 1.1rem; max-width: 42rem; margin: 1rem 0 0; }
-  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.4rem; padding: 2rem 0 4rem; }
-  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 1.7rem; display: flex; flex-direction: column; transition: transform .25s, border-color .25s; }
-  .card:hover { transform: translateY(-4px); border-color: rgba(255,138,0,.45); }
-  .card .ico { font-size: 1.9rem; margin-bottom: .7rem; }
-  .card .pimg { width: 100%; height: 170px; object-fit: cover; border-radius: 12px; margin-bottom: 1rem; background: #0a0a0c; border: 1px solid var(--line); }
-  .card h3 a { color: var(--txt); text-decoration: none; }
-  .card h3 a:hover { color: var(--acc); }
-  .card .go { color: var(--mut); font-size: .88rem; margin: .6rem 0 1rem; display: inline-block; text-decoration: none; }
-  .card .go:hover { color: var(--acc); }
-  .card h3 { margin-bottom: .3rem; font-size: 1.12rem; }
-  .badge { display: inline-block; font-size: .72rem; font-weight: 700; letter-spacing: .08em; color: var(--grn); border: 1px solid rgba(53,208,127,.4); border-radius: 999px; padding: .2rem .7rem; margin-bottom: .8rem; }
-  .badge.ours { color: var(--acc); border-color: rgba(255,138,0,.45); }
-  .card p { color: var(--mut); font-size: .95rem; flex: 1; }
-  .price { font-size: 1.5rem; font-weight: 800; margin: 1.1rem 0 .8rem; }
-  .price small { font-size: .8rem; color: var(--mut); font-weight: 400; }
-  .btn { display: inline-block; background: var(--acc); color: #0d0d0f; font-weight: 700; padding: .85rem 1.8rem; border-radius: 999px; text-decoration: none; text-align: center; }
-  .btn.soon { background: rgba(255,255,255,.12); color: var(--mut); border: 1px dashed rgba(255,255,255,.25); cursor: default; }
-  .note { color: var(--mut); font-size: .9rem; padding: 0 0 4rem; max-width: 42rem; }
-  footer { border-top: 1px solid var(--line); padding: 2rem 0; color: var(--mut); font-size: .9rem; }
-  footer .wrap { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
-  footer a { color: var(--mut); text-decoration: none; margin-left: 1.2rem; }
+  :root{--bg:#0e0e10;--card:#17171b;--line:#26262c;--ink:#f2f2f4;--dim:#a7a7b0;--acc:#ff8a00;--good:#35d07f}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--bg);color:var(--ink);font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;line-height:1.55}
+  a{color:inherit}
+  .wrap{max-width:1100px;margin:0 auto;padding:0 22px}
+  nav{position:fixed;top:0;left:0;right:0;background:rgba(14,14,16,.88);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);z-index:50}
+  nav .wrap{display:flex;align-items:center;gap:26px;height:60px}
+  .logo{font-weight:800;font-size:20px}
+  .logo span{color:var(--acc)}
+  nav .links{margin-left:auto;display:flex;gap:22px;font-size:14.5px;color:var(--dim)}
+  nav .links a{text-decoration:none}
+  nav .links a:hover{color:var(--ink)}
+  header{padding:120px 0 10px;text-align:center}
+  header h1{font-size:42px;font-weight:800;margin-bottom:10px}
+  header p{color:var(--dim);font-size:18px;max-width:620px;margin:0 auto}
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;padding:36px 0 10px}
+  .sechead{grid-column:1/-1;font-size:15px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:var(--acc);padding:14px 2px 0}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px;display:flex;flex-direction:column}
+  .card .ico{font-size:34px;margin-bottom:10px}
+  .pimg{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:12px;border:1px solid var(--line);margin-bottom:14px;background:#0a0a0c}
+  .card .badge{align-self:flex-start;background:#123524;color:var(--good);font-size:11.5px;font-weight:700;letter-spacing:.06em;padding:4px 10px;border-radius:999px;margin-bottom:10px;text-transform:uppercase}
+  .card .badge.ours{background:#3a2408;color:var(--acc)}
+  .card h3{font-size:19px;margin-bottom:6px}
+  .card h3 a{text-decoration:none}
+  .card h3 a:hover{color:var(--acc)}
+  .card p{color:var(--dim);font-size:14.5px;flex:1}
+  .price{font-size:24px;font-weight:800;margin:14px 0 10px}
+  .price small{font-size:13px;color:var(--dim);font-weight:600}
+  .btn{display:inline-block;background:var(--acc);color:#14100a;font-weight:700;padding:11px 20px;border-radius:11px;text-decoration:none;font-size:15px;text-align:center}
+  .btn.soon{background:#232329;color:var(--dim);pointer-events:none}
+  .specs-link{display:block;text-align:center;margin-top:10px;font-size:14px;color:var(--acc);text-decoration:none}
+  .hub{display:grid;grid-template-columns:300px 1fr;gap:34px;align-items:center;padding:44px 0 6px}
+  .phoneframe{width:300px;height:628px;border:1px solid #2c2c33;border-radius:38px;overflow:hidden;background:#0a0a0c;box-shadow:0 24px 60px rgba(0,0,0,.5)}
+  .phoneframe iframe{width:392px;height:820px;border:0;transform:scale(.7653);transform-origin:top left;pointer-events:none;display:block}
+  .hub h2{font-size:28px;font-weight:800;margin-bottom:8px}
+  .hub p{color:var(--dim);font-size:16px;max-width:560px}
+  .note{color:var(--dim);font-size:13.5px;text-align:center;padding:26px 0 6px;max-width:760px;margin:0 auto}
+  footer{border-top:1px solid var(--line);margin-top:50px;padding:26px 0 34px;color:var(--dim);font-size:14px}
+  footer .wrap{display:flex;gap:20px;flex-wrap:wrap;align-items:center}
+  footer .links{margin-left:auto;display:flex;gap:18px}
+  footer a{text-decoration:none}
+  footer a:hover{color:var(--ink)}
+  @media(max-width:860px){.grid{grid-template-columns:1fr}.hub{grid-template-columns:1fr;justify-items:center}}
 </style>
 </head>
 <body>
 <nav><div class="wrap">
-  <a class="brand" href="/">RACE<span>HERO</span><sup class="tm">™</sup></a>
-  <div class="links"><a href="/#features">Features</a><a href="/gear.html">Gear</a><a href="https://www.instagram.com/racehero.ai">Instagram</a></div>
+  <div class="logo">Race<span>Hero</span>™</div>
+  <div class="links">
+    <a href="/#features">Features</a>
+    <a href="/how-it-works.html">How it works</a>
+    <a href="/#sim">Sim racing</a>
+    <a href="/gear.html">Gear</a>
+    <a href="/walkthrough.html">Walkthrough</a>
+    <a href="https://www.instagram.com/racehero.ai/" target="_blank" rel="noopener">Instagram</a>
+  </div>
 </div></nav>
 
-<header class="page"><div class="wrap">
-  <span class="kicker">WORKS WITH RACEHERO™</span>
-  <h1>Gear that makes you faster.</h1>
-  <p class="lead">Every product below is tested with the RaceHero™ app. Buy here and it just works — no config, no guesswork. Secure checkout via Stripe.</p>
+<header><div class="wrap">
+  <h1>Gear that works with RaceHero™</h1>
+  <p>Every product below is tested with the app — it pairs, it streams, it just works. No config, no guesswork. Checkout opens soon.</p>
 </div></header>
 
-<main><div class="wrap"><div class="grid">
+<div class="wrap"><div class="grid">
 
-  <!-- OUR PRODUCT: paste the Stripe Payment Link for the puck kit -->
+  <div class="sechead">GPS pucks</div>
+
   <div class="card">
     <div class="ico">📡</div>
-    <img class="pimg" src="images/gear/puck-kit-black.jpg" alt="RaceHero 25Hz Puck Kit">
-    <span class="badge ours">RACEHERO™ ORIGINAL</span>
+    <img class="pimg" src="images/gear/puck-kit.jpg" alt="RaceHero 25Hz Puck Kit">
+    <span class="badge ours">Our own kit</span>
     <h3><a href="/products/puck-kit.html">RaceHero 25Hz Puck Kit</a></h3>
-    <p>Our assembled, track-tested 25Hz GPS puck. Don't want to solder the DIY build? This is it — badge it in the app and drive.</p>
+    <p>Our own 25Hz GPS puck, built for RaceHero. Pairs in seconds, streams twenty-five fixes a second, and unlocks corner-level coaching. Sold and shipped by RaceHero.</p>
     <div class="price">$119 <small>USD</small></div>
-    <a class="go" href="/products/puck-kit.html">Full specs →</a>
     <a class="btn soon" href="#" data-stripe="PUCK_KIT_LINK">Coming soon</a>
+    <a class="specs-link" href="/products/puck-kit.html">Full specs →</a>
   </div>
 
   <div class="card">
-    <div class="ico">🛰️</div>
+    <div class="ico">📡</div>
+    <span class="badge">Tested with RaceHero™</span>
+    <h3><a href="/products/racebox-mini.html">RaceBox Mini</a></h3>
+    <p>25 Hz GPS + IMU over Bluetooth — the same live data RaceHero reads from the Mini S, without the standalone storage. The value pick of the RaceBox line.</p>
+    <div class="price">$249 <small>USD</small></div>
+    <a class="btn soon" href="#" data-amzn="RACEBOX_MINI">Coming soon</a>
+    <a class="specs-link" href="/products/racebox-mini.html">Full specs →</a>
+  </div>
+
+  <div class="card">
+    <div class="ico">📡</div>
     <img class="pimg" src="images/gear/racebox-mini-s.jpg" alt="RaceBox Mini S">
-    <span class="badge">TESTED WITH RACEHERO™</span>
+    <span class="badge">Tested with RaceHero™</span>
     <h3><a href="/products/racebox-mini-s.html">RaceBox Mini S</a></h3>
-    <p>25Hz GPS + IMU. The gold standard bluetooth puck — plug it in and RaceHero reads every tenth of a second.</p>
+    <p>25 Hz GPS + IMU. The gold standard Bluetooth puck — RaceHero reads it twenty-five times a second. Standalone storage on board, so it logs even without your phone.</p>
     <div class="price">$289 <small>USD</small></div>
-    <a class="go" href="/products/racebox-mini-s.html">Full specs →</a>
-    <a class="btn soon" href="#" data-stripe="RACEBOX_LINK">Coming soon</a>
+    <a class="btn soon" href="#" data-stripe="RACEBOX_LINK" data-amzn="RACEBOX_MINI_S">Coming soon</a>
+    <!-- tag-day ASIN (amazon.com): B0C8JCB8TZ — recorded for the affiliate push only; not a live link -->
+    <a class="specs-link" href="/products/racebox-mini-s.html">Full specs →</a>
   </div>
 
   <div class="card">
-    <div class="ico">📍</div>
+    <div class="ico">📡</div>
+    <span class="badge">Tested with RaceHero™</span>
+    <h3><a href="/products/qstarz-bl-1000gt.html">Qstarz BL-1000GT</a></h3>
+    <p>10 Hz GNSS receiver with standalone logging to microSD. Qstarz's current racing receiver — named in the app and badged in the Hardware Hub.</p>
+    <div class="price">$239 <small>USD</small></div>
+    <a class="btn soon" href="#" data-amzn="QSTARZ_BL1000GT">Coming soon</a>
+    <a class="specs-link" href="/products/qstarz-bl-1000gt.html">Full specs →</a>
+  </div>
+
+  <div class="card">
+    <div class="ico">📡</div>
     <img class="pimg" src="images/gear/dual-xgps160.jpg" alt="Dual XGPS160">
-    <span class="badge">TESTED WITH RACEHERO™</span>
+    <span class="badge">Tested with RaceHero™</span>
     <h3><a href="/products/dual-xgps160.html">Dual XGPS160</a></h3>
     <p>10Hz bluetooth GPS receiver. A paddock favorite — pairs in seconds over classic Bluetooth.</p>
     <div class="price">$179.99 <small>USD</small></div>
-    <a class="go" href="/products/dual-xgps160.html">Full specs →</a>
-    <a class="btn soon" href="#" data-stripe="DUAL_LINK">Coming soon</a>
+    <a class="btn soon" href="#" data-stripe="DUAL_LINK" data-amzn="DUAL_XGPS160">Coming soon</a>
+    <a class="specs-link" href="/products/dual-xgps160.html">Full specs →</a>
   </div>
 
   <div class="card">
-    <div class="ico">🧲</div>
-    <img class="pimg" src="images/gear/qstarz-bt-q1000ex.gif" alt="Qstarz BT-Q1000eX 10Hz">
-    <span class="badge">TESTED WITH RACEHERO™</span>
-    <h3><a href="/products/qstarz-bt-q1000ex.html">Qstarz BT-Q1000eX 10Hz</a></h3>
-    <p>10Hz Bluetooth GPS lap timer. Qstarz's current racing receiver — streams live, logs standalone.</p>
-    <div class="price">$163 <small>USD</small></div>
-    <a class="go" href="/products/qstarz-bt-q1000ex.html">Full specs →</a>
-    <a class="btn soon" href="#" data-stripe="QSTARZ_LINK">Coming soon</a>
+    <div class="ico">📡</div>
+    <span class="badge">Tested with RaceHero™</span>
+    <h3><a href="/products/dual-xgps150a.html">Dual XGPS150A</a></h3>
+    <p>The budget GPS pick. Up to 10 Hz over classic Bluetooth, GPS + WAAS — the same simple pairing flow as the XGPS160, for about half the money.</p>
+    <div class="price">≈$110 <small>USD</small></div>
+    <a class="btn soon" href="#" data-amzn="DUAL_XGPS150A">Coming soon</a>
+    <a class="specs-link" href="/products/dual-xgps150a.html">Full specs →</a>
   </div>
 
+  <div class="sechead">OBD-II — throttle-aware coaching</div>
+
   <div class="card">
-    <div class="ico">🔧</div>
-    <img class="pimg" src="images/gear/obdlink-mx.jpg" alt="OBDLink MX+ / ELM327">
-    <span class="badge">TESTED WITH RACEHERO™</span>
-    <h3><a href="/products/obdlink-mx.html">OBDLink MX+ / ELM327</a></h3>
-    <p>OBD-II dongle for RPM, speed and throttle. Unlocks throttle-aware coaching in the app.</p>
+    <div class="ico">🔌</div>
+    <img class="pimg" src="images/gear/obdlink-mx.jpg" alt="OBDLink MX+">
+    <span class="badge">Tested with RaceHero™</span>
+    <h3><a href="/products/obdlink-mx.html">OBDLink MX+</a></h3>
+    <p>The fastest Bluetooth OBD-II adapter we test with — RPM, speed and throttle for RaceHero throttle-aware coaching (the adapter speaks the ELM327 protocol).</p>
     <div class="price">$139.95 <small>USD</small></div>
-    <a class="go" href="/products/obdlink-mx.html">Full specs →</a>
-    <a class="btn soon" href="#" data-stripe="ELM327_LINK">Coming soon</a>
-  </div>
-
-  <div class="card">
-    <div class="ico">🎥</div>
-    <img class="pimg" src="images/gear/gopro-suction-mount.png" alt="GoPro Suction Cup Mount">
-    <span class="badge">TESTED WITH RACEHERO™</span>
-    <h3>GoPro Suction Mount</h3>
-    <p>Lock your camera down for clean telemetry-overlay video. Pairs with the app's video export.</p>
-    <div class="price">$39 <small>USD</small></div>
-    <a class="go" href="/products/gopro-suction-mount.html">Full specs →</a>
-    <a class="btn soon" href="#" data-stripe="GOPRO_MOUNT_LINK">Coming soon</a>
-  </div>
-
-  <div class="card">
-    <div class="ico">📱</div>
-    <img class="pimg" src="images/gear/ram-x-grip-mount.jpg" alt="RAM X-Grip Phone Mount">
-    <span class="badge">TESTED WITH RACEHERO™</span>
-    <h3><a href="/products/ram-x-grip-mount.html">RAM X-Grip Phone Mount</a></h3>
-    <p>The category-standard kart phone mount. U-bolt base clamps the steering column; X-Grip holds any phone through kerbs and spins.</p>
-    <div class="price">$75.49 <small>USD</small></div>
-    <a class="go" href="/products/ram-x-grip-mount.html">Full specs →</a>
-    <a class="btn soon" href="#" data-stripe="PHONE_MOUNT_LINK">Coming soon</a>
+    <a class="btn soon" href="#" data-stripe="ELM327_LINK" data-amzn="OBDLINK_MXPLUS">Coming soon</a>
+    <a class="specs-link" href="/products/obdlink-mx.html">Full specs →</a>
   </div>
 
   <div class="card">
     <div class="ico">🔌</div>
     <img class="pimg" src="images/gear/veepeak-obdcheck-ble.jpg" alt="Veepeak OBDCheck BLE">
-    <span class="badge">TESTED WITH RACEHERO™</span>
+    <span class="badge">Tested with RaceHero™</span>
     <h3><a href="/products/veepeak-obdcheck-ble.html">Veepeak OBDCheck BLE</a></h3>
-    <p>Budget Bluetooth LE OBD-II adapter for RPM, speed and throttle. Real BLE — no flaky clone chips. Unlocks throttle-aware coaching.</p>
-    <div class="price">$34.99 <small>USD</small></div>
-    <a class="go" href="/products/veepeak-obdcheck-ble.html">Full specs →</a>
-    <a class="btn soon" href="#" data-stripe="ELM327_BLE_LINK">Coming soon</a>
+    <p>Budget OBD-II adapter for RPM, speed and throttle. Dual-mode Bluetooth — pairs with RaceHero over classic Bluetooth on Android. ELM327 inside, no clone chips.</p>
+    <div class="price">$31.99 <small>USD</small></div>
+    <a class="btn soon" href="#" data-stripe="ELM327_BLE_LINK" data-amzn="VEEPEAK_OBDCHECK">Coming soon</a>
+    <!-- tag-day ASIN (amazon.ca): B073XKQQQW — recorded for the affiliate push only; not a live link -->
+    <a class="specs-link" href="/products/veepeak-obdcheck-ble.html">Full specs →</a>
+  </div>
+
+  <div class="sechead">Camera &amp; mounts</div>
+
+  <div class="card">
+    <div class="ico">🎥</div>
+    <span class="badge">Tested with RaceHero™</span>
+    <h3><a href="/products/gopro-hero13.html">GoPro HERO13 Black</a></h3>
+    <p>The current Hero. USB-C webcam mode feeds RaceHero live, and its MP4s carry the telemetry behind every overlay export. Any Hero 8 or newer works.</p>
+    <div class="price">$429.99 <small>USD list</small></div>
+    <a class="btn soon" href="#" data-amzn="GOPRO_HERO13">Coming soon</a>
+    <!-- tag-day ASIN (amazon.ca): B0DCQVQDQ7 — recorded for the affiliate push only; not a live link -->
+    <a class="specs-link" href="/products/gopro-hero13.html">Full specs →</a>
+  </div>
+
+  <div class="card">
+    <div class="ico">🎥</div>
+    <img class="pimg" src="images/gear/gopro-suction-mount.png" alt="GoPro Suction Cup Mount">
+    <span class="badge">Tested with RaceHero™</span>
+    <h3><a href="/products/gopro-suction-mount.html">GoPro Suction Cup Mount</a></h3>
+    <p>The official GoPro suction mount (AUCMT-302) — proven at speed on bodywork and glass.</p>
+    <div class="price">$39.99 <small>USD</small></div>
+    <a class="btn soon" href="#" data-stripe="GOPRO_MOUNT_LINK" data-amzn="GOPRO_SUCTION_MOUNT">Coming soon</a>
+    <a class="specs-link" href="/products/gopro-suction-mount.html">Full specs →</a>
+  </div>
+
+  <div class="card">
+    <div class="ico">📱</div>
+    <img class="pimg" src="images/gear/ram-x-grip-mount.jpg" alt="RAM X-Grip Phone Mount">
+    <span class="badge">Tested with RaceHero™</span>
+    <h3><a href="/products/ram-x-grip-mount.html">RAM X-Grip Phone Mount</a></h3>
+    <p>The kart kit — RAM-B-149Z-A-UN7U: U-bolt base clamps to your steering column or chassis rail, X-Grip holds any phone through a full session of kerbs.</p>
+    <div class="price">$75.49 <small>USD</small></div>
+    <a class="btn soon" href="#" data-stripe="PHONE_MOUNT_LINK" data-amzn="RAM_XGRIP_KIT">Coming soon</a>
+    <a class="specs-link" href="/products/ram-x-grip-mount.html">Full specs →</a>
   </div>
 
 </div>
-<p class="note">Prices in USD, marked ★ are placeholders until final supplier pricing is confirmed. Checkout is processed securely by Stripe — RaceHero™ never sees your card details.</p>
-</div></main>
+
+<div class="hub">
+  <div class="phoneframe"><iframe title="RaceHero Hardware Hub" src="/walkthrough.html?embed=1&amp;screen=hardware" loading="lazy"></iframe></div>
+  <div>
+    <h2>Seen in the app: the Hardware Hub</h2>
+    <p>Every puck and adapter above badges itself in RaceHero's Hardware Hub the moment it connects — <b style="color:var(--ink)">“tested” means the app says so</b>, live, on your phone. If a device ever stops streaming, the Hub tells you what to do in plain words. Nothing to configure, nothing to guess. <a href="/walkthrough.html" style="color:var(--acc)">See the Hub in the walkthrough →</a></p>
+  </div>
+</div>
+
+<p class="note">Prices are reference prices in USD, verified against the manufacturers and retailers on October 25, 2026. They are shown to help you compare — they are not live prices from any store, and they can change. The RaceHero 25Hz Puck Kit is our own product, sold and shipped by RaceHero.</p>
+<!-- AFFILIATE DISCLOSURE PLACEMENT (gear footer note): activate the plan's disclosure copy here on the tag-day push, together with the live links. No Associates claims until then. -->
+</div>
 
 <footer><div class="wrap">
   <div>© 2026 RaceHero™</div>
-  <div><a href="/privacy.html">Privacy</a><a href="/gear.html">Gear</a><a href="/link">RaceHero Link</a></div>
+  <div class="links">
+    <a href="/how-it-works.html">How it works</a>
+    <a href="/gear.html">Gear</a>
+    <a href="/privacy.html">Privacy</a>
+    <a href="/terms.html">Terms</a>
+    <a href="/acc">ACC Setup</a>
+    <a href="/link">RaceHero Link</a>
+  </div>
 </div></footer>
 </body>
 </html>
