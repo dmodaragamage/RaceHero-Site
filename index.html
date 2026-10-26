@@ -18,7 +18,10 @@
   nav .links{margin-left:auto;display:flex;gap:22px;font-size:14.5px;color:var(--dim)}
   nav .links a{text-decoration:none}
   nav .links a:hover{color:var(--ink)}
-  .hero{padding:130px 0 30px;text-align:center}
+  .hero{position:relative;overflow:hidden;padding:130px 0 30px;text-align:center;background:#000}
+  .hero-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0}
+  .hero-shade{position:absolute;inset:0;z-index:1;background:linear-gradient(180deg,rgba(10,10,11,.64),rgba(10,10,11,.55) 45%,rgba(14,14,16,.9) 80%,var(--bg))}
+  .hero .wrap{position:relative;z-index:2}
   .hero .kick{color:var(--acc);font-weight:700;letter-spacing:.14em;font-size:13px;text-transform:uppercase}
   .hero h1{font-size:52px;line-height:1.08;margin:16px auto 14px;max-width:820px;font-weight:800}
   .hero h1 em{font-style:normal;color:var(--acc)}
@@ -26,7 +29,6 @@
   .btn{display:inline-block;background:var(--acc);color:#14100a;font-weight:700;padding:13px 26px;border-radius:12px;text-decoration:none;font-size:16px}
   .btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
   .btnrow{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
-  .hero video{width:100%;max-width:900px;border-radius:18px;border:1px solid var(--line);margin-top:38px;background:#000}
   .ticker{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin:26px 0 6px}
   .ticker span{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:7px 14px;font-size:13.5px;color:var(--dim)}
   .ticker b{color:var(--ink)}
@@ -89,28 +91,27 @@
 </head>
 <body>
 <nav><div class="wrap">
-  <div class="logo">Race<span>Hero</span>™</div>
+  <a class="logo" href="/" style="text-decoration:none">Race<span>Hero</span>™</a>
   <div class="links">
     <a href="#features">Features</a>
     <a href="/how-it-works.html">How it works</a>
     <a href="#sim">Sim racing</a>
     <a href="/gear.html">Gear</a>
-    <a href="/walkthrough.html">Walkthrough</a>
     <a href="https://www.instagram.com/racehero.ai/" target="_blank" rel="noopener">Instagram</a>
   </div>
 </div></nav>
 
-<header class="hero"><div class="wrap">
+<header class="hero">
+  <video class="hero-bg" autoplay muted loop playsinline preload="metadata" aria-hidden="true"><source src="https://github.com/dmodaragamage/RaceHero-Site/releases/download/media-v1/hero-driveoff-final.mp4" type="video/mp4"></video>
+  <div class="hero-shade"></div>
+  <div class="wrap">
   <div class="kick">Karting · Track days · Sim racing</div>
   <h1>The coach in your ear.<br>The <em>story</em> of every lap.</h1>
   <p>RaceHero watches every lap, learns your corners, and tells you the one thing that makes you faster — while you drive, and again in the debrief.</p>
   <div class="btnrow">
     <a class="btn" href="/app">Get it on Google Play — coming soon</a>
-    <a class="btn ghost" href="/walkthrough.html">Tap through the real app →</a>
+    <a class="btn ghost" href="#app">See the real app ↓</a>
   </div>
-  <video autoplay muted loop playsinline preload="metadata" poster="/images/hero-poster.jpg">
-    <source src="https://github.com/dmodaragamage/RaceHero-Site/releases/download/media-v1/hero-driveoff-final.mp4" type="video/mp4">
-  </video>
   <div class="ticker">
     <span>🏎️ <b>8,400+</b> tracks built in</span>
     <span>🎧 <b>Live voice coaching</b> while you drive</span>
@@ -127,18 +128,18 @@
 
 <section id="app"><div class="wrap">
   <h2>The app, as it really is</h2>
-  <p class="sub">No mock-ups, no renders — these are the app's actual screens. <a href="/walkthrough.html" style="color:var(--acc)">Open the walkthrough</a> and tap through every one of them yourself.</p>
+  <p class="sub">No mock-ups, no renders — these are the app's actual screens, live from the phone.</p>
   <div class="frames">
     <div class="fwrap">
-      <div class="phoneframe"><iframe title="RaceHero pre-session screen" src="/walkthrough.html?embed=1&amp;screen=pre" loading="lazy"></iframe></div>
+      <div class="phoneframe"><iframe title="RaceHero pre-session screen" src="/embed/walkthrough.html?embed=1&amp;screen=pre" loading="lazy"></iframe></div>
       <div class="fcap"><span class="beat">1 · Before</span><b>It knows where you are</b><p>One verdict, and why: your track, your feed, your brief — green means go. Nothing to set up, nothing to calibrate.</p></div>
     </div>
     <div class="fwrap">
-      <div class="phoneframe"><iframe title="RaceHero live session screen" src="/walkthrough.html?embed=1&amp;screen=live" loading="lazy"></iframe></div>
+      <div class="phoneframe"><iframe title="RaceHero live session screen" src="/embed/walkthrough.html?embed=1&amp;screen=live" loading="lazy"></iframe></div>
       <div class="fcap"><span class="beat">2 · During</span><b>One tap and you're coached</b><p>The giant timer, your delta, your pedals — and a coach who speaks only when it matters. Nothing counts until you press GO.</p></div>
     </div>
     <div class="fwrap">
-      <div class="phoneframe"><iframe title="RaceHero corner scrub screen" src="/walkthrough.html?embed=1&amp;screen=scrub" loading="lazy"></iframe></div>
+      <div class="phoneframe"><iframe title="RaceHero corner scrub screen" src="/embed/walkthrough.html?embed=1&amp;screen=scrub" loading="lazy"></iframe></div>
       <div class="fcap"><span class="beat">3 · After</span><b>Your lap, as a story</b><p>Scrub any corner with your finger and watch the lap again — verdicts first, measurements one tap down.</p></div>
     </div>
   </div>
@@ -149,19 +150,19 @@
   <p class="sub">Timing apps hand you a spreadsheet. RaceHero hands you a story — and a plan for the next session.</p>
   <div class="grid">
     <div class="card">
-      <div class="uipanel"><iframe title="Session viewer with sector map" src="/walkthrough.html?embed=1&amp;screen=viewer" loading="lazy"></iframe></div>
+      <div class="uipanel"><iframe title="Session viewer with sector map" src="/embed/walkthrough.html?embed=1&amp;screen=viewer" loading="lazy"></iframe></div>
       <h3>Live timing, sectors &amp; delta</h3>
       <p>Lap and sector timing with a live delta to your best — coloured sectors on the map show exactly where the lap is won or lost.</p>
     </div>
     <div class="card"><div class="ico">🎧</div><h3>AI voice coaching</h3><p>A coach who talks while you drive: brake points, focus corners, calm words when it goes wrong. Two focus corners per lap — never a flood.</p></div>
     <div class="card">
-      <div class="uipanel"><iframe title="AI debrief" src="/walkthrough.html?embed=1&amp;screen=debrief" loading="lazy"></iframe></div>
+      <div class="uipanel"><iframe title="AI debrief" src="/embed/walkthrough.html?embed=1&amp;screen=debrief" loading="lazy"></iframe></div>
       <h3>A debrief, not a data dump</h3>
       <p>After every session, a coaching report that reads like your instructor wrote it: what happened, why, and the one fix to try next.</p>
     </div>
     <div class="card"><div class="ico">🎥</div><h3>Video overlays</h3><p>Bring any camera footage — or a GoPro live over USB — and export your laps with a full telemetry HUD. Free exports at 720p; Pro exports 1080p with no watermark.</p></div>
     <div class="card">
-      <div class="uipanel"><iframe title="Hardware Hub" src="/walkthrough.html?embed=1&amp;screen=hardware" loading="lazy"></iframe></div>
+      <div class="uipanel"><iframe title="Hardware Hub" src="/embed/walkthrough.html?embed=1&amp;screen=hardware" loading="lazy"></iframe></div>
       <h3>Hardware that just connects</h3>
       <p>25 Hz GPS pucks, OBD-II readers, sim wheels and pedals — the Hardware Hub finds them, badges what's tested, and never asks you to configure anything.</p>
     </div>
@@ -184,11 +185,11 @@
   <p class="sub">RaceHero Link connects your PC sim to the same coach — Assetto Corsa Competizione, F1, Forza and more. Plug in your wheel and pedals; Link maps them itself.</p>
   <div class="frames" style="margin-bottom:30px">
     <div class="fwrap sm">
-      <div class="phoneframe sm"><iframe title="Sim setup" src="/walkthrough.html?embed=1&amp;screen=pre&amp;sheet=simsetup" loading="lazy"></iframe></div>
+      <div class="phoneframe sm"><iframe title="Sim setup" src="/embed/walkthrough.html?embed=1&amp;screen=pre&amp;sheet=simsetup" loading="lazy"></iframe></div>
       <div class="fcap"><b>How connecting works</b><p>Start the game, start Link — the app finds both and says so, in plain words.</p></div>
     </div>
     <div class="fwrap sm">
-      <div class="phoneframe sm"><iframe title="Hardware Hub — sim rig" src="/walkthrough.html?embed=1&amp;screen=hardware" loading="lazy"></iframe></div>
+      <div class="phoneframe sm"><iframe title="Hardware Hub — sim rig" src="/embed/walkthrough.html?embed=1&amp;screen=hardware" loading="lazy"></iframe></div>
       <div class="fcap"><b>Your rig, badged</b><p>Wheel, pedals and PC link show up in the Hardware Hub with their live state — no drivers to hunt, no axes to assign.</p></div>
     </div>
   </div>
@@ -249,9 +250,9 @@
 
 <div class="cta"><div class="wrap">
   <h2>Your next lap is the story.</h2>
-  <p class="sub" style="margin-bottom:22px">RaceHero is in internal testing now and opens on Google Play soon. Until then, walk through the real app — every screen, one tap deep.</p>
+  <p class="sub" style="margin-bottom:22px">RaceHero is in internal testing now and opens on Google Play soon. Until then, see how it works — one real session, end to end.</p>
   <div class="btnrow">
-    <a class="btn" href="/walkthrough.html">Tap through the real app →</a>
+    <a class="btn" href="/how-it-works.html">See how it works →</a>
     <a class="btn ghost" href="/gear.html">See the gear that just works</a>
   </div>
 </div></div>
