@@ -46,12 +46,43 @@
   .voice .sig{margin-top:18px;color:var(--acc);font-weight:700;font-size:15px;letter-spacing:.06em;text-transform:uppercase}
   .honest{max-width:720px;margin:0 auto;text-align:center;color:var(--dim);font-size:15.5px;border:1px dashed var(--line);border-radius:18px;padding:24px 28px}
   .honest b{color:var(--ink)}
+  .talkgrid{display:grid;grid-template-columns:1fr 1fr;gap:18px;text-align:left}
+  .tpanel{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:26px}
+  .tkick{color:var(--acc);font-weight:700;letter-spacing:.14em;font-size:12px;text-transform:uppercase;margin-bottom:8px}
+  .tpanel h3{font-size:22px;font-weight:800;margin-bottom:8px}
+  .tpanel p{color:var(--dim);font-size:15.5px;margin-bottom:14px}
+  .tpanel p b{color:var(--ink)}
+  .tvideo{width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:12px;border:1px solid var(--line);background:#000;display:block;margin-bottom:18px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+  .tchip{border:1px solid var(--line);border-radius:999px;padding:7px 14px;font-size:13.5px;color:var(--ink);background:#101013}
+  .xcard{background:#101013;border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin-bottom:16px}
+  .xwho{font-size:11px;letter-spacing:.12em;color:var(--dim);font-weight:700;text-transform:uppercase;margin-bottom:4px}
+  .xq{font-size:16.5px;font-weight:700;margin-bottom:12px}
+  .xstrip{display:flex;gap:12px;align-items:flex-start}
+  .xstrip img{width:44px;height:55px;object-fit:cover;object-position:center top;border-radius:8px;border:1px solid var(--line);flex:none}
+  .xname{font-size:11px;letter-spacing:.14em;color:var(--acc);font-weight:800;margin-bottom:3px}
+  .xa{font-size:16px;line-height:1.5}
+  .askline{border-top:1px solid var(--line);padding-top:14px;color:var(--dim);font-size:14.5px}
+  .askline b{color:var(--ink)}
+  .pill{display:flex;gap:11px;align-items:center;background:#101013;border:1px solid var(--line);border-left:3px solid var(--acc);border-radius:14px;padding:12px 14px;margin-bottom:16px}
+  .pill-face{flex:none;width:34px;height:42px;border-radius:8px;overflow:hidden;border:1px solid #33333a}
+  .pill-face img{width:100%;height:100%;object-fit:cover;object-position:center;display:block}
+  .pill-main{flex:1;min-width:0}
+  .pill-head{display:flex;align-items:center;gap:8px;margin-bottom:3px}
+  .pill-name{font-size:10.5px;letter-spacing:.14em;color:var(--acc);font-weight:800}
+  .pill-state{font-size:10px;letter-spacing:.12em;color:var(--dim);font-weight:700;display:flex;align-items:center;gap:5px}
+  .pill-dot{width:6px;height:6px;border-radius:50%;background:var(--acc);animation:lenapulse 1.6s ease-in-out infinite}
+  @keyframes lenapulse{0%,100%{opacity:1}50%{opacity:.25}}
+  .pill-txt{font-size:14.5px;line-height:1.45;color:var(--ink)}
+  .safety{border-top:1px solid var(--line);padding-top:14px;color:var(--dim);font-size:14.5px}
+  .safety b{color:var(--ink)}
+  .tdisc{text-align:center;color:var(--dim);font-size:14px;margin-top:26px}
   footer{border-top:1px solid var(--line);margin-top:70px;padding:26px 0 34px;color:var(--dim);font-size:14px}
   footer .wrap{display:flex;gap:20px;flex-wrap:wrap;align-items:center}
   footer .links{margin-left:auto;display:flex;gap:18px}
   footer a{text-decoration:none}
   footer a:hover{color:var(--ink)}
-  @media(max-width:860px){.steps{grid-template-columns:1fr}.hero h1{font-size:38px}nav .links a:nth-child(2){display:none}.voice{padding:26px 22px}.voice p{font-size:18px}}
+  @media(max-width:860px){.steps{grid-template-columns:1fr}.talkgrid{grid-template-columns:1fr}.hero h1{font-size:38px}nav .links a:nth-child(2){display:none}.voice{padding:26px 22px}.voice p{font-size:18px}}
   @media(min-width:861px){.hero{min-height:660px;padding:170px 0 60px}.hero-bg{object-position:50% 15%}}
   @media(min-width:2000px){.hero{min-height:860px}}
 </style>
@@ -101,6 +132,56 @@
     <div class="step"><div class="n">2</div><h3>Lap 2 — we speed up</h3><p>The training wheels come off in stages. Lena steps the pace up and starts watching your inputs — your real throttle and brake — against the lines you just learned.</p></div>
     <div class="step"><div class="n">3</div><h3>Lap 3 — she coaches</h3><p>Full coaching, live. Two focus corners per lap, never a flood: the brake point that's drifting, the corner that's costing you, calm words when it goes wrong. Afterwards, the debrief names the one thing to fix next.</p></div>
   </div>
+</div></section>
+
+<section id="talk"><div class="wrap">
+  <h2>Talk to Lena.</h2>
+  <p class="sub">One coach, two registers. In the Film Room she teaches — in the car, she rides with you. Either way, you don't dig through menus or data tables. You just ask.</p>
+  <div class="talkgrid">
+
+    <div class="tpanel">
+      <div class="tkick">The film room · the debrief</div>
+      <h3>Ask her about your session.</h3>
+      <p>After the session, she's your instructor at the table — the corner that's costing you, the braking to work on, the one thing to fix next. Start with a tap:</p>
+      <video class="tvideo" autoplay muted loop playsinline preload="metadata" poster="images/lena-voss-canonical-v2-strip.webp" aria-label="Lena Voss answering a debrief question"><source src="https://github.com/dmodaragamage/RaceHero-Site/releases/download/media-v1/talk-film-room.mp4" type="video/mp4"></video>
+      <div class="chips">
+        <span class="tchip">Where am I losing the most time?</span>
+        <span class="tchip">What do I work on next?</span>
+        <span class="tchip">How was my braking?</span>
+      </div>
+      <div class="xcard">
+        <div class="xwho">You asked</div>
+        <div class="xq">“Where am I losing the most time?”</div>
+        <div class="xstrip">
+          <img src="images/lena-voss-canonical-v2-strip.webp" alt="Lena Voss">
+          <div>
+            <div class="xname">LENA VOSS™</div>
+            <div class="xa">“Turn 2 is costing you the most — about 0.2 seconds a lap against your own best composite.”</div>
+          </div>
+        </div>
+      </div>
+      <div class="askline"><b>Or ask her yourself</b> — type your question, or tap the mic and say it. She answers from your laps, in her own voice — and when she can't answer, she tells you so instead of guessing. Your words are kept, never your audio.</div>
+    </div>
+
+    <div class="tpanel">
+      <div class="tkick">The race seat · in the car</div>
+      <h3>In the car, she's Voss.</h3>
+      <p>Nobody uses full names at speed. In the car you call her <b>Voss</b> — and she answers like an engineer on the radio: short, calm, only what matters, only when it helps.</p>
+      <video class="tvideo" autoplay muted loop playsinline preload="metadata" poster="images/lena-race-seat.png" aria-label="Lena Voss answering in the car"><source src="https://github.com/dmodaragamage/RaceHero-Site/releases/download/media-v1/talk-race-seat.mp4" type="video/mp4"></video>
+      <div class="xwho">You, on the radio</div>
+      <div class="xq">“Voss — how was that lap?”</div>
+      <div class="pill">
+        <div class="pill-face"><img src="images/lena-voss-head-race.webp" alt="Lena Voss"></div>
+        <div class="pill-main">
+          <div class="pill-head"><span class="pill-name">VOSS</span><span class="pill-state"><span class="pill-dot"></span>SPEAKING</span></div>
+          <div class="pill-txt">“Two oh seven point one. Your best. The S gave it back to you.”</div>
+        </div>
+      </div>
+      <div class="safety"><b>Safety first, always.</b> She answers in the gaps — never mid-corner. If the car needs you, it cuts her off mid-sentence and she doesn't mind. In-car talk-back is live in the current RaceHero build: call her name, ask, drive.</div>
+    </div>
+
+  </div>
+  <p class="tdisc">Lena Voss is RaceHero's AI coach.</p>
 </div></section>
 
 <section id="honest"><div class="wrap">
