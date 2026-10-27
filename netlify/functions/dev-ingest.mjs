@@ -19,6 +19,19 @@
  *   POST /api/dev-ingest            body = one JSON payload (≤ 8 MB)
  *                                   → 200 {"ok":true,"key":"…"}
  *   GET  /api/dev-ingest?list=1     → newest 50 stored keys + metadata
+ *        Optional list filters (v50.14, data study R2):
+ *        &kind=<kind>   only keys whose kind segment matches
+ *        &limit=<n>     page size (default 50, clamped 1..200)
+ *        &before=<key>  keyset paging: only keys strictly less than
+ *                       <key> in the same newest-first order
+ *        Default-view semantics (R2 fix, 2026-10-27): with NO explicit
+ *        &kind=, heartbeat kinds (link, ping) are EXCLUDED — Link posts
+ *        a heartbeat roughly every 45 s, and an unfiltered newest-50
+ *        window covers only ~35 minutes, which buried whole sessions.
+ *        Heartbeats stay fully retrievable via &kind=link / &kind=ping,
+ *        and &before= pages arbitrarily far back inside any view, so a
+ *        session is always retrievable: ?list=1&kind=session plus
+ *        &before=<oldest key of the previous page> until found.
  *   GET  /api/dev-ingest?key=<key>  → the stored payload JSON
  */
 
@@ -38,6 +51,21 @@ function sanitize(s) {
   return String(s == null ? "" : s)
     .replace(/[^a-zA-Z0-9._-]/g, "")
     .slice(0, 80);
+}
+
+/**
+ * The kind segment of a stored key. Keys are
+ * `<ISO>-<kind>-<sessionId>.json` where the ISO prefix is
+ * `receivedAt.replace(/:/g, "-")` — a fixed-shape 24-char timestamp
+ * (`2026-10-26T22-38-19.123Z`) — so the kind is the first `-`-
+ * delimited segment of what follows it (every kind the app sends —
+ * session / lap / diag / ping — is a single segment). Returns null
+ * for a key that doesn't carry the prefix (defensive: such a key
+ * has no kind segment to match).
+ */
+function kindSegment(key) {
+  const m = /^\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}\.\d{3}Z-([^-]+)-/.exec(key);
+  return m ? m[1] : null;
 }
 
 export default async (req) => {
@@ -80,12 +108,38 @@ export default async (req) => {
 
   if (req.method === "GET") {
     if (url.searchParams.get("list")) {
+      // Optional filters (v50.14, data study R2). `kind` goes
+      // through the same sanitize() as stored kinds; `before` is
+      // used ONLY as a comparison string (never as a store key),
+      // so it is taken raw — sanitize() would truncate a long
+      // legitimate key at 80 chars and break the keyset.
+      const kindFilter = sanitize(url.searchParams.get("kind") || "");
+      const rawLimit = parseInt(url.searchParams.get("limit") || "", 10);
+      const limit = Number.isFinite(rawLimit)
+        ? Math.min(200, Math.max(1, rawLimit))
+        : 50;
+      const before = url.searchParams.get("before") || "";
       const { blobs } = await store.list();
-      const keys = blobs
+      let keys = blobs
         .map((b) => b.key)
         .sort()
-        .reverse()
-        .slice(0, 50);
+        .reverse();
+      if (kindFilter) {
+        keys = keys.filter((k) => kindSegment(k) === kindFilter);
+      } else {
+        // Default view: heartbeats (Link keepalives, app pings) are
+        // excluded so they cannot crowd session/lap/diag payloads out
+        // of the window. They remain one explicit &kind= away.
+        const HEARTBEAT_KINDS = new Set(["link", "ping"]);
+        keys = keys.filter((k) => !HEARTBEAT_KINDS.has(kindSegment(k)));
+      }
+      if (before) {
+        // Same descending order as the listing itself: strictly
+        // less than the given key (string order on the ISO-
+        // prefixed keys is chronological).
+        keys = keys.filter((k) => k < before);
+      }
+      keys = keys.slice(0, limit);
       const items = [];
       for (const key of keys) {
         let meta = null;
