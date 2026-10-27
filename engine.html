@@ -61,6 +61,18 @@
   footer a{text-decoration:none}
   footer a:hover{color:var(--ink)}
   @media(max-width:860px){.steps,.strip{grid-template-columns:1fr}.hero h1{font-size:38px}nav .links a:nth-child(2){display:none}.panel{padding:24px 20px}table{font-size:14.5px}th,td{padding:10px 8px}}
+  .wlpop{position:fixed;top:76px;left:16px;z-index:80;width:322px;max-width:calc(100vw - 32px);background:var(--card,var(--panel,#17171b));border:1px solid var(--line,#26262c);border-radius:16px;padding:18px;box-shadow:0 18px 50px rgba(0,0,0,.55);opacity:0;visibility:hidden;transform:translateX(-14px);transition:opacity .35s ease,transform .35s ease,visibility .35s}
+  .wlpop.on{opacity:1;visibility:visible;transform:none}
+  .wlpop-h{font-size:19px;font-weight:800;margin:0 26px 4px 0}
+  .wlpop p{color:var(--dim,var(--mut,#a7a7b0));font-size:14px;margin:0 0 12px}
+  .wlpop-x{position:absolute;top:8px;right:10px;background:none;border:0;color:var(--dim,var(--mut,#a7a7b0));font-size:22px;line-height:1;cursor:pointer;padding:4px}
+  .wlpop-x:hover{color:var(--ink,var(--txt,#f2f2f4))}
+  .wlpop-row{display:flex;gap:8px}
+  .wlpop-row input{flex:1;min-width:0;background:var(--bg,#0e0e10);border:1px solid var(--line,#26262c);border-radius:10px;color:var(--ink,var(--txt,#f2f2f4));padding:11px 12px;font-size:14.5px;font-family:inherit}
+  .wlpop-btn{background:var(--acc,#ff8a00);color:#14100a;font-weight:700;padding:11px 18px;font-size:14.5px;border:0;cursor:pointer;border-radius:10px}
+  .wlpop .wlhide{position:absolute;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none}
+  .wlpop .wlpop-done{color:var(--ink,var(--txt,#f2f2f4));font-weight:650;font-size:15px;margin:0}
+  @media(max-width:640px){.wlpop{top:74px;left:12px}}
 </style>
 </head>
 <body>
@@ -145,5 +157,44 @@
     <a href="/link">RaceHero Link</a>
   </div>
 </div></footer>
+<div class="wlpop" id="wl-pop" role="dialog" aria-label="Join the RaceHero waitlist">
+  <button class="wlpop-x" id="wl-pop-x" type="button" aria-label="Dismiss">&times;</button>
+  <div class="wlpop-h">Be first on the grid.</div>
+  <p>Join the waitlist for launch access.</p>
+  <form id="wl-pop-form" name="launch-waitlist" method="POST" data-netlify="true" netlify-honeypot="bot-field">
+    <input type="hidden" name="form-name" value="launch-waitlist">
+    <p class="wlhide"><label>Don't fill this out if you're human: <input name="bot-field"></label></p>
+    <div class="wlpop-row">
+      <input type="email" name="email" placeholder="your@email.com" required aria-label="Email address">
+      <button class="btn wlpop-btn" type="submit">Join</button>
+    </div>
+  </form>
+  <p class="wlpop-done" id="wl-pop-done" hidden>You're on the list. See you at launch.</p>
+</div>
+<script>
+(function(){
+  var pop=document.getElementById('wl-pop');
+  if(!pop){return;}
+  var KEY='rh-wlpop';
+  function seen(){ try{return !!sessionStorage.getItem(KEY);}catch(e){return false;} }
+  function mark(){ try{sessionStorage.setItem(KEY,'1');}catch(e){} }
+  if(!seen()){ setTimeout(function(){ pop.classList.add('on'); },5000); }
+  document.getElementById('wl-pop-x').addEventListener('click',function(){ pop.classList.remove('on'); mark(); });
+  var f=document.getElementById('wl-pop-form');
+  if(!f){return;}
+  f.addEventListener('submit',function(e){
+    e.preventDefault();
+    var body=new URLSearchParams(new FormData(f)).toString();
+    fetch('/',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:body})
+      .then(function(r){
+        if(!r.ok){throw new Error('form post failed');}
+        f.hidden=true;
+        document.getElementById('wl-pop-done').hidden=false;
+        mark();
+      })
+      .catch(function(){ f.submit(); });
+  });
+})();
+</script>
 </body>
 </html>
