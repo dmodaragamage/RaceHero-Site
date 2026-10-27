@@ -32,6 +32,19 @@
   to = "https://play.google.com/store"
   status = 302
 
+# Site-wide password gate (founder directive 2026-10-26: the site goes
+# dark to the public until launch). The edge function intercepts every
+# path and enforces HTTP Basic Auth ONLY when the SITE_GATE_PASSWORD env
+# var is set (Netlify → Site settings → Environment variables; optional
+# SITE_GATE_USER, default "racehero"). While the var is unset the gate is
+# inert and the site stays open — setting it + a redeploy arms the gate,
+# deleting it disarms it. /api/* and /.netlify/* are excluded inside the
+# function itself, so the app's endpoints (/api/gemini, /api/dev-ingest)
+# are never gated.
+[[edge_functions]]
+  path = "/*"
+  function = "site-gate"
+
 # /api/dev-ingest is the DEV FUNNEL endpoint (founder test builds only):
 # the app POSTs session data + diagnostics here during test drives, held
 # in Netlify Blobs behind the DEV_FUNNEL_TOKEN env var. Inert (503)
