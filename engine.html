@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Engine — Built on Physics. Proven in Simulation. | RaceHero™</title>
+<meta name="description" content="RaceHero's coaching engine: kinematic-G physics, terrain-verified tracks, every change proven in simulation before it ships — and a coach that learns your laps. The numbers on this page are measured, and each one says where it came from.">
+<style>
+  :root{--bg:#0e0e10;--card:#17171b;--line:#26262c;--ink:#f2f2f4;--dim:#a7a7b0;--acc:#ff8a00;--good:#35d07f;--bad:#ff5252;--blue:#4ea8ff}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--bg);color:var(--ink);font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;line-height:1.55}
+  a{color:inherit}
+  .wrap{max-width:1100px;margin:0 auto;padding:0 22px}
+  nav{position:fixed;top:0;left:0;right:0;background:rgba(14,14,16,.88);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);z-index:50}
+  nav .wrap{display:flex;align-items:center;gap:26px;height:60px}
+  .logo{font-weight:800;font-size:20px;letter-spacing:.2px}
+  .logo span{color:var(--acc)}
+  nav .links{margin-left:auto;display:flex;gap:22px;font-size:14.5px;color:var(--dim)}
+  nav .links a{text-decoration:none}
+  nav .links a:hover{color:var(--ink)}
+  .hero{position:relative;overflow:hidden;padding:130px 0 30px;text-align:center;background:#000}
+  .hero .wrap{position:relative;z-index:2}
+  .hero .kick{color:var(--acc);font-weight:700;letter-spacing:.14em;font-size:13px;text-transform:uppercase}
+  .hero h1{font-size:52px;line-height:1.08;margin:16px auto 14px;max-width:820px;font-weight:800}
+  .hero h1 em{font-style:normal;color:var(--acc)}
+  .hero p{color:var(--dim);font-size:19px;max-width:680px;margin:0 auto 26px}
+  .btn{display:inline-block;background:var(--acc);color:#14100a;font-weight:700;padding:13px 26px;border-radius:12px;text-decoration:none;font-size:16px}
+  .btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+  .btnrow{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+  section{padding:58px 0 8px}
+  h2{font-size:34px;font-weight:800;text-align:center;margin-bottom:8px}
+  .sub{color:var(--dim);text-align:center;max-width:680px;margin:0 auto 34px;font-size:16.5px}
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  .step{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:26px;text-align:center}
+  .step .n{display:inline-flex;width:42px;height:42px;border-radius:50%;background:var(--acc);color:#14100a;font-weight:800;align-items:center;justify-content:center;font-size:19px;margin-bottom:12px}
+  .step h3{font-size:19px;margin-bottom:6px}
+  .step p{color:var(--dim);font-size:15px}
+  .cta{text-align:center;padding:64px 0 20px}
+  .cta h2{margin-bottom:12px}
+  .panel{max-width:820px;margin:0 auto;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:30px 34px}
+  .panel p{font-size:17px;line-height:1.65;color:var(--dim)}
+  .panel p b{color:var(--ink)}
+  .panel p + p{margin-top:14px}
+  table{width:100%;border-collapse:collapse;margin:6px auto 0;max-width:820px;font-size:16px}
+  th,td{padding:13px 16px;text-align:center;border-bottom:1px solid var(--line)}
+  th{color:var(--dim);font-weight:600;font-size:14px;text-transform:uppercase;letter-spacing:.06em}
+  td:first-child,th:first-child{text-align:left}
+  tr.hl td{color:var(--acc);font-weight:700}
+  .bigclaim{font-size:26px;font-weight:800;text-align:center;max-width:760px;margin:30px auto 6px;line-height:1.3}
+  .src{color:#666;font-size:13.5px;text-align:center;max-width:760px;margin:10px auto 0}
+  .strip{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;max-width:820px;margin:0 auto}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:24px;text-align:center}
+  .stat b{display:block;font-size:30px;color:var(--acc);margin-bottom:4px}
+  .stat span{color:var(--dim);font-size:14.5px}
+  .honest{max-width:720px;margin:0 auto;text-align:center;color:var(--dim);font-size:15.5px;border:1px dashed var(--line);border-radius:18px;padding:24px 28px}
+  .honest b{color:var(--ink)}
+  footer{border-top:1px solid var(--line);margin-top:70px;padding:26px 0 34px;color:var(--dim);font-size:14px}
+  footer .wrap{display:flex;gap:20px;flex-wrap:wrap;align-items:center}
+  footer .links{margin-left:auto;display:flex;gap:18px}
+  footer a{text-decoration:none}
+  footer a:hover{color:var(--ink)}
+  @media(max-width:860px){.steps,.strip{grid-template-columns:1fr}.hero h1{font-size:38px}nav .links a:nth-child(2){display:none}.panel{padding:24px 20px}table{font-size:14.5px}th,td{padding:10px 8px}}
+</style>
+</head>
+<body>
+<nav><div class="wrap">
+  <a class="logo" href="/" style="text-decoration:none">Race<span>Hero</span>™</a>
+  <div class="links">
+    <a href="/#features">Features</a>
+    <a href="/how-it-works.html">How it works</a>
+    <a href="/coach.html">Coach</a>
+    <a href="/engine.html">Engine</a>
+    <a href="/#sim">Sim racing</a>
+    <a href="/gear.html">Gear</a>
+    <a href="https://www.instagram.com/racehero.ai/" target="_blank" rel="noopener">Instagram</a>
+  </div>
+</div></nav>
+
+<header class="hero">
+  <div class="wrap">
+  <div class="kick">The RaceHero engine</div>
+  <h1>Built on physics.<br><em>Proven in simulation.</em></h1>
+  <p>A stopwatch reports your lap. RaceHero's engine works out what the lap <em>means</em> — where the time went, what your hands and feet did, and what to change next. This page is how it works, with the measured numbers — and where each number came from.</p>
+  <div class="btnrow">
+    <a class="btn" href="#physics">The physics ↓</a>
+    <a class="btn ghost" href="/coach.html">Meet the coach it powers</a>
+  </div>
+</div></header>
+
+<section id="physics"><div class="wrap">
+  <h2>The physics</h2>
+  <p class="sub">Three ground rules the engine never breaks — because a coach is only worth listening to if its numbers are honest.</p>
+  <div class="steps">
+    <div class="step"><div class="n">G</div><h3>Kinematic G, not sensor G</h3><p>A phone's recorded lateral-G channel over-reads the real force by about 1.29× at an apex. So RaceHero never coaches from it: every G number in the engine is computed kinematically, from your actual path and speed — v²κ, the geometry of the corner you really drove.</p></div>
+    <div class="step"><div class="n">▲</div><h3>Terrain is ground truth</h3><p>Coaching targets are graded against real topography: elevation profiles checked against survey-grade DEM data across a catalogue of 8,400+ real tracks, plus all 24 sim tracks. When a brake target moves because the road falls away, that's the ground talking — not a guess.</p></div>
+    <div class="step"><div class="n">⚑</div><h3>The game owns the line</h3><p>In sim racing, start/finish comes from the game itself — the app never plants its own line and hopes. On real tracks, your own first lap plants it, the way racing actually works: you cross your own path, and timing starts.</p></div>
+  </div>
+</div></section>
+
+<section id="proof"><div class="wrap">
+  <h2>Proven in simulation</h2>
+  <p class="sub">Every engine change is proven in simulation before it ships — synthetic laps with known ground truth, run through the real app code. If a fix can't beat the harness, it doesn't reach your ears. Here's what that discipline measures.</p>
+  <div class="panel">
+    <p><b>Where things happened is what sample rate buys.</b> A coach that says "you braked 6 metres late" is making a location claim — and a logger can only locate a brake point as precisely as its fix rate allows. We measured it: one braking zone, 220 km/h into Turn 4 at the Nürburgring GP, re-measured from sampled data alone at three rates.</p>
+    <table>
+      <tr><th>Brake-point location error</th><th>10 Hz</th><th>25 Hz</th><th>50 Hz</th></tr>
+      <tr><td>Typical (mean)</td><td>5.2 m</td><td>2.8 m</td><td>1.4 m</td></tr>
+      <tr class="hl"><td>Worst case (95th percentile)</td><td>11.3 m</td><td>4.2 m</td><td>1.8 m</td></tr>
+    </table>
+    <div class="bigclaim">Brake points located to about a metre. At 10 Hz, the same braking zone wanders by up to eleven.</div>
+    <p class="src">Measured on a ground-truth reconstruction of the Nürburgring GP driven with a real session's speed profile, sampled at 16 phases per rate; one identical brake detector at every rate, so what remains is pure sampling error. Delta readouts sharpen the same way: sampling noise on a live delta falls from ±39 ms at 10 Hz to ±16 ms at 25 Hz to ±8 ms at 50 Hz. Lap times, honestly, barely change — this was never a timing feature. It's a coaching-precision feature.</p>
+  </div>
+  <div class="strip" style="margin-top:18px">
+    <div class="stat"><b>6 laps</b><span>One real ACC session at the Nürburgring GP — the engine's field benchmark</span></div>
+    <div class="stat"><b>2:07.1</b><span>Best lap of that session, coached live by the engine the whole way</span></div>
+    <div class="stat"><b>37 / 37</b><span>Voice cues issued in that session — all 37 spoken, none dropped</span></div>
+  </div>
+</div></section>
+
+<section id="learns-you"><div class="wrap">
+  <h2>A coach that learns you</h2>
+  <p class="sub">The physics is universal. The coaching is personal — because the engine calibrates itself to the only driver it coaches: you. All of this runs on your phone, on your data, today.</p>
+  <div class="steps">
+    <div class="step"><div class="n">1</div><h3>It remembers your laps</h3><p>The coach carries every corner's last-lap result into the next lap. "Later than last lap — you braked early again" is a comparison against <i>your</i> driving, not a textbook.</p></div>
+    <div class="step"><div class="n">2</div><h3>It learns your points</h3><p>Your brake points and turn-in points are learned from your own fastest laps — where you actually brake, not where a formula guesses. Your reference lap is built from your best sectors, and targets are set at what you've demonstrably done, never at your one luckiest moment.</p></div>
+    <div class="step"><div class="n">3</div><h3>It explains the why</h3><p>Every debrief starts with the cause — the input that cost the time, at the corner where it happened — drawn from a 190-entry coaching library built from real coaching sources. Numbers come second. Verdicts before measurements, always.</p></div>
+  </div>
+  <p class="sub" style="margin-top:26px">The voice that delivers it all is <a href="/coach.html" style="color:var(--acc)">Lena Voss</a> — meet her.</p>
+</div></section>
+
+<section id="field"><div class="wrap">
+  <h2>Learning from the field</h2>
+  <p class="sub">The next layer — designed, being built, and not switched on for anyone yet. When it arrives, it works on one rule:</p>
+  <div class="honest">
+    <p><b>Only validated laps teach the coach.</b> Every lap RaceHero records already carries a validation verdict — a lap that closed short, or from the wrong direction, can never become a reference. The field layer will learn only from laps that passed. And your data stays yours: <b>opt-in only, never bundled; anonymized aggregates, distilled on your device before anything leaves it; no one's raw laps, ever.</b> A coach that gets smarter from the field — without ever seeing your name attached to a lap.</p>
+  </div>
+</div></section>
+
+<div class="cta"><div class="wrap">
+  <h2>Feed it better data.</h2>
+  <p class="sub" style="margin-bottom:22px">The engine coaches at the precision your data allows. The RaceHero Puck streams 25 real fixes a second for $79 — and RaceHero itself is in internal testing now, opening on Google Play soon.</p>
+  <div class="btnrow">
+    <a class="btn" href="/products/puck-kit.html">The RaceHero Puck — $79 →</a>
+    <a class="btn ghost" href="/how-it-works.html">See the app in action</a>
+  </div>
+</div></div>
+
+<footer><div class="wrap">
+  <div>© 2026 RaceHero™</div>
+  <div class="links">
+    <a href="/how-it-works.html">How it works</a>
+    <a href="/coach.html">Coach</a>
+    <a href="/engine.html">Engine</a>
+    <a href="/gear.html">Gear</a>
+    <a href="/privacy.html">Privacy</a>
+    <a href="/terms.html">Terms</a>
+    <a href="/acc">ACC Setup</a>
+    <a href="/link">RaceHero Link</a>
+  </div>
+</div></footer>
+</body>
+</html>
