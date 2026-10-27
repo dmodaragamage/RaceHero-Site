@@ -3,7 +3,7 @@
 
 [Setup]
 AppName=RaceHero Link
-AppVersion=2.7.2
+AppVersion=2.7.3
 AppPublisher=RaceHero
 DefaultDirName={autopf}\RaceHero Link
 OutputDir=installer

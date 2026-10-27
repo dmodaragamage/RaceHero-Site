@@ -1114,7 +1114,19 @@ def load_mapping(devices):
             saved = json.load(f)
     except (OSError, ValueError):
         return None
-    if not saved.get("channels") or not saved.get("calibrated"):
+    return _resolve_map(saved, devices)
+
+
+def _resolve_map(saved, devices):
+    """Re-resolve a saved map's channel device indices against the
+    CURRENT device enumeration (the load_mapping rules above).
+    Returns the resolved map, or None when any channel's device
+    cannot be identified — never a partially-resolved map.
+    v2.7.3: extracted so the streamer's RETAINED map (the last
+    locked map this process held) re-resolves through exactly the
+    same identity rules as the disk map."""
+    if not saved or not saved.get("channels") \
+            or not saved.get("calibrated"):
         return None
     by_vidpid = {(d["vid"], d["pid"]): d for d in devices
                  if d.get("vid") is not None}
@@ -1338,6 +1350,17 @@ class AutoMapper:
     "calibrated": true) -> back to LEARNING if any mapped channel
     flatlines through a full session of real driving.
 
+    v2.7.3: the lock also PERSISTS across stream rebuilds and
+    device-set changes inside one Link run — the streamer keeps
+    the last locked map (the "retained" map) and a rebuilt
+    mapper re-adopts it when it re-resolves; while learning, any
+    device-set change re-tries the persisted map instantly
+    (reload_saved). The app-facing contract is unchanged and
+    absolute: no live frames are EVER reported before lock —
+    the payload is a field-less heartbeat with
+    "calibrated": false, so no consumer can mistake learning
+    for data.
+
     Identification, over a rolling ~2.5 min of axis history:
       * dead axes (range < 0.05) are excluded outright;
       * STEER = the axis with strong travel BOTH ways from a stable
@@ -1357,7 +1380,7 @@ class AutoMapper:
     LOCK_STREAK = 3
     FLAT_UNLOCK_S = 120.0
 
-    def __init__(self, devices, log=print, emit=None):
+    def __init__(self, devices, log=print, emit=None, retained=None):
         self.log = log
         self._emit = emit        # dev-funnel poster (v2.5), optional
         self._evidence = None    # how throttle/brake got decided
@@ -1366,6 +1389,20 @@ class AutoMapper:
         self.series = {}          # (dev, ax) -> [(t, v)]
         self.motion = _GameMotion()
         self.mapping = load_mapping(devices)
+        self._retained_adopted = False
+        if self.mapping is None and retained is not None:
+            # v2.7.3: the disk map did not resolve against THIS
+            # enumeration (a channel's device momentarily absent
+            # is the usual cause), but the streamer still holds
+            # the map this process locked earlier. Adopt it when
+            # IT resolves — a stream rebuild must never reset a
+            # good map back to a 15-minute relearn (the founder's
+            # 2026-10-27 session: lock at 12:43, three laps in).
+            adopted = _resolve_map(
+                json.loads(json.dumps(retained)), devices)
+            if adopted is not None:
+                self.mapping = adopted
+                self._retained_adopted = True
         self.locked = self.mapping is not None
         self._eval_at = 0.0
         self._streak = 0
@@ -1385,14 +1422,24 @@ class AutoMapper:
                                  "throttle": None, "brake": None}
         self._state_sig = None
         if self.locked:
-            log("Direct inputs: saved auto-map loaded — re-validating "
-                "against this session.")
-            self._emit_event({
-                "event": "automap_loaded",
-                "hidDevice": self.device_label(),
-                "calibrated": True,
-                "axisMap": self.axis_map_summary(),
-            })
+            if self._retained_adopted:
+                log("Direct inputs: retained auto-map re-adopted "
+                    "after a device-set change — re-validating.")
+                self._emit_event({
+                    "event": "automap_retained",
+                    "hidDevice": self.device_label(),
+                    "calibrated": True,
+                    "axisMap": self.axis_map_summary(),
+                })
+            else:
+                log("Direct inputs: saved auto-map loaded — "
+                    "re-validating against this session.")
+                self._emit_event({
+                    "event": "automap_loaded",
+                    "hidDevice": self.device_label(),
+                    "calibrated": True,
+                    "axisMap": self.axis_map_summary(),
+                })
 
     # ------------------------------------------------------- funnel --
 
@@ -1562,6 +1609,39 @@ class AutoMapper:
         if self.series:
             return "Pedals: learning — drive a lap"
         return "Pedals: no controllers yet"
+
+    def reload_saved(self, devices):
+        """v2.7.3 — instant re-verification at device-set change.
+        While LEARNING, a device absent at construction may answer
+        later (pedals waking with the game is the normal launch
+        order). The streamer calls this whenever the set changes:
+        if the persisted map NOW resolves against the fresh
+        enumeration, adopt it immediately — the lock is verified
+        by the same identity rules as at startup, and the normal
+        _validate_locked flat-watch still guards it from the
+        first tick. Returns True on adoption."""
+        if self.locked:
+            return False
+        m = load_mapping(devices)
+        if m is None:
+            return False
+        self.devices = {d["index"]: d for d in devices}
+        self.names = {d["index"]: d["name"] for d in devices}
+        self.mapping = m
+        self.locked = True
+        self._diag_stage = "locked"
+        self._diag_reason = "saved map loaded — re-validating"
+        self._state_sig = self._state_signature()
+        self._flat_since.clear()
+        self.log("Direct inputs: saved auto-map loaded — "
+                 "re-validating against this session.")
+        self._emit_event({
+            "event": "automap_loaded",
+            "hidDevice": self.device_label(),
+            "calibrated": True,
+            "axisMap": self.axis_map_summary(),
+        })
+        return True
 
     def payload(self, label):
         """The datagram for this tick: real values once locked;
@@ -1913,6 +1993,10 @@ class InputStreamer(threading.Thread):
         self._announced = False
         self._mapper = None
         self._last_sig = None    # last device-set signature posted
+        # v2.7.3: the last map this process locked — survives
+        # stream rebuilds, so a device-set change can re-adopt it
+        # instead of relearning (see AutoMapper's retained path).
+        self._retained_mapping = None
 
     def _emit_event(self, event):
         """Dev-funnel diagnostics (v2.5), fire-and-forget like the
@@ -2015,7 +2099,8 @@ class InputStreamer(threading.Thread):
             if d["name"] not in names:
                 names.append(d["name"])
         label = " + ".join(names) if names else "Wheel/pedals"
-        mapper = AutoMapper(devices, self.log, emit=self._emit)
+        mapper = AutoMapper(devices, self.log, emit=self._emit,
+                            retained=self._retained_mapping)
         self._mapper = mapper
         self._emit_event({
             "event": "device_connect",
@@ -2050,6 +2135,13 @@ class InputStreamer(threading.Thread):
                 fresh = enumerate_devices()
                 fsig = device_signature(fresh)
                 if fsig != entered_sig:
+                    # v2.7.3: instant re-verification — while the
+                    # mapper is still learning, a changed set may
+                    # be the missing device answering; if the
+                    # persisted map resolves now, adopt it on this
+                    # very poll instead of relearning.
+                    if not mapper.locked:
+                        mapper.reload_saved(fresh)
                     if pending_sig == fsig:
                         # Confirmed on two consecutive polls — a
                         # flaky port can't thrash the mapper.
@@ -2100,6 +2192,11 @@ class InputStreamer(threading.Thread):
             dead_reads = 0
             ever_ok = True
             mapper.observe(snapshot, now)
+            # v2.7.3: keep the retained map current — the moment
+            # this mapper holds a lock, the streamer keeps a copy
+            # for the next rebuild.
+            if mapper.locked and mapper.mapping is not None:
+                self._retained_mapping = mapper.mapping
             if now - last_hb >= 60.0:
                 # Funnel heartbeat (v2.5, extended v2.6/v2.7): proof
                 # of life with the numbers a remote diagnosis needs

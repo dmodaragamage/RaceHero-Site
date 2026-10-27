@@ -48,7 +48,7 @@ try:
     LINK_VERSION = funnel.LINK_VERSION
 except Exception:
     funnel = None
-    LINK_VERSION = "2.7.2"
+    LINK_VERSION = "2.7.3"
 
 
 # ---------------------------------------------------------------- state ---
