@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://racehero.ca/sitemap.xml
