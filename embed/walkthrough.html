@@ -86,8 +86,14 @@
   .divider{height:1px;background:#232329;margin:14px 0}
   .progress-track{height:10px;background:var(--surface2);border-radius:6px;overflow:hidden;margin:8px 0 4px}
   .progress-fill{height:100%;background:linear-gradient(90deg,var(--orange),var(--grn));border-radius:6px}
-  .mapwrap{background:var(--surface);border:1px solid #232329;border-radius:var(--radius);padding:10px 6px 4px;margin:12px 0}
+  .mapwrap{position:relative;background:var(--surface);border:1px solid #232329;border-radius:var(--radius);padding:10px 6px 4px;margin:12px 0}
   .mapwrap svg{width:100%;height:auto;display:block}
+  .maphint{position:absolute;top:14px;right:10px;z-index:3;pointer-events:none;background:rgba(14,14,17,.85);border:1px solid #33333A;border-radius:999px;padding:4px 10px;font-size:11.5px;font-weight:700;letter-spacing:.03em;color:var(--dim)}
+  .gmeter{position:relative;height:12px;border-radius:6px;background:#232329;overflow:hidden;margin-top:6px}
+  .gmeter i{position:absolute;top:0;bottom:0;display:block}
+  .gmeter .gzero{left:50%;width:2px;margin-left:-1px;background:#3A3A41}
+  .gmeter .gfill{background:var(--amb);border-radius:6px}
+  .gmeter .gpeak{width:2px;background:rgba(242,242,242,.55)}
   .cdot{cursor:pointer}
   .cdot.sel circle.core{stroke:#fff;stroke-width:1.8}
   .cdot.briefing circle.core{stroke:var(--orange);stroke-width:2.6}
@@ -704,6 +710,7 @@ html.embed .phone{border:none;border-radius:0;box-shadow:none;width:392px;height
 
     <div class="mapwrap">
       <svg id="map-view" viewBox="0 0 100 72"></svg>
+      <span class="maphint">Tap a corner to scrub</span>
       <div class="legend">
         <span><i class="swatch" style="background:#fff"></i> Your line</span>
         <span><i class="swatch" style="background:var(--grn)"></i> Reference — COMPOSITE: your best pieces</span>
@@ -805,7 +812,6 @@ html.embed .phone{border:none;border-radius:0;box-shadow:none;width:392px;height
     <button class="backbtn" onclick="show('viewer')">‹ Session</button>
     <div class="sub" style="margin-top:4px;" id="scrub-eyebrow">CORNER SCRUB · NÜRBURGRING GP</div>
     <h1 class="headline" style="font-size:24px;" id="scrub-title">Put your finger on the lap.</h1>
-    <p class="sub" id="scrub-intro">One position drives everything — map, ghost, numbers, your feet, the coach's sentence. Drag anywhere: the rail, or straight on the track.</p>
 
     <div class="chiprow">
       <button class="cchip2 sel" id="lap5-chip" onclick="setScrubLap(5)">Lap 5 · your best 2:07.1</button>
@@ -827,6 +833,7 @@ html.embed .phone{border:none;border-radius:0;box-shadow:none;width:392px;height
 
     <div class="mapwrap">
       <svg id="map-scrub" viewBox="0 0 100 72"></svg>
+      <span class="maphint" id="scrub-hint">Tap a corner to scrub</span>
       <div class="legend">
         <span><i class="swatch" style="background:#fff"></i> You</span>
         <span><i class="swatch" style="background:var(--grn)"></i> The fast lap (ghost)</span>
@@ -856,6 +863,7 @@ html.embed .phone{border:none;border-radius:0;box-shadow:none;width:392px;height
       <div class="klabel">Steering trace — the cursor is your finger</div>
       <div id="rb-steer"></div>
       <div class="kv" style="margin-top:8px"><span>Cornering load</span><b id="rb-g">—</b></div>
+      <div class="gmeter"><i class="gzero"></i><i class="gfill" id="rb-gfill"></i><i class="gpeak" id="rb-gpeak"></i></div>
       <div class="kv"><span>Your line vs the fast line</span><b id="rb-dev">—</b></div>
       <div class="kv"><span>Coast (gas off → brake on)</span><b id="rb-coast">—</b></div>
     </div>
@@ -867,7 +875,7 @@ html.embed .phone{border:none;border-radius:0;box-shadow:none;width:392px;height
       <div class="depth">
         <div class="klabel">Elevation — same distance, same cursor</div>
         <div id="elev-scrub"></div>
-        <p class="small">The ground under this stretch — terrain profile, Copernicus DEM.</p>
+        <p class="small">Elevation, same stretch of track.</p>
       </div>
     </div>
 
@@ -1781,6 +1789,12 @@ function scrubSentence(pos){ const tr=trace();
   if(pos<m.gas) return 'Rolling off the apex — patience. The power comes back when the wheel straightens.';
   if(pos<m.gas+320) return 'Power’s back on here. Straighten the wheel and let the car run to the next corner.';
   return 'Between corners — this stretch is breathing room. The next story starts at the next brake point.'; }
+let gPeakCache={key:'',peak:0,side:1};
+function gSpanPeak(tr){ const a= cornerMode? Math.max(0,Math.floor(cornWin.start/STEP)) : 0, b= cornerMode? Math.min(N-1,Math.ceil(cornWin.end/STEP)) : N-1;
+  const key=scrubLapN+'|'+(cornerMode? Math.round(cornWin.start)+'-'+Math.round(cornWin.end) : 'lap');
+  if(gPeakCache.key===key) return gPeakCache;
+  let pk=0, sd=1; for(let i=a;i<=b;i++){ const g=gLatAt(tr,i); if(g>pk){ pk=g; sd= steerAt(i)<0?-1:1; } }
+  gPeakCache={key:key,peak:pk,side:sd}; return gPeakCache; }
 function updateScrub(){ const tr=trace(), cm=cum();
   const f=Math.max(0,Math.min(N-1.001, scrubDist/STEP)), i0=Math.floor(f), fr=f-i0, i1=Math.min(i0+1,N-1);
   const spd=Math.round(tr[i0]+(tr[i1]-tr[i0])*fr);
@@ -1806,8 +1820,10 @@ function updateScrub(){ const tr=trace(), cm=cum();
   document.getElementById('rb-brk').style.width=p.brk+'%';
   const sc=document.getElementById('rb-steer-cur'); if(sc){ const x=4+((scrubDist-steerMap.d0)/Math.max(steerMap.d1-steerMap.d0,1))*332; sc.setAttribute('x1',x); sc.setAttribute('x2',x); }
   const ec=document.getElementById('elevscrub-cur'); if(ec){ const x=4+((scrubDist-elevMap.d0)/Math.max(elevMap.d1-elevMap.d0,1))*332; ec.setAttribute('x1',x); ec.setAttribute('x2',x); }
-  const gv=gLatAt(tr,i0);
-  document.getElementById('rb-g').textContent= gv.toFixed(1)+' g — '+(gv>=1.25?'your tyres working hardest':gv>=1.0?'working nicely':gv>=0.6?'grip in hand':'gentle, straight-line calm');
+  const gv=gLatAt(tr,i0), gside= steerAt(i0)<0?-1:1, gp=gSpanPeak(tr), gscale=Math.max(gp.peak*1.15,0.01), gfrac=Math.min(gv/gscale,1);
+  const gf=document.getElementById('rb-gfill'); gf.style.left=(gside<0? 50-gfrac*50 : 50)+'%'; gf.style.width=(gfrac*50)+'%';
+  document.getElementById('rb-gpeak').style.left=(50+gp.side*(gp.peak/gscale)*50)+'%';
+  document.getElementById('rb-g').textContent= gv.toFixed(1)+' G'+(gv>=0.05? ' · '+(gside<0?'left':'right') : '');
   const dev=Math.abs(Math.hypot(TRACK[i0][0]-fl[i0][0], TRACK[i0][1]-fl[i0][1]))*0.55;
   document.getElementById('rb-dev').textContent= dev<0.3?'on the fast line':dev.toFixed(1)+' m off the fast line';
   const c=CORNERS[selCorner-1], m=moments(c,tr);
@@ -1853,9 +1869,7 @@ function syncScrubChrome(){ const c=CORNERS[selCorner-1];
   document.getElementById('cornerbar').style.display= cornerMode?'block':'none';
   document.getElementById('scrub-eyebrow').textContent= cornerMode? 'CORNER SCRUB · TURN '+c.n+' · NÜRBURGRING GP' : 'CORNER SCRUB · NÜRBURGRING GP';
   document.getElementById('scrub-title').textContent= cornerMode? 'Turn '+c.n+' — the corner, up close.' : 'Put your finger on the lap.';
-  document.getElementById('scrub-intro').textContent= cornerMode
-    ? 'One corner on one line — drag the corner itself, or the rail. Everything under your finger is this corner: entry, brake, apex, exit.'
-    : 'One position drives everything — map, ghost, numbers, your feet, the coach’s sentence. Drag anywhere: the rail, or straight on the track.';
+  document.getElementById('scrub-hint').textContent= cornerMode? 'Drag finger along the corner to scrub' : 'Tap a corner to scrub';
   if(cornerMode){ document.getElementById('cornerbar-name').textContent='Turn '+c.n+' · '+c.dir+' · slowest point '+c.kmh+' km/h';
     document.getElementById('cornerbar-win').textContent=Math.round(cornWin.start)+' m → '+Math.round(cornWin.end)+' m of the lap'; }
   document.querySelectorAll('#zoomseg button').forEach(b=>b.classList.toggle('sel', b.dataset.z===zoomPreset));
