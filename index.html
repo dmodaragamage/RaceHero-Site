@@ -65,6 +65,16 @@
   .step p{color:var(--dim);font-size:15px}
   .cta{text-align:center;padding:64px 0 20px}
   .cta h2{margin-bottom:12px}
+  .wl{max-width:640px;margin:0 auto;text-align:center}
+  .wlrow{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+  .wlrow input{flex:1 1 260px;min-width:0;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:13px 16px;color:var(--ink);font-size:16px;font-family:inherit}
+  .wlrow input::placeholder{color:var(--dim)}
+  .wlrow input:focus{outline:none;border-color:var(--acc)}
+  .wlrow button{border:0;cursor:pointer;font-family:inherit}
+  .wlmicro{color:var(--dim);font-size:13.5px;margin-top:12px}
+  .wlhide{display:none}
+  .wldone{font-size:19px;font-weight:750;color:var(--ink);padding:14px 0 4px}
+  @media(max-width:560px){.wlrow .btn{width:100%}}
   .split{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:stretch}
   .panel{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:28px}
   .panel h3{font-size:22px;margin-bottom:8px}
@@ -261,6 +271,23 @@
   </div>
 </div></div>
 
+<section id="waitlist"><div class="wrap">
+  <div class="wl">
+    <h2>Be first on the grid.</h2>
+    <p class="sub" style="margin-bottom:22px">RaceHero is in final testing. Join the waitlist for launch access — and Lena's training films while you wait.</p>
+    <form class="wlform" id="wl-form" name="launch-waitlist" method="POST" data-netlify="true" netlify-honeypot="bot-field">
+      <input type="hidden" name="form-name" value="launch-waitlist">
+      <p class="wlhide"><label>Don't fill this out if you're human: <input name="bot-field"></label></p>
+      <div class="wlrow">
+        <input type="email" name="email" placeholder="your@email.com" required aria-label="Email address">
+        <button class="btn" type="submit">Join the waitlist</button>
+      </div>
+      <p class="wlmicro">Launch news only. No spam — unsubscribe anytime.</p>
+    </form>
+    <p class="wldone" id="wl-done" hidden>You're on the list. See you at launch.</p>
+  </div>
+</div></section>
+
 <section id="closing"><div class="wrap" style="text-align:center">
   <h2>The product is a better driver. Measurably.</h2>
 </div></section>
@@ -277,5 +304,22 @@
     <a href="/link">RaceHero Link</a>
   </div>
 </div></footer>
+<script>
+(function(){
+  var f=document.getElementById('wl-form');
+  if(!f){return;}
+  f.addEventListener('submit',function(e){
+    e.preventDefault();
+    var body=new URLSearchParams(new FormData(f)).toString();
+    fetch('/',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:body})
+      .then(function(r){
+        if(!r.ok){throw new Error('form post failed');}
+        f.hidden=true;
+        document.getElementById('wl-done').hidden=false;
+      })
+      .catch(function(){ f.submit(); });
+  });
+})();
+</script>
 </body>
 </html>
