@@ -209,6 +209,12 @@
   .tab svg{width:22px;height:22px;fill:currentColor}
   .spin{display:inline-block;animation:rhspin 1.1s linear infinite}
   @keyframes rhspin{to{transform:rotate(360deg)}}
+  /* --- corner scrub room (Team C restoration, 2026-10-26) --- */
+  .segrow{display:flex;background:var(--surface2);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-top:8px}
+  .segrow button{flex:1;border:0;background:transparent;color:var(--dim);font:700 12.5px inherit;padding:10px 4px;cursor:pointer;font-family:inherit}
+  .segrow button.sel{background:var(--orange);color:#1A0E00}
+  #map-scrub{touch-action:none;cursor:grab}
+  #map-scrub:active{cursor:grabbing}
 </style>
 <style>
 html.embed body{padding:0}
@@ -246,7 +252,7 @@ html.embed .phone{border:none;border-radius:0;box-shadow:none;width:392px;height
 <button data-nav="viewer">9 · Session viewer — the lap as a story</button>
 <button data-nav="viewerpre">9b · Viewer — before you go out</button>
 <button data-nav="viewerlive">9c · Viewer — live, laps landing</button>
-<button data-nav="scrub">10 · Corner Scrub — the whole lap, your thumb</button>
+<button data-nav="scrub">10 · Corner Scrub — the lap, and inside every corner</button>
 <button data-nav="debrief">11 · Debrief — the conversation</button>
 <button data-nav="debriefgen">11b · Debrief — being written</button>
 <button data-nav="debrieferr">11c · Debrief — couldn't be written</button>
@@ -549,9 +555,16 @@ html.embed .phone{border:none;border-radius:0;box-shadow:none;width:392px;height
     <div id="live-stalled" style="display:none;background:#2A1416;border:1px solid var(--red);border-radius:12px;padding:10px 12px;margin-top:10px"><b style="color:var(--red)">■ Stopped — the feed went quiet.</b><p class="small" style="margin-top:2px">Nothing new is being recorded. Your finished laps are safe — and the moment the feed moves again, this clears itself.</p></div>
 
     <div style="text-align:center;margin-top:14px" id="ls-giantwrap">
-      <div class="klabel">This lap</div>
-      <div class="giant" id="ls-clock">1:12.4</div>
-      <div style="margin-top:10px"><span class="delta g" id="ls-delta">−0.42 vs your best</span></div>
+      <div class="klabel">Last lap</div>
+      <div class="giant" id="ls-lastlap-giant">2:07.1</div>
+      <div class="delta g" id="ls-bestbanner" style="display:block;margin-top:12px">★ YOUR BEST LAP TODAY</div>
+      <p class="sub" style="margin-top:10px">Green means quicker. That one was your quickest — keep going.</p>
+    </div>
+
+    <div style="text-align:center;margin-top:12px">
+      <div class="klabel">This lap — running</div>
+      <div class="med-num" id="ls-clock" style="margin-top:2px">1:12.4</div>
+      <div style="margin-top:8px"><span class="delta g" id="ls-delta">−0.42 vs your best</span></div>
       <p class="sub" style="margin-top:8px" id="ls-delta-note">Green = you're quicker than your best lap at this exact point. Keep going.</p>
     </div>
 
@@ -700,12 +713,6 @@ html.embed .phone{border:none;border-radius:0;box-shadow:none;width:392px;height
     </div>
     <p class="sub">The track itself is coloured by how you drove it — <span style="color:var(--grn)"><b>green faster</b></span>, <span style="color:var(--red)"><b>red slower</b></span>. Where the white line leaves the green line, time went with it. Tap a coloured part — or a turn number.</p>
 
-    <div class="card" style="padding:12px 14px">
-      <div class="spread"><span class="klabel">The ground under the lap</span><span class="small" id="elev-cap">605 m → 627 m · 22 m of climb and fall</span></div>
-      <div id="elev-viewer"></div>
-      <p class="small">Elevation is the coach's ground truth — brake points and targets are checked against it, never guessed. Terrain: Copernicus DEM.</p>
-    </div>
-
     <div class="secchips" id="secchips">
       <button class="secchip" data-sec="0" onclick="pickSector(0)"><div class="nm">PART 1</div><div class="tm">46.0</div><div class="dl" style="color:var(--red)">+0.3</div></button>
       <button class="secchip" data-sec="1" onclick="pickSector(1)"><div class="nm">PART 2</div><div class="tm">41.0</div><div class="dl" style="color:var(--grn)">best</div></button>
@@ -796,14 +803,26 @@ html.embed .phone{border:none;border-radius:0;box-shadow:none;width:392px;height
 <!-- ============ CORNER SCRUB (whole lap · one position drives everything) ============ -->
   <section class="screen" id="scr-scrub">
     <button class="backbtn" onclick="show('viewer')">‹ Session</button>
-    <div class="sub" style="margin-top:4px;">CORNER SCRUB · NÜRBURGRING GP</div>
-    <h1 class="headline" style="font-size:24px;">Put your finger on the lap.</h1>
-    <p class="sub">One position drives everything — map, ghost, numbers, your feet, the coach's sentence. Drag anywhere: the rail, or straight on the track.</p>
+    <div class="sub" style="margin-top:4px;" id="scrub-eyebrow">CORNER SCRUB · NÜRBURGRING GP</div>
+    <h1 class="headline" style="font-size:24px;" id="scrub-title">Put your finger on the lap.</h1>
+    <p class="sub" id="scrub-intro">One position drives everything — map, ghost, numbers, your feet, the coach's sentence. Drag anywhere: the rail, or straight on the track.</p>
 
     <div class="chiprow">
       <button class="cchip2 sel" id="lap5-chip" onclick="setScrubLap(5)">Lap 5 · your best 2:07.1</button>
       <button class="cchip2" id="lap6-chip" onclick="setScrubLap(6)">Lap 6 · 2:20.4 ⚠ the spin</button>
       <button class="cchip2 sel" id="cmp-chip" onclick="toggleCompare()">Compare: fast lap ON</button>
+    </div>
+
+    <div id="cornerbar" style="display:none;margin-top:12px">
+      <div class="row">
+        <button class="btn ghost small" onclick="exitCorner()">‹ Whole lap</button>
+        <div class="grow" style="text-align:right"><span class="klabel" id="cornerbar-name">Turn 4 · left</span><div class="small" id="cornerbar-win">the corner, up close</div></div>
+      </div>
+      <div class="segrow" id="zoomseg">
+        <button data-z="whole" class="sel" onclick="setZoom('whole')">Whole corner</button>
+        <button data-z="entry" onclick="setZoom('entry')">Entry half</button>
+        <button data-z="exit" onclick="setZoom('exit')">Exit half</button>
+      </div>
     </div>
 
     <div class="mapwrap">
@@ -843,12 +862,18 @@ html.embed .phone{border:none;border-radius:0;box-shadow:none;width:392px;height
 
     <div class="klabel">Gears along the lap — the empty hatched stretch is coast: neither pedal, time rolling away</div>
     <div id="gear-ribbon" style="margin-top:6px"></div>
-    <div class="klabel" style="margin-top:12px">Elevation — same distance, same cursor</div>
-    <div id="elev-scrub"></div>
+    <div style="margin-top:12px">
+      <span class="link" onclick="toggleDepth(this)">See the data</span>
+      <div class="depth">
+        <div class="klabel">Elevation — same distance, same cursor</div>
+        <div id="elev-scrub"></div>
+        <p class="small">The ground under this stretch — terrain profile, Copernicus DEM.</p>
+      </div>
+    </div>
 
     <div class="railwrap">
       <input type="range" class="rail" id="scrub-rail" min="0" max="5137" step="1" value="0" oninput="scrubTo(+this.value,true)">
-      <div class="spread"><span class="small">Start / finish</span><span class="small" id="rb-dist">0 m of 5,137 m</span><span class="small">Start / finish</span></div>
+      <div class="spread"><span class="small" id="rail-lbl-l">Start / finish</span><span class="small" id="rb-dist">0 m of 5,137 m</span><span class="small" id="rail-lbl-r">Start / finish</span></div>
     </div>
     <div class="row" style="gap:8px;margin-top:6px">
       <button class="btn ghost grow" id="play-btn" onclick="togglePlay()">▶ Play the lap</button>
@@ -866,7 +891,7 @@ html.embed .phone{border:none;border-radius:0;box-shadow:none;width:392px;height
       <button class="momchip" onclick="jumpMoment('gason')">GAS BACK ON</button>
     </div>
 
-    <div class="klabel" style="margin-top:14px">Corners — tap one to land at its brake point</div>
+    <div class="klabel" style="margin-top:14px">Corners — tap one to step inside it</div>
     <div class="cornerstrip" id="cornerstrip"></div>
     <p class="small">⚠ on the rail and the map marks the lap-6 spin at Turn 1 — tap it on lap 6 and the coach tells it fairly, the same as in the Debrief.</p>
   </section>
@@ -1440,14 +1465,32 @@ function buildView(){ const svg=document.getElementById('map-view'); const fl=fa
   h+='<path d="'+pathFrom(0,TRACK.length-1)+'Z" fill="none" stroke="#F2F2F2" stroke-width="2.2" stroke-linecap="round"/>';
   const sp=TRACK[24]; h+='<text x="'+(sp[0]-1)+'" y="'+(sp[1]-3)+'" font-size="6">⚠</text>'; h+=startMark();
   svg.innerHTML=h; cornerDots(svg,'view'); }
-function buildScrubMap(){ const svg=document.getElementById('map-scrub'); const fl=fastLinePts(); let fd='';
-  fl.forEach((p,i)=>{ fd+=(i===0?'M':'L')+p[0].toFixed(1)+' '+p[1].toFixed(1)+' '; }); fd+='Z';
-  let h='<path d="'+fd+'" fill="none" stroke="#35D07F" stroke-width="1.4" stroke-dasharray="2.4 1.8"/>';
-  h+='<path d="'+pathFrom(0,TRACK.length-1)+'Z" fill="none" stroke="#F2F2F2" stroke-width="2.2" stroke-linecap="round"/>';
-  const sp=TRACK[24]; h+='<text id="scrub-spin" x="'+(sp[0]-1)+'" y="'+(sp[1]-3)+'" font-size="6" style="display:none">⚠</text>';
-  h+=startMark();
-  h+='<circle id="mk-ghost" r="2.6" fill="#35D07F" stroke="#0A0A0C" stroke-width="1.2"/>';
-  h+='<circle id="mk-you" r="3.2" fill="#fff" stroke="#FF8A00" stroke-width="2"/>';
+function buildScrubMap(){ const svg=document.getElementById('map-scrub'); const fl=fastLinePts();
+  if(!cornerMode){ svg.setAttribute('viewBox','0 0 100 72'); let fd='';
+    fl.forEach((p,i)=>{ fd+=(i===0?'M':'L')+p[0].toFixed(1)+' '+p[1].toFixed(1)+' '; }); fd+='Z';
+    let h='<path d="'+fd+'" fill="none" stroke="#35D07F" stroke-width="1.4" stroke-dasharray="2.4 1.8"/>';
+    h+='<path d="'+pathFrom(0,TRACK.length-1)+'Z" fill="none" stroke="#F2F2F2" stroke-width="2.2" stroke-linecap="round"/>';
+    const sp=TRACK[24]; h+='<text id="scrub-spin" x="'+(sp[0]-1)+'" y="'+(sp[1]-3)+'" font-size="6" style="display:none">⚠</text>';
+    h+=startMark();
+    h+='<circle id="mk-ghost" r="2.6" fill="#35D07F" stroke="#0A0A0C" stroke-width="1.2"/>';
+    h+='<circle id="mk-you" r="3.2" fill="#fff" stroke="#FF8A00" stroke-width="2"/>';
+    svg.innerHTML=h; return; }
+  /* corner mode: only the corner-window stretch, scaled to fill the map — the corner on one line */
+  const i0=viewI0, i1=viewI1; let mnx=1e9,mxx=-1e9,mny=1e9,mxy=-1e9;
+  for(let i=i0;i<=i1;i++){ [TRACK[i],fl[i]].forEach(p=>{ mnx=Math.min(mnx,p[0]); mxx=Math.max(mxx,p[0]); mny=Math.min(mny,p[1]); mxy=Math.max(mxy,p[1]); }); }
+  const bw=mxx-mnx, bh=mxy-mny, px=bw*0.09+1.5, py=bh*0.09+1.5;
+  svg.setAttribute('viewBox',(mnx-px).toFixed(1)+' '+(mny-py).toFixed(1)+' '+(bw+2*px).toFixed(1)+' '+(bh+2*py).toFixed(1));
+  const sc=(bw+2*px)/100;
+  let fd=''; for(let i=i0;i<=i1;i++){ fd+=(i===i0?'M':'L')+fl[i][0].toFixed(1)+' '+fl[i][1].toFixed(1)+' '; }
+  let h='<path d="'+fd+'" fill="none" stroke="#35D07F" stroke-width="'+(1.4*sc).toFixed(2)+'" stroke-dasharray="'+(2.4*sc).toFixed(1)+' '+(1.8*sc).toFixed(1)+'"/>';
+  h+='<path d="'+pathFrom(i0,i1)+'" fill="none" stroke="#F2F2F2" stroke-width="'+(2.2*sc).toFixed(2)+'" stroke-linecap="round"/>';
+  const c=CORNERS[selCorner-1], m=moments(c,trace());
+  const dot=(d,col,lbl)=>{ const ri=Math.round(d/STEP); if(ri<i0||ri>i1) return ''; const p=TRACK[ri];
+    return '<circle cx="'+p[0]+'" cy="'+p[1]+'" r="'+(3.4*sc).toFixed(1)+'" fill="'+col+'" stroke="#0A0A0C" stroke-width="'+(1.4*sc).toFixed(1)+'"/><text x="'+p[0]+'" y="'+(p[1]-5.5*sc).toFixed(1)+'" font-size="'+(4.6*sc).toFixed(1)+'" font-weight="800" fill="'+col+'" text-anchor="middle">'+lbl+'</text>'; };
+  h+=dot(m.lift,'#8A8A93','ENTRY'); h+=dot(m.brake,'#FF5A5A','YOU BRAKE'); h+=dot(m.fastBrake,'#35D07F','FAST'); h+=dot(m.apex,'#FF8A00','APEX'); h+=dot(m.gas,'#35D07F','GAS');
+  if(24>=i0&&24<=i1){ const sp=TRACK[24]; h+='<text id="scrub-spin" x="'+(sp[0]-1)+'" y="'+(sp[1]-3)+'" font-size="'+(6*sc).toFixed(1)+'" style="display:none">⚠</text>'; }
+  h+='<circle id="mk-ghost" r="'+(2.6*sc).toFixed(1)+'" fill="#35D07F" stroke="#0A0A0C" stroke-width="'+(1.2*sc).toFixed(1)+'"/>';
+  h+='<circle id="mk-you" r="'+(3.2*sc).toFixed(1)+'" fill="#fff" stroke="#FF8A00" stroke-width="'+(2*sc).toFixed(1)+'"/>';
   svg.innerHTML=h; }
 
 /* ================= traces ================= */
@@ -1464,8 +1507,9 @@ function pedalTraces(slice){ const gas=[],brk=[];
   return traceSVG(gas,100,'#35D07F')+'<div style="margin-top:-10px">'+traceSVG(brk,100,'#FF5A5A')+'</div>'; }
 
 /* ================= elevation strips ================= */
-function elevSVG(id,withCursor){ const w=340,hh=56,pad=4; const mn=600,mx=632;
-  const pts=ELEV.map((v,i)=> (pad+i*(w-2*pad)/(N-1)).toFixed(1)+','+(hh-pad-((v-mn)/(mx-mn))*(hh-2*pad)).toFixed(1)).join(' ');
+function elevSVG(id,withCursor,i0,i1){ const w=340,hh=56,pad=4; const a=(i0==null?0:i0), b=(i1==null?N-1:i1);
+  const seg=ELEV.slice(a,b+1); let mn=Math.min(...seg), mx=Math.max(...seg); const rp=(mx-mn)*0.1||1; mn-=rp; mx+=rp;
+  const pts=seg.map((v,k)=> (pad+k*(w-2*pad)/Math.max(seg.length-1,1)).toFixed(1)+','+(hh-pad-((v-mn)/(mx-mn))*(hh-2*pad)).toFixed(1)).join(' ');
   return '<svg viewBox="0 0 '+w+' '+hh+'" style="width:100%;height:auto"><polyline points="'+pts+'" fill="none" stroke="#8A8A93" stroke-width="1.8"/>'
     +(withCursor?'<line id="'+id+'-cur" x1="4" y1="2" x2="4" y2="'+(hh-2)+'" stroke="#FF8A00" stroke-width="1.6"/>':'')+'</svg>'; }
 
@@ -1491,7 +1535,7 @@ function pickSector(sec){ document.querySelectorAll('.secchip').forEach(c=>c.cla
       +'<div class="chart-label">YOUR FEET IN THIS PART</div>'
       +'<div class="tracebox">'+pedalTraces(slice)+'<div class="cap"><span style="color:var(--grn)">— Gas</span> &nbsp;<span style="color:var(--red)">— Brake</span><br>'+S.pedals+'</div></div>'
       +'<div class="chart-label">THE GROUND IN THIS PART</div>'
-      +'<div class="tracebox">'+elevSVG('sec'+sec,false)+'<div class="cap">Elevation, same stretch of track. Brake points here are checked against this slope — the ground is the coach’s ground truth.</div></div>'
+      +'<div class="tracebox">'+elevSVG('sec'+sec,false,SECB[sec],SECB[sec+1]-1)+'<div class="cap">Elevation, same stretch of track.</div></div>'
       +'<div class="chart-label">GEARS &amp; COAST</div>'
       +'<p class="small">Gears 2–6 through this part. One coast window at Turn 4 — gas off, a beat, then brake — counted in the Scrub, where your finger can sit on it.</p>'
       +'<div class="chart-label">HOW HARD THE CAR CORNERED</div>'
@@ -1513,14 +1557,22 @@ function openCorner(n){ const c=CORNERS[n-1]; const sec=c.i<SECB[1]?0:c.i<SECB[2
    +'<button class="btn orange" style="margin-top:14px" onclick="closeCorner();openScrubAt('+c.n+')">🧤 OPEN THE SCRUB AT THIS CORNER</button>'
    +'<div style="margin-top:12px"><span class="link" onclick="toggleDepth(this)">See the data</span>'
    +'<div class="depth">'
-     +'<div class="kv"><span>Slowest point</span><b>'+c.kmh+' km/h</b></div>'
-     +'<div class="kv"><span>Time hiding here</span><b>'+c.loss+' s</b></div>'
-     +'<div class="kv"><span>How consistent you are</span><b>'+c.cons+'</b></div>'
-     +'<div class="kv"><span>Cornering load</span><b>'+c.g+'</b></div>'
+     +'<div class="row" style="gap:8px">'
+       +'<div class="card grow" style="margin:0;text-align:center"><div class="klabel">Slowest point</div><div class="med-num">'+c.kmh+'</div><div class="small">km/h</div></div>'
+       +'<div class="card grow" style="margin:0;text-align:center"><div class="klabel">Time hiding here</div><div class="med-num" style="color:'+(c.loss==='0.0'?'var(--grn)':'var(--red)')+'">'+c.loss+'s</div><div class="small">vs your perfect lap</div></div>'
+     +'</div>'
+     +'<div class="kv" style="margin-top:8px"><span>Same speed every lap?</span><b>'+c.cons+'</b></div>'
+     +'<div class="kv"><span>How hard the car corners here</span><b>'+c.g+'</b></div>'
+     +'<div class="kv"><span>Did the car turn in time?</span><b>'+(c.n===4?'yes — rotation was early':'yes')+'</b></div>'
      +'<div class="kv"><span>Judged against</span><b>your own best laps — nobody else’s</b></div>'
-   +'</div></div>';
+   +'</div></div>'
+   +(c.focus? '<p class="sub" style="margin-top:12px">Your coach will remind you before this turn, every lap, next session.</p>'
+            : '<button class="btn ghost" style="margin-top:14px" onclick="makeProject('+c.n+')">📌 Make Turn '+c.n+' our project corner</button>');
   document.getElementById('cornerModal').classList.add('on'); }
 function closeCorner(){ document.getElementById('cornerModal').classList.remove('on'); }
+function makeProject(n){ CORNERS.forEach(c=>{ c.focus = c.n===n; });
+  buildTurnlist(); openCorner(n);
+  toast('Turn '+n+' is now our project corner — your coach will remind you before it, every lap'); }
 </script>
 
 <script>
@@ -1603,7 +1655,7 @@ function buildTurnlist(){ const tl=document.getElementById('turnlist'); if(!tl) 
    +'<div class="small">'+c.brief+'</div></div><span class="stamp '+c.verdict+'" style="font-size:11px;padding:4px 9px">'+c.stamp+'</span></div>'; }).join(''); }
 
 /* ================= live tracer (pre-session strip + in-session telemetry) ================= */
-let tickN=0, preIdx=0, livePosM=0, liveLapsDone=6, sessSec=14*60+32, guardianCalmUntil=0;
+let tickN=0, preIdx=0, livePosM=0, liveLapsDone=6, sessSec=14*60+32, guardianCalmUntil=0, liveBestSec=127.1, liveLastSec=127.1;
 function steerBar(el,idx){ const s=steerAt(idx); const pct=Math.max(-46,Math.min(46, s*260)); 
   el.style.left = pct<0 ? (50+pct)+'%' : '50%'; el.style.width = Math.abs(pct)+'%'; }
 setInterval(()=>{ tickN++;
@@ -1666,7 +1718,12 @@ setInterval(()=>{ tickN++;
     if(livePosM>=LAPLEN){ livePosM=0; liveLapsDone++;
       document.getElementById('ls-laps').textContent=liveLapsDone;
       document.getElementById('ls-lapnum').textContent=liveLapsDone+1;
-      document.getElementById('ls-lastlap').textContent=fmtLap(CUM_FAST[N-1]); }
+      liveLastSec=CUM_FAST[N-1];
+      document.getElementById('ls-lastlap').textContent=fmtLap(liveLastSec);
+      document.getElementById('ls-lastlap-giant').textContent=fmtLap(liveLastSec);
+      const bn=document.getElementById('ls-bestbanner');
+      if(liveLastSec<=liveBestSec+0.001){ liveBestSec=Math.min(liveBestSec,liveLastSec); bn.textContent='★ YOUR BEST LAP TODAY'; bn.className='delta g'; }
+      else { bn.textContent='+'+(liveLastSec-liveBestSec).toFixed(1)+' s vs your best today'; bn.className='delta r'; } }
     sessSec+=0.12; const sm=Math.floor(sessSec/60), ss=Math.floor(sessSec%60);
     document.getElementById('ls-session').textContent=sm+':'+(ss<10?'0':'')+ss; }
   if(document.getElementById('scr-scrub').classList.contains('on') && playOn){ advancePlay(); }
@@ -1683,6 +1740,27 @@ function cycleVoiceStrip(){ voiceState=(voiceState+1)%4; const strip=document.ge
 
 /* ================= Corner Scrub engine ================= */
 let scrubDist=0, scrubLapN=5, compareOn=true, selCorner=4, playOn=false, playRate=1;
+/* --- corner room (Team C corner scrub, restored 2026-10-26): the scrub is two-level.
+   Lap mode = the whole lap, exactly as before. Corner mode re-windows the map, the
+   rail, the steering trace, the gear ribbon and the elevation strip to ONE corner:
+   window = entry lift − 260 m → gas-on + 60 m, clamped to the lap. One scrub
+   position still drives everything; the spans below are what it is measured
+   against (lap mode: 0 → LAPLEN, so lap behaviour is unchanged). --- */
+let cornerMode=false, zoomPreset='whole', cornWin={start:0,end:LAPLEN}, viewI0=0, viewI1=N-1;
+let spanStart=0, spanEnd=LAPLEN, steerMap={d0:0,d1:LAPLEN}, elevMap={d0:0,d1:LAPLEN};
+function cornerWindow(c,tr){ const m=moments(c,tr);
+  return { start:Math.max(0,m.lift-260), end:Math.min(LAPLEN,m.gas+60), m:m }; }
+function viewRange(){ if(!cornerMode) return {i0:0,i1:N-1,d0:0,d1:LAPLEN};
+  const apexI=CORNERS[selCorner-1].i;
+  let a=Math.max(0,Math.floor(cornWin.start/STEP)), b=Math.min(N-1,Math.ceil(cornWin.end/STEP));
+  if(zoomPreset==='entry') b=Math.min(b, Math.max(apexI, a+Math.round(0.55*(b-a))));
+  if(zoomPreset==='exit') a=Math.max(a, Math.min(apexI, b-Math.round(0.55*(b-a))));
+  return { i0:a, i1:b, d0:a*STEP, d1:b*STEP }; }
+function applySpan(){ const v=viewRange(); viewI0=v.i0; viewI1=v.i1;
+  if(!cornerMode){ spanStart=0; spanEnd=LAPLEN; }
+  else if(zoomPreset==='whole'){ spanStart=cornWin.start; spanEnd=cornWin.end; }
+  else { spanStart=v.d0; spanEnd=v.d1; } }
+function playLabel(){ return playOn?'⏸ Pause':(cornerMode?'▶ Play the corner':'▶ Play the lap'); }
 function trace(){ return scrubLapN===5?SPEED:SPIN; }
 function cum(){ return scrubLapN===5?CUM_YOU:CUM_SPIN; }
 function moments(c,tr){ let j=c.i; while(j>1 && tr[j-1]>=tr[j]) j--;
@@ -1707,13 +1785,15 @@ function updateScrub(){ const tr=trace(), cm=cum();
   const f=Math.max(0,Math.min(N-1.001, scrubDist/STEP)), i0=Math.floor(f), fr=f-i0, i1=Math.min(i0+1,N-1);
   const spd=Math.round(tr[i0]+(tr[i1]-tr[i0])*fr);
   const rail=document.getElementById('scrub-rail'); rail.value=Math.round(scrubDist);
-  rail.style.setProperty('--fill', (scrubDist/LAPLEN*100)+'%');
-  document.getElementById('rb-dist').textContent=Math.round(scrubDist)+' m of 5,137 m';
+  rail.style.setProperty('--fill', ((scrubDist-spanStart)/Math.max(spanEnd-spanStart,1)*100)+'%');
+  document.getElementById('rb-dist').textContent= cornerMode
+    ? Math.round(scrubDist)+' m · '+Math.round(scrubDist-cornWin.start)+' m into Turn '+selCorner
+    : Math.round(scrubDist)+' m of 5,137 m';
   const you=document.getElementById('mk-you'), ghost=document.getElementById('mk-ghost'), fl=fastLinePts();
   you.setAttribute('cx', TRACK[i0][0]+(TRACK[i1][0]-TRACK[i0][0])*fr); you.setAttribute('cy', TRACK[i0][1]+(TRACK[i1][1]-TRACK[i0][1])*fr);
   ghost.setAttribute('cx', fl[i0][0]+(fl[i1][0]-fl[i0][0])*fr); ghost.setAttribute('cy', fl[i0][1]+(fl[i1][1]-fl[i0][1])*fr);
   ghost.style.display=compareOn?'block':'none';
-  document.getElementById('scrub-spin').style.display= scrubLapN===6?'block':'none';
+  const spn=document.getElementById('scrub-spin'); if(spn) spn.style.display= scrubLapN===6?'block':'none';
   document.getElementById('rb-speed').textContent=spd;
   document.getElementById('rb-fast').textContent= compareOn? Math.round(FAST[i0]+(FAST[i1]-FAST[i0])*fr) : '—';
   document.getElementById('rb-gear').textContent= gearAt(spd);
@@ -1724,8 +1804,8 @@ function updateScrub(){ const tr=trace(), cm=cum();
   const p=pedalsAt(tr,i0);
   document.getElementById('rb-gas').style.width=p.gas+'%';
   document.getElementById('rb-brk').style.width=p.brk+'%';
-  const sc=document.getElementById('rb-steer-cur'); if(sc){ const x=4+f*(332/(N-1)); sc.setAttribute('x1',x); sc.setAttribute('x2',x); }
-  const ec=document.getElementById('elevscrub-cur'); if(ec){ const x=4+f*(332/(N-1)); ec.setAttribute('x1',x); ec.setAttribute('x2',x); }
+  const sc=document.getElementById('rb-steer-cur'); if(sc){ const x=4+((scrubDist-steerMap.d0)/Math.max(steerMap.d1-steerMap.d0,1))*332; sc.setAttribute('x1',x); sc.setAttribute('x2',x); }
+  const ec=document.getElementById('elevscrub-cur'); if(ec){ const x=4+((scrubDist-elevMap.d0)/Math.max(elevMap.d1-elevMap.d0,1))*332; ec.setAttribute('x1',x); ec.setAttribute('x2',x); }
   const gv=gLatAt(tr,i0);
   document.getElementById('rb-g').textContent= gv.toFixed(1)+' g — '+(gv>=1.25?'your tyres working hardest':gv>=1.0?'working nicely':gv>=0.6?'grip in hand':'gentle, straight-line calm');
   const dev=Math.abs(Math.hypot(TRACK[i0][0]-fl[i0][0], TRACK[i0][1]-fl[i0][1]))*0.55;
@@ -1739,45 +1819,92 @@ function updateScrub(){ const tr=trace(), cm=cum();
     ? '<span class="stamp r">⚠ INCIDENT — SET ASIDE, FAIRLY</span>'
     : '<span class="stamp '+near.verdict+'">'+near.stamp+'</span> <span class="small">Turn '+near.n+' · slowest point '+near.kmh+' km/h</span>';
   document.querySelectorAll('.cchip').forEach(ch=>ch.classList.toggle('sel', +ch.dataset.cn===selCorner)); }
-function scrubTo(d,user){ if(user && playOn){ playOn=false; document.getElementById('play-btn').textContent='▶ Play the lap'; }
-  scrubDist=Math.max(0,Math.min(LAPLEN,d)); updateScrub(); }
+function scrubTo(d,user){ if(user && playOn){ playOn=false; document.getElementById('play-btn').textContent=playLabel(); }
+  scrubDist=Math.max(spanStart,Math.min(spanEnd,d)); updateScrub(); }
 function setSelCorner(n){ selCorner=n; updateScrub(); }
 function jumpMoment(kind){ const c=CORNERS[selCorner-1], m=moments(c,trace());
-  scrubTo(m[kind==='youbrake'?'brake':kind==='fastbrake'?'fastBrake':kind==='turnin'?'turnin':kind==='apex'?'apex':'gas'], false);
+  const target=m[kind==='youbrake'?'brake':kind==='fastbrake'?'fastBrake':kind==='turnin'?'turnin':kind==='apex'?'apex':'gas'];
+  if(cornerMode && (target<spanStart||target>spanEnd)) setZoom('whole');
+  scrubTo(target, false);
   toast({youbrake:'Your brake point',fastbrake:'Where the fast lap brakes',turnin:'Turn-in',apex:'The apex',gason:'Gas back on'}[kind]+' — Turn '+c.n); }
-function togglePlay(){ playOn=!playOn; document.getElementById('play-btn').textContent= playOn?'⏸ Pause':'▶ Play the lap'; }
+function togglePlay(){ if(!playOn && cornerMode && scrubDist>=spanEnd-1) scrubDist=spanStart;
+  playOn=!playOn; document.getElementById('play-btn').textContent=playLabel(); if(playOn) updateScrub(); }
 function setPlaySpeed(r){ playRate=r; document.getElementById('spd-1').classList.toggle('sel', r===1); document.getElementById('spd-q').classList.toggle('sel', r===0.25); }
 function advancePlay(){ const tr=trace(); const spd=tr[Math.floor(scrubDist/STEP)]||120;
-  scrubDist += (spd/3.6)*0.12*playRate; if(scrubDist>=LAPLEN){ scrubDist=0; } updateScrub(); }
+  scrubDist += (spd/3.6)*0.12*playRate;
+  if(cornerMode){ if(scrubDist>=spanEnd){ scrubDist=spanEnd; playOn=false; document.getElementById('play-btn').textContent=playLabel(); } }
+  else if(scrubDist>=LAPLEN){ scrubDist=0; } updateScrub(); }
 function setScrubLap(n){ scrubLapN=n;
   document.getElementById('lap5-chip').classList.toggle('sel', n===5);
-  document.getElementById('lap6-chip').classList.toggle('sel', n===6); updateScrub(); }
+  document.getElementById('lap6-chip').classList.toggle('sel', n===6);
+  if(cornerMode){ cornWin=cornerWindow(CORNERS[selCorner-1],trace()); applySpan(); syncScrubChrome(); }
+  updateScrub(); }
 function toggleCompare(){ compareOn=!compareOn;
   document.getElementById('cmp-chip').textContent='Compare: fast lap '+(compareOn?'ON':'OFF');
   document.getElementById('cmp-chip').classList.toggle('sel', compareOn); updateScrub(); }
-function openScrubAt(n){ show('scrub'); setSelCorner(n); const m=moments(CORNERS[n-1],trace()); scrubTo(m.brake,false); }
-function buildScrubExtras(){
-  /* steering trace with cursor */
-  const sts=[]; for(let i=0;i<N;i++) sts.push(steerAt(i));
-  const mx=Math.max(...sts.map(Math.abs))||0.01, w=340,hh=52,pad=4;
-  const pts=sts.map((v,i)=> (pad+i*(w-2*pad)/(N-1)).toFixed(1)+','+(hh/2-(v/mx)*(hh/2-4)).toFixed(1)).join(' ');
-  document.getElementById('rb-steer').innerHTML='<svg viewBox="0 0 '+w+' '+hh+'" style="width:100%;height:auto"><line x1="0" y1="'+(hh/2)+'" x2="'+w+'" y2="'+(hh/2)+'" stroke="#26262B"/><polyline points="'+pts+'" fill="none" stroke="#4EA8FF" stroke-width="1.8"/><line id="rb-steer-cur" x1="4" y1="2" x2="4" y2="'+(hh-2)+'" stroke="#FF8A00" stroke-width="1.6"/></svg>';
-  /* gear ribbon with coast hatch at the selected corner's lift→brake window */
-  const m=moments(CORNERS[3],SPEED); const runs=[]; let st=0;
-  for(let i=1;i<=N;i++){ if(i===N||gearAt(SPEED[i])!==gearAt(SPEED[st])){ runs.push([st,i-1]); st=i; } }
-  const gw=340, x0=4, xw=gw-8;
+function openScrubAt(n){ show('scrub'); enterCorner(n); }
+/* --- corner room: enter / exit / zoom, and the chrome that follows the mode --- */
+function enterCorner(n){ selCorner=n; cornerMode=true; zoomPreset='whole';
+  cornWin=cornerWindow(CORNERS[n-1],trace()); applySpan(); syncScrubChrome();
+  scrubTo(cornWin.m.brake,false); }
+function exitCorner(){ cornerMode=false; zoomPreset='whole'; applySpan(); syncScrubChrome(); }
+function setZoom(z){ if(!cornerMode) return; zoomPreset=z; applySpan(); syncScrubChrome(); }
+function syncScrubChrome(){ const c=CORNERS[selCorner-1];
+  document.getElementById('cornerbar').style.display= cornerMode?'block':'none';
+  document.getElementById('scrub-eyebrow').textContent= cornerMode? 'CORNER SCRUB · TURN '+c.n+' · NÜRBURGRING GP' : 'CORNER SCRUB · NÜRBURGRING GP';
+  document.getElementById('scrub-title').textContent= cornerMode? 'Turn '+c.n+' — the corner, up close.' : 'Put your finger on the lap.';
+  document.getElementById('scrub-intro').textContent= cornerMode
+    ? 'One corner on one line — drag the corner itself, or the rail. Everything under your finger is this corner: entry, brake, apex, exit.'
+    : 'One position drives everything — map, ghost, numbers, your feet, the coach’s sentence. Drag anywhere: the rail, or straight on the track.';
+  if(cornerMode){ document.getElementById('cornerbar-name').textContent='Turn '+c.n+' · '+c.dir+' · slowest point '+c.kmh+' km/h';
+    document.getElementById('cornerbar-win').textContent=Math.round(cornWin.start)+' m → '+Math.round(cornWin.end)+' m of the lap'; }
+  document.querySelectorAll('#zoomseg button').forEach(b=>b.classList.toggle('sel', b.dataset.z===zoomPreset));
+  const rail=document.getElementById('scrub-rail'); rail.min=Math.round(spanStart); rail.max=Math.round(spanEnd);
+  document.getElementById('rail-lbl-l').textContent= cornerMode? Math.round(spanStart)+' m' : 'Start / finish';
+  document.getElementById('rail-lbl-r').textContent= cornerMode? Math.round(spanEnd)+' m' : 'Start / finish';
+  document.getElementById('play-btn').textContent=playLabel();
+  buildScrubMap(); buildSteerStrip(); buildGearRibbon(); buildElevStrip(); updateScrub(); }
+/* drag on the map itself: the marker jumps to the nearest point on your line, then
+   follows (spec §2). A clean tap near a corner's apex, in lap mode, steps inside it. */
+(function(){ const svg=document.getElementById('map-scrub'); if(!svg||!svg.addEventListener) return; let drag=null;
+  function toSvg(e){ if(!svg.createSVGPoint||!svg.getScreenCTM) return null;
+    const pt=svg.createSVGPoint(); pt.x=e.clientX; pt.y=e.clientY; const ctm=svg.getScreenCTM(); return ctm? pt.matrixTransform(ctm.inverse()) : null; }
+  function nearestIdx(p){ let best=viewI0, bd=1e18; for(let i=viewI0;i<=viewI1;i++){ const dx=TRACK[i][0]-p.x, dy=TRACK[i][1]-p.y, dd=dx*dx+dy*dy; if(dd<bd){ bd=dd; best=i; } } return best; }
+  svg.addEventListener('pointerdown', e=>{ const p=toSvg(e); if(!p) return; drag={x:e.clientX,y:e.clientY,moved:false};
+    try{ svg.setPointerCapture(e.pointerId); }catch(err){}
+    scrubTo(nearestIdx(p)*STEP,true); e.preventDefault(); });
+  svg.addEventListener('pointermove', e=>{ if(!drag) return;
+    if(Math.abs(e.clientX-drag.x)+Math.abs(e.clientY-drag.y)>6) drag.moved=true;
+    if(drag.moved){ const p=toSvg(e); if(p) scrubTo(nearestIdx(p)*STEP,true); } });
+  function endDrag(e){ if(!drag) return; const wasTap=!drag.moved; drag=null;
+    if(wasTap && !cornerMode){ const p=toSvg(e); if(!p) return; const idx=nearestIdx(p);
+      const c=CORNERS.reduce((a,c)=> Math.abs(c.i-idx)<Math.abs(a.i-idx)?c:a, CORNERS[0]);
+      if(Math.abs(c.i-idx)<=2) enterCorner(c.n); } }
+  svg.addEventListener('pointerup', endDrag); svg.addEventListener('pointercancel', ()=>{ drag=null; }); })();
+function buildSteerStrip(){ const v=viewRange(); const sts=[]; for(let i=v.i0;i<=v.i1;i++) sts.push(steerAt(i));
+  const mx=Math.max(...sts.map(Math.abs))||0.01, w=340,hh=52,pad=4, cnt=sts.length;
+  const pts=sts.map((s,k)=> (pad+k*(w-2*pad)/Math.max(cnt-1,1)).toFixed(1)+','+(hh/2-(s/mx)*(hh/2-4)).toFixed(1)).join(' ');
+  steerMap={d0:v.d0,d1:v.d1};
+  document.getElementById('rb-steer').innerHTML='<svg viewBox="0 0 '+w+' '+hh+'" style="width:100%;height:auto"><line x1="0" y1="'+(hh/2)+'" x2="'+w+'" y2="'+(hh/2)+'" stroke="#26262B"/><polyline points="'+pts+'" fill="none" stroke="#4EA8FF" stroke-width="1.8"/><line id="rb-steer-cur" x1="4" y1="2" x2="4" y2="'+(hh-2)+'" stroke="#FF8A00" stroke-width="1.6"/></svg>'; }
+function buildGearRibbon(){ const v=viewRange(); const src= cornerMode? trace() : SPEED;
+  const cm= cornerMode? CORNERS[selCorner-1] : CORNERS[3], m=moments(cm,src);
+  const runs=[]; let st=v.i0;
+  for(let i=v.i0+1;i<=v.i1+1;i++){ if(i===v.i1+1||gearAt(src[i])!==gearAt(src[st])){ runs.push([st,i-1]); st=i; } }
+  const gw=340, x0=4, xw=gw-8, ispan=Math.max(v.i1-v.i0,1), dspan=Math.max(v.d1-v.d0,1);
   let gh='<svg viewBox="0 0 '+gw+' 30" style="width:100%;height:auto"><defs><pattern id="hatch" width="5" height="5" patternTransform="rotate(45)" patternUnits="userSpaceOnUse"><rect width="5" height="5" fill="#1E1E22"/><line x1="0" y1="0" x2="0" y2="5" stroke="#FFB020" stroke-width="2"/></pattern></defs>';
-  runs.forEach(r=>{ const a=x0+(r[0]/(N-1))*xw, b=x0+(r[1]/(N-1))*xw;
+  runs.forEach(r=>{ const a=x0+((r[0]-v.i0)/ispan)*xw, b=x0+((r[1]-v.i0)/ispan)*xw;
     gh+='<rect x="'+a.toFixed(1)+'" y="4" width="'+Math.max(b-a-1,1.5).toFixed(1)+'" height="16" rx="3" fill="#232329"/>';
-    if(b-a>13) gh+='<text x="'+((a+b)/2).toFixed(1)+'" y="16.5" font-size="9.5" font-weight="800" fill="#B9B9C0" text-anchor="middle">'+gearAt(SPEED[r[0]])+'</text>'; });
-  const ca=x0+(m.lift/LAPLEN)*xw, cb=x0+(m.brake/LAPLEN)*xw;
+    if(b-a>13) gh+='<text x="'+((a+b)/2).toFixed(1)+'" y="16.5" font-size="9.5" font-weight="800" fill="#B9B9C0" text-anchor="middle">'+gearAt(src[r[0]])+'</text>'; });
+  const ca=x0+((m.lift-v.d0)/dspan)*xw, cb=x0+((m.brake-v.d0)/dspan)*xw;
   gh+='<rect x="'+ca.toFixed(1)+'" y="4" width="'+Math.max(cb-ca,3).toFixed(1)+'" height="16" rx="3" fill="url(#hatch)"><title>coast</title></rect>';
-  gh+='<text x="'+((ca+cb)/2).toFixed(1)+'" y="28" font-size="8.5" fill="#FFB020" text-anchor="middle">COAST · TURN 4</text></svg>';
-  document.getElementById('gear-ribbon').innerHTML=gh;
-  /* corner strip */
-  document.getElementById('cornerstrip').innerHTML= CORNERS.map(c=>'<button class="cchip" data-cn="'+c.n+'" onclick="setSelCorner('+c.n+');jumpMoment(\'youbrake\')"><div class="cn">'+c.n+'</div><div class="cs" style="color:'+(c.verdict==='g'?'var(--grn)':'var(--amb)')+'">'+(c.stamp.replace('🎯 ',''))+'</div></button>').join('');
-  document.getElementById('elev-scrub').innerHTML=elevSVG('elevscrub',true);
-  document.getElementById('elev-viewer').innerHTML=elevSVG('elevv',false);
+  gh+='<text x="'+((ca+cb)/2).toFixed(1)+'" y="28" font-size="8.5" fill="#FFB020" text-anchor="middle">COAST · TURN '+cm.n+'</text></svg>';
+  document.getElementById('gear-ribbon').innerHTML=gh; }
+function buildElevStrip(){ const v=viewRange(); elevMap={d0:v.d0,d1:v.d1};
+  document.getElementById('elev-scrub').innerHTML=elevSVG('elevscrub',true,v.i0,v.i1); }
+function buildScrubExtras(){
+  buildSteerStrip(); buildGearRibbon(); buildElevStrip();
+  /* corner strip — tapping a corner steps inside it (the corner room) */
+  document.getElementById('cornerstrip').innerHTML= CORNERS.map(c=>'<button class="cchip" data-cn="'+c.n+'" onclick="enterCorner('+c.n+')"><div class="cn">'+c.n+'</div><div class="cs" style="color:'+(c.verdict==='g'?'var(--grn)':'var(--amb)')+'">'+(c.stamp.replace('🎯 ',''))+'</div></button>').join('');
   document.getElementById('chart-spin').innerHTML=twoTrace(SPEED,SPIN); }
 
 /* ================= sheets ================= */
@@ -1801,6 +1928,7 @@ function closeSheet(){ const m=document.getElementById('sheetModal'); if(m) m.cl
 buildPre(); buildView(); buildScrubMap(); buildTurnlist(); buildScrubExtras();
 pickSector(1); applyPreState(); setSelCorner(4);
 scrubTo(moments(CORNERS[3],SPEED).brake,false);
+syncScrubChrome();
 show('welcome');
 </script>
 <script>
@@ -1948,6 +2076,7 @@ function setLiveState(st){ ['ok','quiet','stalled'].forEach(k=>{ const b=documen
 
 applyPreState();
 </script>
+
 
 <script>
 (function(){var q=new URLSearchParams(location.search);
