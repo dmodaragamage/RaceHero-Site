@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meet Lena Voss — Your RaceHero Coach | RaceHero™</title>
+<meta name="description" content="Lena Voss is RaceHero's AI coach: in your ear on every lap — karting, track days and sim racing — and out of the car, she teaches. Lap 1 she shows you the track. Lap 2 you speed up. Lap 3 she coaches.">
+<style>
+  :root{--bg:#0e0e10;--card:#17171b;--line:#26262c;--ink:#f2f2f4;--dim:#a7a7b0;--acc:#ff8a00;--good:#35d07f;--bad:#ff5252;--blue:#4ea8ff}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--bg);color:var(--ink);font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;line-height:1.55}
+  a{color:inherit}
+  .wrap{max-width:1100px;margin:0 auto;padding:0 22px}
+  nav{position:fixed;top:0;left:0;right:0;background:rgba(14,14,16,.88);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);z-index:50}
+  nav .wrap{display:flex;align-items:center;gap:26px;height:60px}
+  .logo{font-weight:800;font-size:20px;letter-spacing:.2px}
+  .logo span{color:var(--acc)}
+  nav .links{margin-left:auto;display:flex;gap:22px;font-size:14.5px;color:var(--dim)}
+  nav .links a{text-decoration:none}
+  nav .links a:hover{color:var(--ink)}
+  .hero{position:relative;overflow:hidden;padding:130px 0 30px;text-align:center;background:#000}
+  .hero-bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0}
+  .hero-shade{position:absolute;inset:0;z-index:1;background:linear-gradient(180deg,rgba(10,10,11,.64),rgba(10,10,11,.55) 45%,rgba(14,14,16,.9) 80%,var(--bg))}
+  .hero .wrap{position:relative;z-index:2}
+  .hero .kick{color:var(--acc);font-weight:700;letter-spacing:.14em;font-size:13px;text-transform:uppercase}
+  .hero h1{font-size:52px;line-height:1.08;margin:16px auto 14px;max-width:820px;font-weight:800}
+  .hero h1 em{font-style:normal;color:var(--acc)}
+  .hero p{color:var(--dim);font-size:19px;max-width:640px;margin:0 auto 26px}
+  .btn{display:inline-block;background:var(--acc);color:#14100a;font-weight:700;padding:13px 26px;border-radius:12px;text-decoration:none;font-size:16px}
+  .btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+  .btnrow{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+  section{padding:58px 0 8px}
+  h2{font-size:34px;font-weight:800;text-align:center;margin-bottom:8px}
+  .sub{color:var(--dim);text-align:center;max-width:640px;margin:0 auto 34px;font-size:16.5px}
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  .step{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:26px;text-align:center}
+  .step .n{display:inline-flex;width:42px;height:42px;border-radius:50%;background:var(--acc);color:#14100a;font-weight:800;align-items:center;justify-content:center;font-size:19px;margin-bottom:12px}
+  .step h3{font-size:19px;margin-bottom:6px}
+  .step p{color:var(--dim);font-size:15px}
+  .cta{text-align:center;padding:64px 0 20px}
+  .cta h2{margin-bottom:12px}
+  .voice{max-width:780px;margin:0 auto;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:34px 38px}
+  .voice p{font-size:20px;line-height:1.65}
+  .voice .sig{margin-top:18px;color:var(--acc);font-weight:700;font-size:15px;letter-spacing:.06em;text-transform:uppercase}
+  .honest{max-width:720px;margin:0 auto;text-align:center;color:var(--dim);font-size:15.5px;border:1px dashed var(--line);border-radius:18px;padding:24px 28px}
+  .honest b{color:var(--ink)}
+  footer{border-top:1px solid var(--line);margin-top:70px;padding:26px 0 34px;color:var(--dim);font-size:14px}
+  footer .wrap{display:flex;gap:20px;flex-wrap:wrap;align-items:center}
+  footer .links{margin-left:auto;display:flex;gap:18px}
+  footer a{text-decoration:none}
+  footer a:hover{color:var(--ink)}
+  @media(max-width:860px){.steps{grid-template-columns:1fr}.hero h1{font-size:38px}nav .links a:nth-child(2){display:none}.voice{padding:26px 22px}.voice p{font-size:18px}}
+</style>
+</head>
+<body>
+<nav><div class="wrap">
+  <a class="logo" href="/" style="text-decoration:none">Race<span>Hero</span>™</a>
+  <div class="links">
+    <a href="/#features">Features</a>
+    <a href="/how-it-works.html">How it works</a>
+    <a href="/coach.html">Coach</a>
+    <a href="/#sim">Sim racing</a>
+    <a href="/gear.html">Gear</a>
+    <a href="https://www.instagram.com/racehero.ai/" target="_blank" rel="noopener">Instagram</a>
+  </div>
+</div></nav>
+
+<header class="hero">
+  <video class="hero-bg" autoplay muted loop playsinline preload="metadata" poster="https://github.com/dmodaragamage/RaceHero-Site/releases/download/media-v1/coach-banner.jpg" aria-hidden="true"><source src="https://github.com/dmodaragamage/RaceHero-Site/releases/download/media-v1/coach-banner.mp4" type="video/mp4"></video>
+  <div class="hero-shade"></div>
+  <div class="wrap">
+  <div class="kick">The RaceHero coach</div>
+  <h1>Meet Lena <em>Voss</em>.</h1>
+  <p>Your coach. In your ear, on every lap.</p>
+  <div class="btnrow">
+    <a class="btn" href="#how">How she coaches ↓</a>
+    <a class="btn ghost" href="/how-it-works.html">See the app in action</a>
+  </div>
+</div></header>
+
+<section id="story"><div class="wrap">
+  <h2>In her own words</h2>
+  <p class="sub">This is the voice RaceHero drivers hear in the car — and the coach behind every debrief.</p>
+  <div class="voice">
+    <p>“I'm Lena Voss. I'm your coach. In the car, I ride with you — every corner, every lap, I'm in your ear. Out here, I teach. What fast actually looks like, where it's hiding in your data, and the one thing to fix next. I'm an AI — and that's the point. Built like a coach, not a stopwatch.”</p>
+    <div class="sig">— Lena Voss · RaceHero AI coach</div>
+  </div>
+</div></section>
+
+<section id="how"><div class="wrap">
+  <h2>How she coaches</h2>
+  <p class="sub">Every session starts the same way — her contract with you: <b style="color:var(--ink)">Lap 1 I show you the track. Lap 2 we speed up. Lap 3 I coach.</b></p>
+  <div class="steps">
+    <div class="step"><div class="n">1</div><h3>Lap 1 — she shows you the track</h3><p>A guided lap at pace. As each corner comes up, Lena walks you through it — where to brake, where to turn in, what the corner asks of the car. No stopwatch pressure yet; just learn the lap.</p></div>
+    <div class="step"><div class="n">2</div><h3>Lap 2 — we speed up</h3><p>The training wheels come off in stages. Lena steps the pace up and starts watching your inputs — your real throttle and brake — against the lines you just learned.</p></div>
+    <div class="step"><div class="n">3</div><h3>Lap 3 — she coaches</h3><p>Full coaching, live. Two focus corners per lap, never a flood: the brake point that's drifting, the corner that's costing you, calm words when it goes wrong. Afterwards, the debrief names the one thing to fix next.</p></div>
+  </div>
+</div></section>
+
+<section id="honest"><div class="wrap">
+  <h2>The honest part</h2>
+  <div class="honest">
+    <p><b>Lena Voss is RaceHero's AI coach</b> — a persona for the coaching system in the app, with an AI voice. She isn't a human instructor, and we don't pretend otherwise. Her coaching is built from real method and your real session data: your laps, your pedals, your corners. The face is new. The coaching is the product.</p>
+  </div>
+</div></section>
+
+<div class="cta"><div class="wrap">
+  <h2>Hear her on your next lap.</h2>
+  <p class="sub" style="margin-bottom:22px">RaceHero is in internal testing now and opens on Google Play soon. See a full session, end to end — or the gear that feeds her the data she coaches from.</p>
+  <div class="btnrow">
+    <a class="btn" href="/how-it-works.html">See how it works →</a>
+    <a class="btn ghost" href="/gear.html">See the gear that just works</a>
+  </div>
+</div></div>
+
+<footer><div class="wrap">
+  <div>© 2026 RaceHero™</div>
+  <div class="links">
+    <a href="/how-it-works.html">How it works</a>
+    <a href="/gear.html">Gear</a>
+    <a href="/privacy.html">Privacy</a>
+    <a href="/terms.html">Terms</a>
+    <a href="/acc">ACC Setup</a>
+    <a href="/link">RaceHero Link</a>
+  </div>
+</div></footer>
+</body>
+</html>
