@@ -153,6 +153,15 @@
   .wlpop .wlpop-done{color:var(--ink,var(--txt,#f2f2f4));font-weight:650;font-size:15px;margin:0}
   @media(max-width:640px){.wlpop{top:74px;left:12px}}
 </style>
+<style>
+  .faq-list{max-width:900px;display:grid;gap:1rem;margin-top:1.5rem}
+  .faq-item{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:1.7rem}
+  .faq-item h3{font-size:1.15rem;margin-bottom:.5rem}
+  .faq-item p{color:var(--mut)}
+</style>
+<script type="application/ld+json">
+{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "Do I need to calibrate anything before a session?", "acceptedAnswer": {"@type": "Answer", "text": "No calibration wizards — RaceHero Link auto-maps your pedals and wheel. Before you roll, the Live Data Strip streams every channel in plain words — WAITING, WORKING, LIVE, or honestly stalled. If a channel isn't real, the app says so before it can coach from it, not after."}}, {"@type": "Question", "name": "What does the coach do while I drive?", "acceptedAnswer": {"@type": "Answer", "text": "RaceHero's coach is an in-seat voice instructor that remembers lap to lap: it learns your brake and turn-in points, references your last lap at this corner, and explains corrections as causes, not slogans."}}, {"@type": "Question", "name": "What do I get in the debrief after a session?", "acceptedAnswer": {"@type": "Answer", "text": "The debrief reads like a conversation with your instructor: what I saw, the moment that mattered, the one thing, one drill. The full lap table and engineering numbers sit one tap below — verdicts first, evidence attached, every claim tied to a metre of track."}}, {"@type": "Question", "name": "Can I scrub through a corner after the session?", "acceptedAnswer": {"@type": "Answer", "text": "Tap a corner and it opens; open the Corner Scrub and drag — the data tracks your finger through the turn, with a verdict stamp the data has to earn: HIT, BRAKED EARLY, TOO WIDE. No measurement, no stamp."}}, {"@type": "Question", "name": "What can I use RaceHero with?", "acceptedAnswer": {"@type": "Answer", "text": "Your Android phone, your GPS puck (BYOP — Bring Your Own Puck), your existing video via universal overlay, or your sim via RaceHero Link. And yes — RaceHero sells hardware too: the gear store is up, including the 25 Hz Puck Kit."}}, {"@type": "Question", "name": "What is free, and how much is RaceHero Pro?", "acceptedAnswer": {"@type": "Answer", "text": "RaceHero — Free gives you live lap timing, delta and racing line, all 8,400+ tracks, 4 AI debriefs a month — one a week, a regular karter's rhythm — and full session history. RaceHero Pro gives you unlimited AI debriefs and unlimited AI voice coaching, and 1080p video exports with no watermark, for $12.99/month or $99/year · 14-day free trial · on Google Play."}}, {"@type": "Question", "name": "How does RaceHero check its coaching targets?", "acceptedAnswer": {"@type": "Answer", "text": "RaceHero's targets come from a physics solver fed with real terrain profiles — elevation sampled from named survey data — and we grade the solver against the ground before its numbers reach a driver. Every circuit profile carries its source. Where no profile exists yet, the app says \"flat model\" on the label. Never silently."}}]}
+</script>
 </head>
 <body>
 
@@ -325,6 +334,21 @@
       <div class="card"><div class="ico">🔌</div><h3>Works with what you have</h3><p>Your Android phone, your GPS puck (BYOP — Bring Your Own Puck), your existing video via universal overlay, or your sim via RaceHero Link. And yes — RaceHero sells hardware too: the gear store is up, including the 25 Hz Puck Kit.</p></div>
     </div>
     <p class="src" style="margin-top:1rem">RaceHero is in Google Play internal testing. This page describes the current build as tested by the founder; features graduate to the public listing as they're verified.</p>
+  </div>
+</section>
+
+<section class="section" id="faq" style="padding-top:0">
+  <div class="wrap">
+    <h2>Frequently <span>asked questions</span></h2>
+    <div class="faq-list">
+    <div class="faq-item"><h3>Do I need to calibrate anything before a session?</h3><p>No calibration wizards — RaceHero Link auto-maps your pedals and wheel. Before you roll, the Live Data Strip streams every channel in plain words — WAITING, WORKING, LIVE, or honestly stalled. If a channel isn&#x27;t real, the app says so before it can coach from it, not after.</p></div>
+    <div class="faq-item"><h3>What does the coach do while I drive?</h3><p>RaceHero&#x27;s coach is an in-seat voice instructor that remembers lap to lap: it learns your brake and turn-in points, references your last lap at this corner, and explains corrections as causes, not slogans.</p></div>
+    <div class="faq-item"><h3>What do I get in the debrief after a session?</h3><p>The debrief reads like a conversation with your instructor: what I saw, the moment that mattered, the one thing, one drill. The full lap table and engineering numbers sit one tap below — verdicts first, evidence attached, every claim tied to a metre of track.</p></div>
+    <div class="faq-item"><h3>Can I scrub through a corner after the session?</h3><p>Tap a corner and it opens; open the Corner Scrub and drag — the data tracks your finger through the turn, with a verdict stamp the data has to earn: HIT, BRAKED EARLY, TOO WIDE. No measurement, no stamp.</p></div>
+    <div class="faq-item"><h3>What can I use RaceHero with?</h3><p>Your Android phone, your GPS puck (BYOP — Bring Your Own Puck), your existing video via universal overlay, or your sim via RaceHero Link. And yes — RaceHero sells hardware too: the gear store is up, including the 25 Hz Puck Kit.</p></div>
+    <div class="faq-item"><h3>What is free, and how much is RaceHero Pro?</h3><p>RaceHero — Free gives you live lap timing, delta and racing line, all 8,400+ tracks, 4 AI debriefs a month — one a week, a regular karter&#x27;s rhythm — and full session history. RaceHero Pro gives you unlimited AI debriefs and unlimited AI voice coaching, and 1080p video exports with no watermark, for $12.99/month or $99/year · 14-day free trial · on Google Play.</p></div>
+    <div class="faq-item"><h3>How does RaceHero check its coaching targets?</h3><p>RaceHero&#x27;s targets come from a physics solver fed with real terrain profiles — elevation sampled from named survey data — and we grade the solver against the ground before its numbers reach a driver. Every circuit profile carries its source. Where no profile exists yet, the app says &quot;flat model&quot; on the label. Never silently.</p></div>
+    </div>
   </div>
 </section>
 
