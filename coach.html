@@ -41,6 +41,16 @@
   .step p{color:var(--dim);font-size:15px}
   .cta{text-align:center;padding:64px 0 20px}
   .cta h2{margin-bottom:12px}
+  .wl{max-width:640px;margin:0 auto;text-align:center}
+  .wlrow{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+  .wlrow input{flex:1 1 260px;min-width:0;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:13px 16px;color:var(--ink);font-size:16px;font-family:inherit}
+  .wlrow input::placeholder{color:var(--dim)}
+  .wlrow input:focus{outline:none;border-color:var(--acc)}
+  .wlrow button{border:0;cursor:pointer;font-family:inherit}
+  .wlmicro{color:var(--dim);font-size:13.5px;margin-top:12px}
+  .wlhide{display:none}
+  .wldone{font-size:19px;font-weight:750;color:var(--ink);padding:14px 0 4px}
+  @media(max-width:560px){.wlrow .btn{width:100%}}
   .voice{max-width:780px;margin:0 auto;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:34px 38px}
   .voice p{font-size:20px;line-height:1.65}
   .voice .sig{margin-top:18px;color:var(--acc);font-weight:700;font-size:15px;letter-spacing:.06em;text-transform:uppercase}
@@ -53,6 +63,12 @@
   .tpanel p{color:var(--dim);font-size:15.5px;margin-bottom:14px}
   .tpanel p b{color:var(--ink)}
   .tvideo{width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:12px;border:1px solid var(--line);background:#000;display:block;margin-bottom:18px}
+  .vidwrap{position:relative}
+  .tpanel .vidwrap{margin-bottom:18px}
+  .vidwrap .tvideo{margin-bottom:0}
+  video.lena-sound{cursor:pointer}
+  .soundchip{position:absolute;right:12px;bottom:12px;pointer-events:none;background:rgba(16,16,19,.92);border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:11.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink)}
+  .soundchip.on{border-color:var(--acc);color:var(--acc)}
   .chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
   .tchip{border:1px solid var(--line);border-radius:999px;padding:7px 14px;font-size:13.5px;color:var(--ink);background:#101013}
   .xcard{background:#101013;border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin-bottom:16px}
@@ -77,6 +93,19 @@
   .safety{border-top:1px solid var(--line);padding-top:14px;color:var(--dim);font-size:14.5px}
   .safety b{color:var(--ink)}
   .tdisc{text-align:center;color:var(--dim);font-size:14px;margin-top:26px}
+  .fkick{color:var(--acc);font-weight:700;letter-spacing:.14em;font-size:12.5px;text-transform:uppercase;text-align:center;margin-bottom:10px}
+  .fvideo{width:100%;aspect-ratio:16/9;object-fit:cover;border-radius:18px;border:1px solid var(--line);background:#000;display:block}
+  .fcap{text-align:center;color:var(--dim);font-size:14px;margin-top:14px}
+  .fcap b{color:var(--ink)}
+  .filmrec{max-width:860px;margin:30px auto 0;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:28px 36px}
+  .frow{display:flex;gap:18px;padding:14px 0;border-top:1px solid var(--line)}
+  .frow:first-child{border-top:none;padding-top:2px}
+  .frow:last-child{padding-bottom:2px}
+  .fbeat{flex:none;width:88px;color:var(--acc);font-weight:800;font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;padding-top:5px}
+  .fline{font-size:17.5px;line-height:1.55}
+  .fline + .fline{margin-top:10px}
+  .fclose{max-width:700px;margin:28px auto 0;text-align:center;font-size:19.5px;font-weight:750;line-height:1.4}
+  @media(max-width:860px){.frow{flex-direction:column;gap:2px}.filmrec{padding:24px 22px}}
   footer{border-top:1px solid var(--line);margin-top:70px;padding:26px 0 34px;color:var(--dim);font-size:14px}
   footer .wrap{display:flex;gap:20px;flex-wrap:wrap;align-items:center}
   footer .links{margin-left:auto;display:flex;gap:18px}
@@ -85,6 +114,18 @@
   @media(max-width:860px){.steps{grid-template-columns:1fr}.talkgrid{grid-template-columns:1fr}.hero h1{font-size:38px}nav .links a:nth-child(2){display:none}.voice{padding:26px 22px}.voice p{font-size:18px}}
   @media(min-width:861px){.hero{min-height:660px;padding:170px 0 60px}.hero-bg{object-position:50% 15%}}
   @media(min-width:2000px){.hero{min-height:860px}}
+  .wlpop{position:fixed;top:76px;left:16px;z-index:80;width:322px;max-width:calc(100vw - 32px);background:var(--card,var(--panel,#17171b));border:1px solid var(--line,#26262c);border-radius:16px;padding:18px;box-shadow:0 18px 50px rgba(0,0,0,.55);opacity:0;visibility:hidden;transform:translateX(-14px);transition:opacity .35s ease,transform .35s ease,visibility .35s}
+  .wlpop.on{opacity:1;visibility:visible;transform:none}
+  .wlpop-h{font-size:19px;font-weight:800;margin:0 26px 4px 0}
+  .wlpop p{color:var(--dim,var(--mut,#a7a7b0));font-size:14px;margin:0 0 12px}
+  .wlpop-x{position:absolute;top:8px;right:10px;background:none;border:0;color:var(--dim,var(--mut,#a7a7b0));font-size:22px;line-height:1;cursor:pointer;padding:4px}
+  .wlpop-x:hover{color:var(--ink,var(--txt,#f2f2f4))}
+  .wlpop-row{display:flex;gap:8px}
+  .wlpop-row input{flex:1;min-width:0;background:var(--bg,#0e0e10);border:1px solid var(--line,#26262c);border-radius:10px;color:var(--ink,var(--txt,#f2f2f4));padding:11px 12px;font-size:14.5px;font-family:inherit}
+  .wlpop-btn{background:var(--acc,#ff8a00);color:#14100a;font-weight:700;padding:11px 18px;font-size:14.5px;border:0;cursor:pointer;border-radius:10px}
+  .wlpop .wlhide{position:absolute;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none}
+  .wlpop .wlpop-done{color:var(--ink,var(--txt,#f2f2f4));font-weight:650;font-size:15px;margin:0}
+  @media(max-width:640px){.wlpop{top:74px;left:12px}}
 </style>
 </head>
 <body>
@@ -143,7 +184,7 @@
       <div class="tkick">The film room · the debrief</div>
       <h3>Ask her about your session.</h3>
       <p>After the session, she's your instructor at the table — the corner that's costing you, the braking to work on, the one thing to fix next. Start with a tap:</p>
-      <video class="tvideo" autoplay muted loop playsinline preload="metadata" poster="images/lena-voss-canonical-v2-strip.webp" aria-label="Lena Voss answering a debrief question"><source src="https://github.com/dmodaragamage/RaceHero-Site/releases/download/media-v1/talk-film-room.mp4" type="video/mp4"></video>
+      <div class="vidwrap"><video class="tvideo lena-sound" autoplay muted loop playsinline preload="metadata" poster="images/lena-voss-canonical-v2-strip.webp" aria-label="Lena Voss answering a debrief question"><source src="https://github.com/dmodaragamage/RaceHero-Site/releases/download/media-v1/talk-film-room.mp4" type="video/mp4"></video><span class="soundchip" aria-hidden="true">Tap for sound</span></div>
       <div class="chips">
         <span class="tchip">Where am I losing the most time?</span>
         <span class="tchip">What do I work on next?</span>
@@ -167,7 +208,7 @@
       <div class="tkick">The race seat · in the car</div>
       <h3>In the car, she's Voss.</h3>
       <p>Nobody uses full names at speed. In the car you call her <b>Voss</b> — and she answers like an engineer on the radio: short, calm, only what matters, only when it helps.</p>
-      <video class="tvideo" autoplay muted loop playsinline preload="metadata" poster="images/lena-race-seat.png" aria-label="Lena Voss answering in the car"><source src="https://github.com/dmodaragamage/RaceHero-Site/releases/download/media-v1/talk-race-seat.mp4" type="video/mp4"></video>
+      <div class="vidwrap"><video class="tvideo lena-sound" autoplay muted loop playsinline preload="metadata" poster="images/lena-race-seat.png" aria-label="Lena Voss answering in the car"><source src="https://github.com/dmodaragamage/RaceHero-Site/releases/download/media-v1/talk-race-seat.mp4" type="video/mp4"></video><span class="soundchip" aria-hidden="true">Tap for sound</span></div>
       <div class="xwho">You, on the radio</div>
       <div class="xq">“Voss — how was that lap?”</div>
       <div class="pill">
@@ -184,6 +225,34 @@
   <p class="tdisc">Lena Voss is RaceHero's AI coach.</p>
 </div></section>
 
+<section id="filmroom"><div class="wrap">
+  <div class="fkick">The Film Room</div>
+  <h2>Watch her work a corner.</h2>
+  <p class="sub">One real corner, one real session: the Schumacher S at the Nürburgring GP, lap four. Her reference is his own best pass. She freezes this one at the brake point and delivers the verdict. This is the Film Room, demonstrated.</p>
+  <div class="vidwrap"><video class="fvideo lena-sound" autoplay muted loop playsinline preload="metadata" poster="https://github.com/dmodaragamage/RaceHero-Site/releases/download/media-v1/film-room-hero.jpg" aria-label="The Film Room: Lena Voss reviews the Schumacher S, with the telemetry on the phone beside her"><source src="https://github.com/dmodaragamage/RaceHero-Site/releases/download/media-v1/film-room-hero.mp4" type="video/mp4"></video><span class="soundchip" aria-hidden="true">Tap for sound</span></div>
+  <p class="fcap"><b>The Film Room: a Lena Voss corner review</b> · Schumacher S · Nürburgring GP · Lap 4 — Lena Voss is RaceHero's AI coach.</p>
+  <div class="filmrec">
+    <div class="frow"><div class="fbeat">Open</div><div class="fline">“Watch the braking first. Before the car.”</div></div>
+    <div class="frow"><div class="fbeat">Freeze</div><div class="fline">“Stop. Right here. This is yours — and it's the best one you did all day.”</div></div>
+    <div class="frow"><div class="fbeat">Verdict</div><div><div class="fline">“You got the brakes on at the right moment. And then — this is the hard part — you let them off while the car was still turning. Eighty-two metres of release, into the rotation. That's trail braking. That's how an S is done.”</div><div class="fline">“One thing to chase: midway through, you breathed off the pedal for a heartbeat, then took the brake again. Hold the taper smooth, and the flip comes to you even earlier.”</div></div></div>
+    <div class="frow"><div class="fbeat">Close</div><div class="fline">“I found it because it was there. Now let's do it again.”</div></div>
+  </div>
+  <p class="fclose">In the app, this room is yours — pick a corner from your session, and she reviews it.</p>
+</div></section>
+
+<section id="difference"><div class="wrap">
+  <div class="fkick">How she learns</div>
+  <h2>The Difference &amp; Inference Engine</h2>
+  <p class="sub">She doesn't grade your lap against a textbook. She measures the <b style="color:var(--ink)">difference</b> between what you did and what your data says was there, infers the one change that matters — and checks the next lap to prove it moved.</p>
+  <div class="filmrec">
+    <div class="frow"><div class="fbeat">The gap</div><div class="fline">Take a hairpin. Your foot leaves the throttle — and for a beat, nothing. Then the brake. That pause is coasting: at 100 km/h, every tenth of a second between the pedals is nearly three metres of road where the car is neither driven nor slowed. The corner is being given away before you've even turned the wheel.</div></div>
+    <div class="frow"><div class="fbeat">The pattern</div><div class="fline">She measures that gap at every braking zone, on every lap — and its siblings: the pause between releasing the brake and picking the throttle back up, the overlap as the pedals trade places. Once is noise. The same gap, turning up in the same slow corners lap after lap, is a habit — and a habit can be coached.</div></div>
+    <div class="frow"><div class="fbeat">The call</div><div><div class="fline">The differences are inferred into one change, in the words you'd hear in the car:</div><div class="fline">“Into the hairpin, your feet take a breath between the pedals. The car coasts, and the corner's gone before it starts. Close the gap — that's the whole job there.”</div></div></div>
+    <div class="frow"><div class="fbeat">The proof</div><div class="fline">Then she watches the next lap. If the gap closed, the difference shrinks — and if it didn't, she says so, and you go again. Nothing is coached on a hunch: every lesson has to survive your data.</div></div>
+  </div>
+  <p class="fclose">A coachable moment is one she can measure, point to, and watch improve. That's coachability, measured.</p>
+</div></section>
+
 <section id="honest"><div class="wrap">
   <h2>The honest part</h2>
   <div class="honest">
@@ -198,11 +267,29 @@
     <a class="btn" href="/how-it-works.html">See how it works →</a>
     <a class="btn ghost" href="/gear.html">See the gear that just works</a>
     <a class="btn ghost" href="/engine.html">The engine behind her →</a>
+    <a class="btn ghost" href="/built.html">How Lena was built →</a>
   </div>
 </div></div>
 
+<section id="waitlist"><div class="wrap">
+  <div class="wl">
+    <h2>Be first on the grid.</h2>
+    <p class="sub" style="margin-bottom:22px">RaceHero is in final testing. Join the waitlist for launch access — and Lena's training films while you wait.</p>
+    <form class="wlform" id="wl-form" name="launch-waitlist" method="POST" data-netlify="true" netlify-honeypot="bot-field">
+      <input type="hidden" name="form-name" value="launch-waitlist">
+      <p class="wlhide"><label>Don't fill this out if you're human: <input name="bot-field"></label></p>
+      <div class="wlrow">
+        <input type="email" name="email" placeholder="your@email.com" required aria-label="Email address">
+        <button class="btn" type="submit">Join the waitlist</button>
+      </div>
+      <p class="wlmicro">Launch news only. No spam — unsubscribe anytime.</p>
+    </form>
+    <p class="wldone" id="wl-done" hidden>You're on the list. See you at launch.</p>
+  </div>
+</div></section>
+
 <footer><div class="wrap">
-  <div>© 2026 RaceHero™</div>
+  <div>© 2026 RaceHero™. All rights reserved.</div>
   <div>RaceHero's physics engine, in your corner.</div>
   <div class="links">
     <a href="/how-it-works.html">How it works</a>
@@ -213,5 +300,79 @@
     <a href="/link">RaceHero Link</a>
   </div>
 </div></footer>
+<script>
+(function(){
+  var vids=document.querySelectorAll('video.lena-sound');
+  function chipFor(v){var w=v.parentElement;return w?w.querySelector('.soundchip'):null;}
+  function setChip(v,on){var c=chipFor(v);if(c){c.textContent=on?'Sound on — tap to mute':'Tap for sound';c.classList.toggle('on',on);}}
+  vids.forEach(function(v){
+    v.addEventListener('click',function(){
+      if(!v.muted){v.muted=true;setChip(v,false);return;}
+      vids.forEach(function(o){if(o!==v){o.muted=true;setChip(o,false);}});
+      v.muted=false;
+      v.currentTime=0;
+      var p=v.play();
+      if(p&&p.catch){p.catch(function(){});}
+      setChip(v,true);
+    });
+  });
+})();
+</script>
+<script>
+(function(){
+  var f=document.getElementById('wl-form');
+  if(!f){return;}
+  f.addEventListener('submit',function(e){
+    e.preventDefault();
+    var body=new URLSearchParams(new FormData(f)).toString();
+    fetch('/',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:body})
+      .then(function(r){
+        if(!r.ok){throw new Error('form post failed');}
+        f.hidden=true;
+        document.getElementById('wl-done').hidden=false;
+      })
+      .catch(function(){ f.submit(); });
+  });
+})();
+</script>
+<div class="wlpop" id="wl-pop" role="dialog" aria-label="Join the RaceHero waitlist">
+  <button class="wlpop-x" id="wl-pop-x" type="button" aria-label="Dismiss">&times;</button>
+  <div class="wlpop-h">Be first on the grid.</div>
+  <p>Join the waitlist for launch access.</p>
+  <form id="wl-pop-form" name="launch-waitlist" method="POST" data-netlify="true" netlify-honeypot="bot-field">
+    <input type="hidden" name="form-name" value="launch-waitlist">
+    <p class="wlhide"><label>Don't fill this out if you're human: <input name="bot-field"></label></p>
+    <div class="wlpop-row">
+      <input type="email" name="email" placeholder="your@email.com" required aria-label="Email address">
+      <button class="btn wlpop-btn" type="submit">Join</button>
+    </div>
+  </form>
+  <p class="wlpop-done" id="wl-pop-done" hidden>You're on the list. See you at launch.</p>
+</div>
+<script>
+(function(){
+  var pop=document.getElementById('wl-pop');
+  if(!pop){return;}
+  var KEY='rh-wlpop';
+  function seen(){ try{return !!sessionStorage.getItem(KEY);}catch(e){return false;} }
+  function mark(){ try{sessionStorage.setItem(KEY,'1');}catch(e){} }
+  if(!seen()){ setTimeout(function(){ pop.classList.add('on'); },5000); }
+  document.getElementById('wl-pop-x').addEventListener('click',function(){ pop.classList.remove('on'); mark(); });
+  var f=document.getElementById('wl-pop-form');
+  if(!f){return;}
+  f.addEventListener('submit',function(e){
+    e.preventDefault();
+    var body=new URLSearchParams(new FormData(f)).toString();
+    fetch('/',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:body})
+      .then(function(r){
+        if(!r.ok){throw new Error('form post failed');}
+        f.hidden=true;
+        document.getElementById('wl-pop-done').hidden=false;
+        mark();
+      })
+      .catch(function(){ f.submit(); });
+  });
+})();
+</script>
 </body>
 </html>
