@@ -77,6 +77,17 @@
   .wlpop .wlhide{position:absolute;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none}
   .wlpop .wlpop-done{color:var(--ink,var(--txt,#f2f2f4));font-weight:650;font-size:15px;margin:0}
   @media(max-width:640px){.wlpop{top:74px;left:12px}}
+  /* Mobile pass 2026-10-29: nav scrolls instead of overflowing, 44px tap targets, no iOS focus-zoom on the pop-up input (desktop unchanged) */
+  @media(max-width:700px){
+    nav .wrap{gap:14px;padding:0 14px}
+    nav .logo{flex:none}
+    nav .links{min-width:0;gap:16px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+    nav .links::-webkit-scrollbar{display:none}
+    nav .links a{white-space:nowrap;flex:none;padding:13px 0}
+    .wlpop-x{padding:11px;top:1px;right:3px}
+    .wlpop-row input{font-size:16px}
+    footer .links a{padding:10px 0}
+  }
 </style>
 </head>
 <body>

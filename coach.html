@@ -126,6 +126,17 @@
   .wlpop .wlhide{position:absolute;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none}
   .wlpop .wlpop-done{color:var(--ink,var(--txt,#f2f2f4));font-weight:650;font-size:15px;margin:0}
   @media(max-width:640px){.wlpop{top:74px;left:12px}}
+  /* Mobile pass 2026-10-29: nav scrolls instead of overflowing, 44px tap targets, no iOS focus-zoom on the pop-up input (desktop unchanged) */
+  @media(max-width:700px){
+    nav .wrap{gap:14px;padding:0 14px}
+    nav .logo{flex:none}
+    nav .links{min-width:0;gap:16px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+    nav .links::-webkit-scrollbar{display:none}
+    nav .links a{white-space:nowrap;flex:none;padding:13px 0}
+    .wlpop-x{padding:11px;top:1px;right:3px}
+    .wlpop-row input{font-size:16px}
+    footer .links a{padding:10px 0}
+  }
 </style>
 </head>
 <body>
@@ -184,7 +195,7 @@
       <div class="tkick">The film room · the debrief</div>
       <h3>Ask her about your session.</h3>
       <p>After the session, she's your instructor at the table — the corner that's costing you, the braking to work on, the one thing to fix next. Start with a tap:</p>
-      <div class="vidwrap"><video class="tvideo lena-sound" autoplay muted loop playsinline preload="metadata" poster="images/lena-voss-canonical-v2-strip.webp" aria-label="Lena Voss answering a debrief question"><source src="https://github.com/dmodaragamage/RaceHero-Site/releases/download/media-v1/talk-film-room.mp4" type="video/mp4"></video><span class="soundchip" aria-hidden="true">Tap for sound</span></div>
+      <div class="vidwrap"><video class="tvideo lena-sound lazyvid" muted loop playsinline preload="none" poster="images/lena-voss-canonical-v2-strip.webp" aria-label="Lena Voss answering a debrief question"><source data-src="https://github.com/dmodaragamage/RaceHero-Site/releases/download/media-v1/talk-film-room.mp4" type="video/mp4"></video><span class="soundchip" aria-hidden="true">Tap for sound</span></div>
       <div class="chips">
         <span class="tchip">Where am I losing the most time?</span>
         <span class="tchip">What do I work on next?</span>
@@ -208,7 +219,7 @@
       <div class="tkick">The race seat · in the car</div>
       <h3>In the car, she's Voss.</h3>
       <p>Nobody uses full names at speed. In the car you call her <b>Voss</b> — and she answers like an engineer on the radio: short, calm, only what matters, only when it helps.</p>
-      <div class="vidwrap"><video class="tvideo lena-sound" autoplay muted loop playsinline preload="metadata" poster="images/lena-race-seat.png" aria-label="Lena Voss answering in the car"><source src="https://github.com/dmodaragamage/RaceHero-Site/releases/download/media-v1/talk-race-seat.mp4" type="video/mp4"></video><span class="soundchip" aria-hidden="true">Tap for sound</span></div>
+      <div class="vidwrap"><video class="tvideo lena-sound lazyvid" muted loop playsinline preload="none" poster="images/lena-race-seat.png" aria-label="Lena Voss answering in the car"><source data-src="https://github.com/dmodaragamage/RaceHero-Site/releases/download/media-v1/talk-race-seat.mp4" type="video/mp4"></video><span class="soundchip" aria-hidden="true">Tap for sound</span></div>
       <div class="xwho">You, on the radio</div>
       <div class="xq">“Voss — how was that lap?”</div>
       <div class="pill">
@@ -229,7 +240,7 @@
   <div class="fkick">The Film Room</div>
   <h2>Watch her work a corner.</h2>
   <p class="sub">One real corner, one real session: the Schumacher S at the Nürburgring GP, lap four. Her reference is his own best pass. She freezes this one at the brake point and delivers the verdict. This is the Film Room, demonstrated.</p>
-  <div class="vidwrap"><video class="fvideo lena-sound" autoplay muted loop playsinline preload="metadata" poster="https://github.com/dmodaragamage/RaceHero-Site/releases/download/media-v1/film-room-hero.jpg" aria-label="The Film Room: Lena Voss reviews the Schumacher S, with the telemetry on the phone beside her"><source src="https://github.com/dmodaragamage/RaceHero-Site/releases/download/media-v1/film-room-hero.mp4" type="video/mp4"></video><span class="soundchip" aria-hidden="true">Tap for sound</span></div>
+  <div class="vidwrap"><video class="fvideo lena-sound lazyvid" muted loop playsinline preload="none" poster="https://github.com/dmodaragamage/RaceHero-Site/releases/download/media-v1/film-room-hero.jpg" aria-label="The Film Room: Lena Voss reviews the Schumacher S, with the telemetry on the phone beside her"><source data-src="https://github.com/dmodaragamage/RaceHero-Site/releases/download/media-v1/film-room-hero.mp4" type="video/mp4"></video><span class="soundchip" aria-hidden="true">Tap for sound</span></div>
   <p class="fcap"><b>The Film Room: a Lena Voss corner review</b> · Schumacher S · Nürburgring GP · Lap 4 — Lena Voss is RaceHero's AI coach.</p>
   <div class="filmrec">
     <div class="frow"><div class="fbeat">Open</div><div class="fline">“Watch the braking first. Before the car.”</div></div>
@@ -310,12 +321,37 @@
       if(!v.muted){v.muted=true;setChip(v,false);return;}
       vids.forEach(function(o){if(o!==v){o.muted=true;setChip(o,false);}});
       v.muted=false;
+      if(window.__loadVid){window.__loadVid(v);}
       v.currentTime=0;
       var p=v.play();
       if(p&&p.catch){p.catch(function(){});}
       setChip(v,true);
     });
   });
+})();
+</script>
+<script>
+/* Mobile pass 2026-10-29: below-fold videos load + play only as they near the viewport (posters carry the layout until then); tap-to-sound still loads on demand via __loadVid */
+(function(){
+  var vids=document.querySelectorAll('video.lazyvid');
+  if(!vids.length){return;}
+  var reduce=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function load(v){
+    if(v.dataset.loaded){return;}
+    v.dataset.loaded='1';
+    var s=v.querySelector('source[data-src]');
+    if(s){s.src=s.getAttribute('data-src');}
+    v.load();
+  }
+  window.__loadVid=load;
+  function play(v){var p=v.play();if(p&&p.catch){p.catch(function(){});}}
+  if(!('IntersectionObserver' in window)){vids.forEach(function(v){load(v);if(!reduce){play(v);}});return;}
+  var io=new IntersectionObserver(function(es){
+    es.forEach(function(e){
+      if(e.isIntersecting){load(e.target);if(!reduce){play(e.target);}io.unobserve(e.target);}
+    });
+  },{rootMargin:'500px 0px'});
+  vids.forEach(function(v){io.observe(v);});
 })();
 </script>
 <script>
